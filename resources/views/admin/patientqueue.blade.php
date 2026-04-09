@@ -693,26 +693,46 @@
 <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
 <aside class="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-logo"><i class="bi bi-shield-plus" style="color:#4fce9e; font-size: 1.2rem;"></i></div>
         <div class="brand-name">CuraSure</div>
+       
     </div>
 
     <nav class="sidebar-nav">
-    <a href="{{ route('staff.dashboard') }}" class="sidebar-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}">
+    <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
         <i class="bi bi-grid-1x2"></i>
-        <span>Staff Dashboard</span>
+        <span>Admin Dashboard</span>
     </a>
-    <a href="{{ route('staff.queue') }}" class="sidebar-link {{ request()->routeIs('staff.queue') ? 'active' : '' }}">
+    <a href="{{ route('admin.queue') }}" class="sidebar-link {{ request()->routeIs('admin.queue') ? 'active' : '' }}">
         <i class="bi bi-people"></i>
         <span>Patient Queue</span>
     </a>
+        <a href="#" class="sidebar-link">
+            <i class="bi bi-calendar3"></i> Schedule
+        </a>
+        <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
+            <i class="bi bi-journal-medical"></i>
+            <span>Medical Records</span>
+        </a>
+        <a href="#" class="sidebar-link">
+            <i class="bi bi-shield-lock"></i> Administration
+        </a>
     </nav>
 
     <div class="sidebar-bottom">
-        <form action="{{ route('logout') }}" method="POST">
-            @csrf
-            <button type="submit" class="btn-logout"><i class="bi bi-box-arrow-left"></i> Logout</button>
-        </form>
+        <button class="btn-new-appt">
+            <i class="bi bi-plus-lg me-1"></i> New Appointment
+        </button>
+        <div class="sidebar-footer mt-3">
+            <a href="#" class="sidebar-link" style="padding:8px 6px;">
+                <i class="bi bi-question-circle"></i> Support
+            </a>
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="sidebar-link w-100 text-start" style="background:none;border:none;padding:8px 6px;cursor:pointer;">
+                    <i class="bi bi-box-arrow-left"></i> Logout
+                </button>
+            </form>
+        </div>
     </div>
 </aside>
 

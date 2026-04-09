@@ -126,12 +126,33 @@
             padding: 10px 0;
             font-size: .82rem;
             font-weight: 600;
+            font-family: 'DM Sans', sans-serif;
             letter-spacing: .02em;
             transition: background .18s;
             cursor: pointer;
         }
 
         .btn-new-appt:hover { background: var(--accent); }
+
+        .btn-logout {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 8px 6px;
+            color: rgba(255,255,255,.65);
+            font-size: .82rem;
+            font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+            border-left: 3px solid transparent;
+            transition: all .18s;
+            text-align: left;
+        }
+
+        .btn-logout:hover { background: var(--sidebar-hover); color: #fff; }
+        .btn-logout i { font-size: 1rem; width: 18px; text-align: center; }
 
         .sidebar-footer {
             padding: 10px 0 4px;
@@ -147,7 +168,8 @@
 
         /* Top bar */
         .topbar {
-            background: #fff;
+            background: rgba(255,255,255,.85);
+            backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border);
             padding: 0 32px;
             height: 58px;
@@ -159,22 +181,31 @@
             z-index: 50;
         }
 
-        .topbar-title {
+        .topbar-left h3 {
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
             color: var(--text-primary);
+            margin: 0;
             letter-spacing: .01em;
+        }
+
+        .topbar-left p {
+            font-size: .75rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text-muted);
+            margin: 2px 0 0;
         }
 
         .topbar-actions {
             display: flex;
             align-items: center;
-            gap: 14px;
+            gap: 10px;
         }
 
         .topbar-icon {
             width: 36px; height: 36px;
-            border-radius: 50%;
+            border-radius: 8px;
             background: var(--page-bg);
             border: 1px solid var(--border);
             display: flex; align-items: center; justify-content: center;
@@ -188,11 +219,12 @@
 
         .avatar {
             width: 36px; height: 36px;
-            border-radius: 50%;
-            background: var(--sidebar-bg);
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--sidebar-bg), var(--accent-light));
             color: #fff;
             font-size: .8rem;
             font-weight: 700;
+            font-family: 'DM Sans', sans-serif;
             display: flex; align-items: center; justify-content: center;
             cursor: pointer;
         }
@@ -373,22 +405,52 @@
             background: #aaa; border-radius: 50%;
         }
 
-        .action-btn {
-            background: none;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 4px 12px;
-            font-size: .75rem;
-            color: var(--text-muted);
-            cursor: pointer;
-            transition: all .15s;
-        }
+        /* Base Button Structure */
+.action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: .75rem;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
 
-        .action-btn:hover {
-            background: var(--accent-soft);
-            border-color: var(--accent);
-            color: var(--accent);
-        }
+/* Edit Button - Primary Style */
+.btn-edit {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+.btn-edit:hover {
+    background-color: var(--accent);
+    filter: brightness(1.1);
+    border-color: var(--accent);
+    color: white;
+}
+
+/* Disable Button - Light Green Style */
+.btn-disable {
+    background-color: #f0fdf4; /* Very light green */
+    border-color: #bbf7d0;     /* Soft green border */
+    color: #166534;           /* Dark green text for contrast */
+}
+
+.btn-disable:hover {
+    background-color: #dcfce7;
+    border-color: #86efac;
+    color: #14532d;
+}
+
+/* Utility margin */
+.ms-1 {
+    margin-left: 0.25rem;
+}
 
         /* Bar chart */
         .bar-chart {
@@ -565,22 +627,25 @@
     </div>
 
     <nav class="sidebar-nav">
-        <a href="#" class="sidebar-link active">
-            <i class="bi bi-grid-1x2"></i> Dashboard
-        </a>
-        <a href="#" class="sidebar-link">
-            <i class="bi bi-people"></i> Patient Queue
-        </a>
+    <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+        <i class="bi bi-grid-1x2"></i>
+        <span>Admin Dashboard</span>
+    </a>
+    <a href="{{ route('admin.queue') }}" class="sidebar-link {{ request()->routeIs('admin.queue') ? 'active' : '' }}">
+        <i class="bi bi-people"></i>
+        <span>Patient Queue</span>
+    </a>
         <a href="#" class="sidebar-link">
             <i class="bi bi-calendar3"></i> Schedule
         </a>
-        <a href="#" class="sidebar-link">
-            <i class="bi bi-journal-medical"></i> Medical Records
+        <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
+            <i class="bi bi-journal-medical"></i>
+            <span>Medical Records</span>
         </a>
         <a href="#" class="sidebar-link">
-            <i class="bi bi-box-seam"></i> Inventory
+            <i class="bi bi-graph-up-arrow"></i> Reports
         </a>
-        <a href="#" class="sidebar-link">
+         <a href="#" class="sidebar-link">
             <i class="bi bi-shield-lock"></i> Administration
         </a>
     </nav>
@@ -595,7 +660,7 @@
             </a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
-                <button type="submit" class="sidebar-link w-100 text-start" style="background:none;border:none;padding:8px 6px;cursor:pointer;">
+                <button type="submit" class="btn-logout">
                     <i class="bi bi-box-arrow-left"></i> Logout
                 </button>
             </form>
@@ -608,7 +673,10 @@
 
     <!-- Topbar -->
     <header class="topbar">
-        <span class="topbar-title">System Administration</span>
+        <div class="topbar-left">
+            <h3>System Administration</h3>
+            <p>Real-time system health and clinical throughput</p>
+        </div>
         <div class="topbar-actions">
             <div class="topbar-icon"><i class="bi bi-bell"></i></div>
             <div class="topbar-icon"><i class="bi bi-gear"></i></div>
@@ -678,7 +746,84 @@
                     </tr>
                 </thead>
                 <tbody>
-                    
+                    <tr>
+                        <td>
+                            <div class="user-name">Dr. Isabel Santos</div>
+                            <div class="user-role">Physician</div>
+                        </td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td class="user-email">i.santos@curasure.ph</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>
+                            <button class="action-btn btn-edit"">Edit</button>
+                            <button class="action-btn btn-delete ms-1">Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="user-name">Dr. Ramon Reyes</div>
+                            <div class="user-role">Physician</div>
+                        </td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td class="user-email">r.reyes@curasure.ph</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>
+                            <button class="action-btn btn-edit">Edit</button>
+                            <button class="action-btn btn-delete ms-1">Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="user-name">Dr. Ana Cruz</div>
+                            <div class="user-role">Physician</div>
+                        </td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td class="user-email">a.cruz@curasure.ph</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>
+                            <button class="action-btn btn-edit">Edit</button>
+                            <button class="action-btn btn-delete ms-1">Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="user-name">Nurse Patricia Lim</div>
+                            <div class="user-role">Head Nurse</div>
+                        </td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td class="user-email">p.lim@curasure.ph</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>
+                            <button class="action-btn btn-edit">Edit</button>
+                            <button class="action-btn btn-delete ms-1">Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="user-name">Marco Villanueva</div>
+                            <div class="user-role">Front Desk</div>
+                        </td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td class="user-email">m.villanueva@curasure.ph</td>
+                        <td><span class="status-badge status-active">Active</span></td>
+                        <td>
+                            <button class="action-btn btn-edit">Edit</button>
+                            <button class="action-btn btn-delete ms-1">Delete</button>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="user-name">Carla Domingo</div>
+                            <div class="user-role">Medical Records</div>
+                        </td>
+                        <td><span class="status-badge status-disabled">Inactive</span></td>
+                        <td class="user-email">c.domingo@curasure.ph</td>
+                        <td><span class="status-badge status-disabled">Inactive</span></td>
+                        <td>
+                            <button class="action-btn btn-edit">Edit</button>
+                            <button class="action-btn btn-delete ms-1">Delete</button>
+                        </td>
+                    </tr>
                 </tbody>
             </table>
         </div>
@@ -712,10 +857,46 @@
 
                     <div class="diag-item">
                         <div class="diag-header">
-                            
+                            <span>Upper Respiratory Infection</span>
+                            <span class="diag-pct">28%</span>
+                        </div>
+                        <div class="diag-bar"><div class="diag-fill" style="width:28%"></div></div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-header">
+                            <span>Hypertension</span>
+                            <span class="diag-pct">22%</span>
+                        </div>
+                        <div class="diag-bar"><div class="diag-fill" style="width:22%"></div></div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-header">
+                            <span>Acute Gastritis</span>
+                            <span class="diag-pct">18%</span>
+                        </div>
+                        <div class="diag-bar"><div class="diag-fill" style="width:18%"></div></div>
+                    </div>
+                    <div class="diag-item">
+                        <div class="diag-header">
+                            <span>Migraine</span>
+                            <span class="diag-pct">15%</span>
+                        </div>
                         <div class="diag-bar"><div class="diag-fill" style="width:15%"></div></div>
                     </div>
-                </div>
+                    <div class="diag-item">
+                        <div class="diag-header">
+                            <span>Type 2 Diabetes</span>
+                            <span class="diag-pct">10%</span>
+                        </div>
+                        <div class="diag-bar"><div class="diag-fill" style="width:10%"></div></div>
+                    </div>
+                    <div class="diag-item" style="margin-bottom:0;">
+                        <div class="diag-header">
+                            <span>Lumbar Disc Issues</span>
+                            <span class="diag-pct">7%</span>
+                        </div>
+                        <div class="diag-bar"><div class="diag-fill" style="width:7%"></div></div>
+                    </div>
             </div>
         </div>
 
@@ -729,7 +910,7 @@
                 <div class="col-md-4">
                     <div class="settings-field">
                         <label>Clinic Display Name</label>
-                        <input type="text" value="The Clinical Atelier">
+                        <input type="text" value="CuraSure">
                     </div>
                 </div>
                 <div class="col-md-3">
