@@ -413,9 +413,9 @@ body {
         <a href="#" class="sidebar-link active">
             <i class="bi bi-grid-1x2"></i> Dashboard
         </a>
-        <a href="#" class="sidebar-link">
-            <i class="bi bi-people"></i> Patient Queue
-        </a>
+        <a href="{{ route('staff.queue') }}" class="sidebar-link">
+    <i class="bi bi-people"></i> Patient Queue
+</a>
     </nav>
 
     <div class="sidebar-bottom">

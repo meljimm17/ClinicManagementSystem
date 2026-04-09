@@ -4,7 +4,10 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
 
-// 1. Root Logic
+/**
+ * 1. Root Logic
+ * Redirects users to their specific dashboard based on their role upon visiting the root URL.
+ */
 Route::get('/', function () {
     if (Auth::check()) {
         $user = Auth::user();
@@ -18,7 +21,10 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// 2. Auth Routes
+/**
+ * 2. Auth Routes
+ * Handles login and logout functionality.
+ */
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
@@ -26,22 +32,33 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-// 3. Protected Dashboards (The NAMES are critical here)
+/**
+ * 3. Protected Dashboards
+ * Routes wrapped in 'auth' middleware to ensure only logged-in users can access them.
+ */
 Route::middleware(['auth'])->group(function () {
     
+    // Admin Routes
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
     });
 
+    // Doctor Routes
     Route::prefix('doctor')->name('doctor.')->group(function () {
-        Route::get('/dashboard', fn () => view('doctor.dashboard'))->name('dashboard'); // This creates 'doctor.dashboard'
+        Route::get('/dashboard', fn () => view('doctor.dashboard'))->name('dashboard'); 
     });
 
-    Route::prefix('staff')->name('staff.')->group(function () {
-        Route::get('/dashboard', fn () => view('staff.dashboard'))->name('dashboard');
-    });
+    // Staff Routes
+  Route::prefix('staff')->name('staff.')->group(function () {
+    Route::get('/dashboard', fn () => view('staff.dashboard'))->name('dashboard');
+    // Change 'staff.queue' to 'staff.patientqueue'
+    Route::get('/queue', fn () => view('staff.patientqueue'))->name('queue'); 
+});
 
-    // Generic dashboard route used by shared nav or fallback logic
+    /**
+     * Generic Dashboard Redirect
+     * Fallback route that directs users to the correct dashboard based on their role string.
+     */
     Route::get('/dashboard', function () {
         $user = Auth::user();
         if (! $user) {
