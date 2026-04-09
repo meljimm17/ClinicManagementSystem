@@ -528,6 +528,113 @@
             padding: 3px 10px;
             text-transform: uppercase;
         }
+
+        /* --- PROFILE MODAL STYLING --- */
+.modal-content-clean { 
+    border: none; 
+    border-radius: 28px; 
+    padding: 25px; 
+}
+
+/* Header: Pic and Name */
+.modal-header-profile { 
+    display: flex; 
+    align-items: center; 
+    gap: 20px; 
+    margin-bottom: 30px; 
+}
+
+.profile-pic-large { 
+    width: 80px; height: 80px; 
+    border-radius: 20px; 
+    background: #f2f7f5; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    font-size: 2rem; 
+    font-family: 'DM Serif Display', serif; 
+    color: #1b3d2f; 
+}
+
+.profile-title-area h2 { 
+    font-family: 'DM Serif Display', serif; 
+    margin: 0; 
+    font-size: 1.6rem; 
+    color: #1a202c; 
+}
+
+/* Tab Underline */
+.modal-tabs { 
+    display: flex; 
+    gap: 25px; 
+    border-bottom: 1px solid #e9ecef; 
+    margin-bottom: 25px; 
+}
+
+.tab-item { 
+    padding-bottom: 10px; 
+    font-weight: 700; 
+    font-size: 0.85rem; 
+    color: #718096; 
+}
+
+.tab-item.active { 
+    color: #3d8b6e; 
+    border-bottom: 3px solid #3d8b6e; 
+}
+
+/* Info Grid Layout */
+.info-grid { 
+    display: grid; 
+    grid-template-columns: 1fr 1fr; 
+    gap: 25px; 
+}
+
+.info-row-full { grid-column: span 2; }
+
+.info-box { 
+    display: flex; 
+    align-items: flex-start; 
+    gap: 15px; 
+}
+
+.info-icon { 
+    width: 38px; height: 38px; 
+    border-radius: 10px; 
+    background: #f2f7f5; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
+    color: #3d8b6e; 
+    font-size: 1.1rem; 
+}
+
+.info-content label { 
+    display: block; 
+    font-size: 0.65rem; 
+    text-transform: uppercase; 
+    font-weight: 800; 
+    color: #718096; 
+    margin-bottom: 2px; 
+}
+
+.info-content span { 
+    font-size: 1rem; 
+    font-weight: 700; 
+    color: #1a202c; 
+}
+
+/* Rounded Close Button */
+.btn-close-custom { 
+    width: 100%; 
+    padding: 14px; 
+    border-radius: 50px; 
+    border: 1px solid #e9ecef; 
+    background: white; 
+    font-weight: 700; 
+    color: #718096; 
+    margin-top: 35px; 
+}
     </style>
 </head>
 <body>
@@ -571,8 +678,9 @@
         </div>
         <div class="topbar-actions">
             <div class="topbar-icon"><i class="bi bi-bell"></i></div>
-            <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
-        </div>
+            <<div class="avatar" data-bs-toggle="modal" data-bs-target="#staffProfileModal" style="cursor: pointer;">
+    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+</div>
     </header>
 
     <!-- Content -->
@@ -868,6 +976,79 @@
                     <i class="bi bi-check-lg me-1"></i> Save Changes
                 </button>
             </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="staffProfileModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content modal-content-clean">
+            
+            <div class="modal-header-profile">
+                <div class="profile-pic-large">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
+                <div class="profile-title-area">
+                    <h2>{{ Auth::user()->name }}</h2>
+                    <p class="text-muted small">{{ Auth::user()->role ?? 'Medical Staff' }}</p>
+                </div>
+            </div>
+
+            <div class="modal-tabs">
+                <div class="tab-item active">Information</div>
+                <div class="tab-item">Account</div>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-box info-row-full">
+                    <div class="info-icon"><i class="bi bi-person-badge"></i></div>
+                    <div class="info-content">
+                        <label>Full Name</label>
+                        <span>{{ Auth::user()->name }}</span>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-icon"><i class="bi bi-calendar-event"></i></div>
+                    <div class="info-content">
+                        <label>Age</label>
+                        <span>28 Years</span>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-icon"><i class="bi bi-gender-ambiguous"></i></div>
+                    <div class="info-content">
+                        <label>Gender</label>
+                        <span>Female</span>
+                    </div>
+                </div>
+
+                <div class="info-box info-row-full">
+                    <div class="info-icon"><i class="bi bi-geo-alt"></i></div>
+                    <div class="info-content">
+                        <label>Address</label>
+                        <span>123 Medical Ave, Davao City</span>
+                    </div>
+                </div>
+
+                <hr class="info-row-full" style="opacity: 0.1; margin: 5px 0;">
+
+                <div class="info-box">
+                    <div class="info-icon"><i class="bi bi-card-text"></i></div>
+                    <div class="info-content">
+                        <label>Staff ID Number</label>
+                        <span>ID-{{ Auth::user()->id ?? '88291' }}</span>
+                    </div>
+                </div>
+
+                <div class="info-box">
+                    <div class="info-icon"><i class="bi bi-briefcase"></i></div>
+                    <div class="info-content">
+                        <label>Current Role</label>
+                        <span>Front Desk</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="btn-close-custom" data-bs-dismiss="modal">Close</button>
         </div>
     </div>
 </div>

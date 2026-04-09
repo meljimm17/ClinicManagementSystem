@@ -52,7 +52,7 @@ Route::middleware(['auth'])->group(function () {
   Route::prefix('staff')->name('staff.')->group(function () {
     Route::get('/dashboard', fn () => view('staff.dashboard'))->name('dashboard');
     // Change 'staff.queue' to 'staff.patientqueue'
-    Route::get('/queue', fn () => view('staff.patientqueue'))->name('queue'); 
+    Route::get('/patientqueue', fn () => view('staff.patientqueue'))->name('queue'); // Optional: Keep old route for backward compatibility 
 });
 
     /**
