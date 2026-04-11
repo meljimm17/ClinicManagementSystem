@@ -149,11 +149,69 @@ body {
 .card-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; }
 .panel-title { font-size: .9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
 
+/* Section divider inside form */
+.form-section-label {
+    font-size: .65rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--primary);
+    padding: 6px 0 4px;
+    border-bottom: 1px solid var(--accent-soft);
+    margin-bottom: 14px;
+    display: block;
+}
+
 /* Custom Form Styles */
 .form-label-custom { font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; display: block; }
 .form-control-custom { border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: .845rem; font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--page-bg); width: 100%; outline: none; transition: border-color .15s; }
 .form-control-custom:focus { border-color: var(--accent); background: #fff; }
-.form-control-custom[readonly] { background-color: #f8f9fa; color: #555; }
+.form-control-custom[readonly], .form-control-custom:disabled { background-color: #f0f4f2; color: #9aada6; border-color: #dce6e1; cursor: not-allowed; }
+
+/* N/A Toggle */
+.na-field-wrap { position: relative; }
+.na-toggle-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.na-toggle-row .form-label-custom { margin-bottom: 0; flex: 1; }
+.na-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--page-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 2px 9px;
+    font-size: .62rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all .15s;
+    text-transform: uppercase;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.na-btn:hover { background: #fff4e5; border-color: #f0d9a0; color: #b07000; }
+.na-btn.active { background: #fff4e5; border-color: #f0d9a0; color: #b07000; }
+.na-btn.active::before { content: '✓ '; }
+
+/* Returning Patient Toggle */
+.returning-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--accent-soft);
+    border: 1px solid #c0dfd0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    cursor: pointer;
+}
+.returning-toggle input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
+.returning-toggle label { font-size: .8rem; font-weight: 600; color: var(--primary); cursor: pointer; margin: 0; }
+.returning-toggle small { font-size: .7rem; color: var(--text-muted); }
+
+#returningSearch { display: none; }
+#returningSearch.visible { display: block; }
 
 .btn-register { width: 100%; background: var(--sidebar-bg); color: #fff; border: none; border-radius: 8px; padding: 11px 0; font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .18s; }
 .btn-register:hover { background: var(--accent); }
@@ -177,111 +235,20 @@ body {
 .mini-stat-card.green-light { background: #d1e7dd; }
 
 /* --- PROFILE MODAL STYLING --- */
-.modal-content-clean { 
-    border: none; 
-    border-radius: 28px; 
-    padding: 25px; 
-}
-
-/* Header: Pic and Name */
-.modal-header-profile { 
-    display: flex; 
-    align-items: center; 
-    gap: 20px; 
-    margin-bottom: 30px; 
-}
-
-.profile-pic-large { 
-    width: 80px; height: 80px; 
-    border-radius: 20px; 
-    background: #f2f7f5; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    font-size: 2rem; 
-    font-family: 'DM Serif Display', serif; 
-    color: #1b3d2f; 
-}
-
-.profile-title-area h2 { 
-    font-family: 'DM Serif Display', serif; 
-    margin: 0; 
-    font-size: 1.6rem; 
-    color: #1a202c; 
-}
-
-/* Tab Underline */
-.modal-tabs { 
-    display: flex; 
-    gap: 25px; 
-    border-bottom: 1px solid #e9ecef; 
-    margin-bottom: 25px; 
-}
-
-.tab-item { 
-    padding-bottom: 10px; 
-    font-weight: 700; 
-    font-size: 0.85rem; 
-    color: #718096; 
-}
-
-.tab-item.active { 
-    color: #3d8b6e; 
-    border-bottom: 3px solid #3d8b6e; 
-}
-
-/* Info Grid Layout */
-.info-grid { 
-    display: grid; 
-    grid-template-columns: 1fr 1fr; 
-    gap: 25px; 
-}
-
+.modal-content-clean { border: none; border-radius: 28px; padding: 25px; }
+.modal-header-profile { display: flex; align-items: center; gap: 20px; margin-bottom: 30px; }
+.profile-pic-large { width: 80px; height: 80px; border-radius: 20px; background: #f2f7f5; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-family: 'DM Serif Display', serif; color: #1b3d2f; }
+.profile-title-area h2 { font-family: 'DM Serif Display', serif; margin: 0; font-size: 1.6rem; color: #1a202c; }
+.modal-tabs { display: flex; gap: 25px; border-bottom: 1px solid #e9ecef; margin-bottom: 25px; }
+.tab-item { padding-bottom: 10px; font-weight: 700; font-size: 0.85rem; color: #718096; }
+.tab-item.active { color: #3d8b6e; border-bottom: 3px solid #3d8b6e; }
+.info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
 .info-row-full { grid-column: span 2; }
-
-.info-box { 
-    display: flex; 
-    align-items: flex-start; 
-    gap: 15px; 
-}
-
-.info-icon { 
-    width: 38px; height: 38px; 
-    border-radius: 10px; 
-    background: #f2f7f5; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
-    color: #3d8b6e; 
-    font-size: 1.1rem; 
-}
-
-.info-content label { 
-    display: block; 
-    font-size: 0.65rem; 
-    text-transform: uppercase; 
-    font-weight: 800; 
-    color: #718096; 
-    margin-bottom: 2px; 
-}
-
-.info-content span { 
-    font-size: 1rem; 
-    font-weight: 700; 
-    color: #1a202c; 
-}
-
-/* Rounded Close Button */
-.btn-close-custom { 
-    width: 100%; 
-    padding: 14px; 
-    border-radius: 50px; 
-    border: 1px solid #e9ecef; 
-    background: white; 
-    font-weight: 700; 
-    color: #718096; 
-    margin-top: 35px; 
-}
+.info-box { display: flex; align-items: flex-start; gap: 15px; }
+.info-icon { width: 38px; height: 38px; border-radius: 10px; background: #f2f7f5; display: flex; align-items: center; justify-content: center; color: #3d8b6e; font-size: 1.1rem; }
+.info-content label { display: block; font-size: 0.65rem; text-transform: uppercase; font-weight: 800; color: #718096; margin-bottom: 2px; }
+.info-content span { font-size: 1rem; font-weight: 700; color: #1a202c; }
+.btn-close-custom { width: 100%; padding: 14px; border-radius: 50px; border: 1px solid #e9ecef; background: white; font-weight: 700; color: #718096; margin-top: 35px; }
 
 .dash-footer { text-align: center; font-size: .7rem; color: var(--text-muted); border-top: 1px solid var(--border); padding: 14px 32px; display: flex; justify-content: space-between; }
 </style>
@@ -314,64 +281,201 @@ body {
         <div class="topbar-actions">
             <div class="topbar-icon"><i class="bi bi-bell"></i></div>
             <div class="avatar" data-bs-toggle="modal" data-bs-target="#staffProfileModal">
-    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-</div>
+                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+            </div>
         </div>
     </header>
 
     <main class="content">
         <div class="row g-4">
+            <!-- ── Registration Form ── -->
             <div class="col-lg-6 col-md-12">
                 <div class="card-panel">
-                    <div class="panel-title mb-4">Patient Registration</div>
-                    <form>
+                    <div class="panel-title mb-1">Patient Registration</div>
+                    <p style="font-size:.72rem; color:var(--text-muted); margin-bottom:16px;">Fields marked <span style="color:#b07000; font-weight:700;">N/A</span> can be toggled if information is unavailable.</p>
+
+                    {{-- Success Message --}}
+@if(session('success'))
+    <div class="alert" style="background:#e8f5f0; border:1px solid #c0dfd0; color:#1b7a4e; border-radius:8px; padding:10px 14px; font-size:.82rem; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+        <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
+    </div>
+@endif
+
+                    {{-- FIXED: added method, action, and @csrf --}}
+                    <form method="POST" action="{{ route('patients.store') }}">
+                        @csrf
+
+                        {{-- ── Returning Patient ── --}}
+                        <div class="returning-toggle" onclick="toggleReturning(this)">
+                            <input type="checkbox" id="returningCheck">
+                            <div>
+                                <label for="returningCheck">Returning Patient?</label><br>
+                                <small>Toggle to search existing records instead of re-entering details</small>
+                            </div>
+                        </div>
+                        <div id="returningSearch" class="mb-3">
+    <label class="form-label-custom">Search Existing Patient</label>
+    <input type="text" id="patientSearchInput" class="form-control-custom" placeholder="Search by name or contact number…">
+    
+    {{-- Dropdown results --}}
+    <div id="searchResults" style="background:#fff; border:1px solid var(--border); border-radius:8px; margin-top:4px; display:none;"></div>
+</div>
+
+                        {{-- ── Personal Info ── --}}
+                        <span class="form-section-label"><i class="bi bi-person me-1"></i> Personal Information</span>
+
                         <div class="mb-3">
                             <label class="form-label-custom">Full Patient Name</label>
-                            <input type="text" class="form-control-custom" placeholder="e.g. Elena Rodriguez" required>
+                            {{-- FIXED: added name="name" --}}
+                            <input type="text" name="name" class="form-control-custom" placeholder="e.g. Elena Rodriguez" required>
                         </div>
+
                         <div class="row mb-3 g-2">
-                            <div class="col-md-3">
+                            <div class="col-md-4">
+                                <label class="form-label-custom">Date of Birth</label>
+                                {{-- FIXED: added name="date_of_birth" --}}
+                                <input type="date" name="date_of_birth" class="form-control-custom" id="dob" onchange="calcAge()">
+                            </div>
+                            <div class="col-md-2">
                                 <label class="form-label-custom">Age</label>
-                                <input type="number" class="form-control-custom" placeholder="24">
+                                {{-- FIXED: added name="age" --}}
+                                <input type="number" name="age" class="form-control-custom" id="age" placeholder="—" readonly>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label-custom">Gender</label>
-                                <select class="form-control-custom" style="appearance: auto;">
+                                {{-- FIXED: added name="gender" --}}
+                                <select name="gender" class="form-control-custom" style="appearance: auto;">
                                     <option selected disabled>Select</option>
                                     <option>Male</option>
                                     <option>Female</option>
                                 </select>
                             </div>
-                            <div class="col-md-6">
-                                <label class="form-label-custom">Contact Number</label>
-                                <input type="text" class="form-control-custom" placeholder="+63 (555) 000-0000">
+                            <div class="col-md-3">
+                                <label class="form-label-custom">Civil Status</label>
+                                {{-- FIXED: added name="civil_status" --}}
+                                <select name="civil_status" class="form-control-custom" style="appearance: auto;">
+                                    <option selected disabled>Select</option>
+                                    <option>Single</option>
+                                    <option>Married</option>
+                                    <option>Widowed</option>
+                                    <option>Separated</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label-custom">Address</label>
-                            <input type="text" class="form-control-custom" placeholder="123 Health St, Wellness City">
-                        </div>
+
                         <div class="row mb-3 g-2">
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Contact Number</label>
+                                {{-- FIXED: added name="contact_number" --}}
+                                <input type="text" name="contact_number" class="form-control-custom" placeholder="+63 (555) 000-0000">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Address</label>
+                                {{-- FIXED: added name="address" --}}
+                                <input type="text" name="address" class="form-control-custom" placeholder="123 Health St, Davao City">
+                            </div>
+                        </div>
+
+                        <div class="row mb-4 g-2">
                             <div class="col-md-4">
                                 <label class="form-label-custom">Blood Type</label>
-                                <select class="form-control-custom" style="appearance: auto;">
+                                {{-- FIXED: added name="blood_type" --}}
+                                <select name="blood_type" class="form-control-custom" style="appearance: auto;">
                                     <option>Select Type</option>
-                                    <option>A+</option><option>A-</option><option>O+</option><option>O-</option>
+                                    <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+                                    <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label-custom">Height (cm)</label>
-                                <input type="number" class="form-control-custom" placeholder="170">
+                                {{-- FIXED: added name="height" --}}
+                                <input type="number" name="height" class="form-control-custom" placeholder="170">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label-custom">Weight (kg)</label>
-                                <input type="number" class="form-control-custom" placeholder="70">
+                                {{-- FIXED: added name="weight" --}}
+                                <input type="number" name="weight" class="form-control-custom" placeholder="70">
                             </div>
                         </div>
+
+                        {{-- ── Administrative ── --}}
+                        <span class="form-section-label"><i class="bi bi-card-checklist me-1"></i> Administrative Details</span>
+
+                        <div class="row mb-3 g-2">
+                            <div class="col-md-6">
+                                <div class="na-toggle-row">
+                                    <label class="form-label-custom">PhilHealth No.</label>
+                                    <button type="button" class="na-btn" onclick="toggleNA(this, 'philhealth')">N/A</button>
+                                </div>
+                                {{-- FIXED: added name="philhealth_no" --}}
+                                <input type="text" name="philhealth_no" class="form-control-custom" id="philhealth" placeholder="XX-XXXXXXXXX-X">
+                            </div>
+                            <div class="col-md-6">
+                                <div class="na-toggle-row">
+                                    <label class="form-label-custom">HMO / Insurance</label>
+                                    <button type="button" class="na-btn" onclick="toggleNA(this, 'hmo')">N/A</button>
+                                </div>
+                                {{-- FIXED: added name="hmo_insurance" --}}
+                                <input type="text" name="hmo_insurance" class="form-control-custom" id="hmo" placeholder="Provider & Member No.">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="na-toggle-row">
+                                <label class="form-label-custom">Emergency Contact</label>
+                                <button type="button" class="na-btn" onclick="toggleNA(this, 'emgContact'); toggleNA(this, 'emgName')">N/A</button>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-6">
+                                    {{-- FIXED: added name="emergency_contact_name" --}}
+                                    <input type="text" name="emergency_contact_name" class="form-control-custom" id="emgName" placeholder="Contact Person Name">
+                                </div>
+                                <div class="col-md-6">
+                                    {{-- FIXED: added name="emergency_contact_number" --}}
+                                    <input type="text" name="emergency_contact_number" class="form-control-custom" id="emgContact" placeholder="+63 (555) 000-0000">
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- ── Medical History ── --}}
+                        <span class="form-section-label"><i class="bi bi-heart-pulse me-1"></i> Medical History</span>
+
+                        <div class="mb-3">
+                            <div class="na-toggle-row">
+                                <label class="form-label-custom">Known Allergies</label>
+                                <button type="button" class="na-btn" onclick="toggleNA(this, 'allergies')">N/A</button>
+                            </div>
+                            {{-- FIXED: added name="allergies" --}}
+                            <input type="text" name="known_allergies" class="form-control-custom" id="allergies" placeholder="e.g. Penicillin, Shellfish, Dust">
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="na-toggle-row">
+                                <label class="form-label-custom">Existing Conditions</label>
+                                <button type="button" class="na-btn" onclick="toggleNA(this, 'conditions')">N/A</button>
+                            </div>
+                            {{-- FIXED: added name="existing_conditions" --}}
+                            <input type="text" name="existing_conditions" class="form-control-custom" id="conditions" placeholder="e.g. Hypertension, Diabetes Type 2">
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="na-toggle-row">
+                                <label class="form-label-custom">Current Medications</label>
+                                <button type="button" class="na-btn" onclick="toggleNA(this, 'medications')">N/A</button>
+                            </div>
+                            {{-- FIXED: added name="current_medications" --}}
+                            <input type="text" name="current_medications" class="form-control-custom" id="medications" placeholder="e.g. Metformin 500mg, Losartan 50mg">
+                        </div>
+
+                        {{-- ── Visit Info ── --}}
+                        <span class="form-section-label"><i class="bi bi-clipboard2-pulse me-1"></i> Visit Information</span>
+
                         <div class="mb-4">
                             <label class="form-label-custom">Primary Symptoms</label>
-                            <textarea class="form-control-custom" rows="4" placeholder="Describe symptoms..."></textarea>
+                            {{-- FIXED: added name="primary_symptoms" --}}
+                            <textarea name="primary_symptoms" class="form-control-custom" rows="3" placeholder="Describe symptoms…"></textarea>
                         </div>
+
                         <button type="submit" class="btn-register">
                             <i class="bi bi-person-check me-2"></i> Complete Registration
                         </button>
@@ -379,6 +483,7 @@ body {
                 </div>
             </div>
 
+            <!-- ── Recent Entries ── -->
             <div class="col-lg-6 col-md-12">
                 <div class="card-panel">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -419,14 +524,17 @@ body {
 
     <footer class="dash-footer">
         <span>© 2024 CuraSure · Staff Portal</span>
-        <div class="footer-links"><a href="#" style="color:var(--text-muted); text-decoration:none; font-size:.7rem; margin-left:15px;">Privacy Protocol</a><a href="#" style="color:var(--text-muted); text-decoration:none; font-size:.7rem; margin-left:15px;">Support</a></div>
+        <div class="footer-links">
+            <a href="#" style="color:var(--text-muted); text-decoration:none; font-size:.7rem; margin-left:15px;">Privacy Protocol</a>
+            <a href="#" style="color:var(--text-muted); text-decoration:none; font-size:.7rem; margin-left:15px;">Support</a>
+        </div>
     </footer>
 </div>
 
+<!-- Staff Profile Modal -->
 <div class="modal fade" id="staffProfileModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content modal-content-clean">
-            
             <div class="modal-header-profile">
                 <div class="profile-pic-large">S</div>
                 <div class="profile-title-area">
@@ -434,69 +542,166 @@ body {
                     <p class="text-muted small">Medical Staff</p>
                 </div>
             </div>
-
             <div class="modal-tabs">
                 <div class="tab-item active">Information</div>
                 <div class="tab-item">Account</div>
             </div>
-
             <div class="info-grid">
                 <div class="info-box info-row-full">
                     <div class="info-icon"><i class="bi bi-person-badge"></i></div>
-                    <div class="info-content">
-                        <label>Full Name</label>
-                        <span>Sarah Staff</span>
-                    </div>
+                    <div class="info-content"><label>Full Name</label><span>Sarah Staff</span></div>
                 </div>
-
                 <div class="info-box">
                     <div class="info-icon"><i class="bi bi-calendar-event"></i></div>
-                    <div class="info-content">
-                        <label>Age</label>
-                        <span>28 Years</span>
-                    </div>
+                    <div class="info-content"><label>Age</label><span>28 Years</span></div>
                 </div>
-
                 <div class="info-box">
                     <div class="info-icon"><i class="bi bi-gender-ambiguous"></i></div>
-                    <div class="info-content">
-                        <label>Gender</label>
-                        <span>Female</span>
-                    </div>
+                    <div class="info-content"><label>Gender</label><span>Female</span></div>
                 </div>
-
                 <div class="info-box info-row-full">
                     <div class="info-icon"><i class="bi bi-geo-alt"></i></div>
-                    <div class="info-content">
-                        <label>Address</label>
-                        <span>123 Medical Ave, Davao City</span>
-                    </div>
+                    <div class="info-content"><label>Address</label><span>123 Medical Ave, Davao City</span></div>
                 </div>
-
                 <hr class="info-row-full" style="opacity: 0.1; margin: 5px 0;">
-
                 <div class="info-box">
                     <div class="info-icon"><i class="bi bi-card-text"></i></div>
-                    <div class="info-content">
-                        <label>Staff ID Number</label>
-                        <span>ID-88291</span>
-                    </div>
+                    <div class="info-content"><label>Staff ID Number</label><span>ID-88291</span></div>
                 </div>
-
                 <div class="info-box">
                     <div class="info-icon"><i class="bi bi-briefcase"></i></div>
-                    <div class="info-content">
-                        <label>Current Role</label>
-                        <span>Front Desk</span>
-                    </div>
+                    <div class="info-content"><label>Current Role</label><span>Front Desk</span></div>
                 </div>
             </div>
-
             <button type="button" class="btn-close-custom" data-bs-dismiss="modal">Close</button>
         </div>
     </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+
+<script>
+    /* Auto-calculate age from DOB */
+    function calcAge() {
+        const dob = document.getElementById('dob').value;
+        if (!dob) return;
+        const today = new Date();
+        const birth = new Date(dob);
+        let age = today.getFullYear() - birth.getFullYear();
+        const m = today.getMonth() - birth.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+        document.getElementById('age').value = age;
+    }
+
+    /* N/A toggle for a field */
+    function toggleNA(btn, fieldId) {
+        const field = document.getElementById(fieldId);
+        if (!field) return;
+        const isNA = btn.classList.toggle('active');
+        field.disabled = isNA;
+        if (isNA) {
+            field._prev = field.value;
+            field.value = 'N/A';
+        } else {
+            field.value = field._prev || '';
+        }
+    }
+
+    /* Returning patient toggle */
+    function toggleReturning(wrapper) {
+        const cb = wrapper.querySelector('input[type="checkbox"]');
+        cb.checked = !cb.checked;
+        const search = document.getElementById('returningSearch');
+        search.classList.toggle('visible', cb.checked);
+    }
+
+    /* Live search — attached after DOM is ready */
+    document.addEventListener('DOMContentLoaded', function () {
+        const searchInput = document.getElementById('patientSearchInput');
+        const results     = document.getElementById('searchResults');
+
+        searchInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // stop form submission
+
+        const first = document.querySelector('#searchResults div');
+        if (first) {
+            first.click(); // auto-fill first result
+        }
+    }
+});
+
+        searchInput.addEventListener('input', function () {
+            const query = this.value.trim();
+
+            if (query.length < 2) {
+                results.style.display = 'none';
+                return;
+            }
+
+            fetch(`{{ route('patients.search') }}?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(patients => {
+                    if (patients.length === 0) {
+                        results.innerHTML = `<div style="padding:10px 14px; font-size:.8rem; color:var(--text-muted);">No patients found.</div>`;
+                    } else {
+                        results.innerHTML = patients.map(p => `
+                            <div onclick="fillPatient(${JSON.stringify(p).replace(/"/g, '&quot;')})"
+                                 style="padding:10px 14px; font-size:.83rem; cursor:pointer; border-bottom:1px solid var(--border);"
+                                 onmouseover="this.style.background='var(--accent-soft)'"
+                                 onmouseout="this.style.background='#fff'">
+                                <strong>${p.name}</strong>
+                                <span style="color:var(--text-muted); font-size:.75rem;"> · ${p.contact_number ?? 'No contact'}</span>
+                            </div>
+                        `).join('');
+                    }
+                    results.style.display = 'block';
+                })
+                .catch(err => console.error('Search error:', err));
+        });
+
+        /* Hide results when clicking outside */
+        document.addEventListener('click', function (e) {
+            if (!searchInput.contains(e.target) && !results.contains(e.target)) {
+                results.style.display = 'none';
+            }
+        });
+    });
+
+    
+
+    /* Fill all form fields with returning patient data */
+    function fillPatient(p) {
+        document.getElementById('searchResults').style.display = 'none';
+        document.getElementById('patientSearchInput').value = p.name;
+
+        // Personal
+        document.querySelector('[name="name"]').value            = p.name ?? '';
+        document.querySelector('[name="date_of_birth"]').value   = p.date_of_birth ?? '';
+        document.querySelector('[name="age"]').value             = p.age ?? '';
+        document.querySelector('[name="gender"]').value          = p.gender ?? '';
+        document.querySelector('[name="civil_status"]').value    = p.civil_status ?? '';
+        document.querySelector('[name="contact_number"]').value  = p.contact_number ?? '';
+        document.querySelector('[name="address"]').value         = p.address ?? '';
+
+        // Vitals
+        document.querySelector('[name="blood_type"]').value      = p.blood_type ?? '';
+        document.querySelector('[name="height"]').value          = p.height ?? '';
+        document.querySelector('[name="weight"]').value          = p.weight ?? '';
+
+        // Administrative
+        document.querySelector('[name="philhealth_no"]').value   = p.philhealth_no ?? '';
+        document.querySelector('[name="hmo_insurance"]').value   = p.hmo_insurance ?? '';
+        document.getElementById('emgName').value                 = p.emergency_contact_name ?? '';
+        document.getElementById('emgContact').value              = p.emergency_contact_number ?? '';
+
+        // Medical History
+        document.getElementById('allergies').value               = p.known_allergies ?? '';
+        document.getElementById('conditions').value              = p.existing_conditions ?? '';
+        document.getElementById('medications').value             = p.current_medications ?? '';
+    }
+</script>
+
 </body>
 </html>

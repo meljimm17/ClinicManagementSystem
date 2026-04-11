@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\PatientController;
 
 // 1. Root Logic
 Route::get('/', function () {
@@ -45,6 +46,16 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', fn () => view('staff.dashboard'))->name('dashboard');
         Route::get('/patientqueue', fn () => view('staff.patientqueue'))->name('queue'); 
     });
+
+    // Patient Routes
+Route::prefix('patients')->name('patients.')->group(function () {
+    Route::get('/search', [PatientController::class, 'search'])->name('search');  // MUST be before /{id}
+    Route::get('/register', [PatientController::class, 'create'])->name('create');
+    Route::post('/register', [PatientController::class, 'store'])->name('store');
+    Route::get('/', [PatientController::class, 'index'])->name('index');
+    Route::get('/{id}', [PatientController::class, 'show'])->name('show');
+});
+
 
     // Generic Dashboard Named Route
     Route::get('/dashboard', function () {

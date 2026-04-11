@@ -532,6 +532,9 @@
         <i class="bi bi-journal-medical"></i>           
         <span>Medical Records</span>
     </a>
+    <a href="#" class="sidebar-link">
+            <i class="bi bi-graph-up-arrow"></i> Reports
+        </a>
 
     <a href="#" class="sidebar-link">
         <i class="bi bi-shield-lock"></i>
