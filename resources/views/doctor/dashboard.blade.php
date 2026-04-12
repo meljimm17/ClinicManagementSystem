@@ -61,10 +61,7 @@ body {
     flex-shrink: 0;
 }
 
-.brand-logo i {
-    color: #4fce9e;
-    font-size: 1.2rem;
-}
+.brand-logo i { color: #4fce9e; font-size: 1.2rem; }
 
 .brand-name {
     font-family: 'DM Serif Display', serif;
@@ -74,10 +71,7 @@ body {
     letter-spacing: .01em;
 }
 
-.sidebar-nav {
-    flex: 1;
-    padding: 14px 0;
-}
+.sidebar-nav { flex: 1; padding: 14px 0; }
 
 .sidebar-link {
     display: flex;
@@ -92,10 +86,7 @@ body {
     transition: all .18s ease;
 }
 
-.sidebar-link:hover {
-    background: var(--sidebar-hover);
-    color: #fff;
-}
+.sidebar-link:hover { background: var(--sidebar-hover); color: #fff; }
 
 .sidebar-link.active {
     background: var(--sidebar-active);
@@ -104,20 +95,14 @@ body {
     font-weight: 500;
 }
 
-.sidebar-link i {
-    font-size: 1rem;
-    width: 18px;
-    text-align: center;
-}
+.sidebar-link i { font-size: 1rem; width: 18px; text-align: center; }
 
 .sidebar-bottom {
     padding: 16px 16px 24px;
     border-top: 1px solid rgba(255,255,255,.08);
 }
 
-.sidebar-footer {
-    padding: 6px 0 0;
-}
+.sidebar-footer { padding: 6px 0 0; }
 
 .btn-logout {
     display: flex;
@@ -136,35 +121,30 @@ body {
     text-align: left;
 }
 
-.btn-logout:hover {
-    background: var(--sidebar-hover);
-    color: #fff;
-}
+.btn-logout:hover { background: var(--sidebar-hover); color: #fff; }
 
 .btn-view-queue {
-    background-color: var(--sidebar-bg); /* Dark green from your sidebar */
+    background-color: var(--sidebar-bg);
     color: #ffffff;
     border: none;
     border-radius: 8px;
     padding: 8px 16px;
     font-size: 0.75rem;
     font-weight: 600;
-    text-decoration: none; /* Removes link underline */
+    text-decoration: none;
     display: inline-flex;
     align-items: center;
     transition: all 0.2s ease;
 }
 
 .btn-view-queue:hover {
-    background-color: var(--accent); /* Transitions to the lighter green on hover */
+    background-color: var(--accent);
     color: #ffffff;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
-.btn-view-queue:active {
-    transform: translateY(0);
-}
+.btn-view-queue:active { transform: translateY(0); }
 
 /* ── Main ── */
 .main-wrap {
@@ -203,11 +183,7 @@ body {
     margin: 2px 0 0;
 }
 
-.topbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+.topbar-actions { display: flex; align-items: center; gap: 12px; }
 
 .topbar-icon {
     width: 36px; height: 36px;
@@ -224,7 +200,6 @@ body {
 
 .topbar-icon:hover { background: var(--accent-soft); color: var(--accent); }
 
-/* Avatar Side-by-Side */
 .avatar {
     width: 36px; height: 36px;
     border-radius: 10px;
@@ -247,15 +222,16 @@ body {
     font-size: 2.2rem; font-family: 'DM Serif Display'; color: var(--sidebar-bg);
 }
 .profile-tabs { padding: 0 24px; display: flex; gap: 25px; border-bottom: 1px solid var(--border); }
-.tab-link { 
-    padding: 12px 0; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); 
-    cursor: pointer; border-bottom: 2px solid transparent; 
+.tab-link {
+    padding: 12px 0; font-size: 0.85rem; font-weight: 600; color: var(--text-muted);
+    cursor: pointer; border-bottom: 2px solid transparent;
 }
 .tab-link.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
 .info-item { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 20px; }
-.info-item-icon { 
+.info-item-icon {
     width: 36px; height: 36px; border-radius: 10px; background: var(--accent-soft);
     color: var(--primary); display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
 }
 
 /* Content & Panels */
@@ -271,15 +247,52 @@ body {
 .dash-footer { text-align: center; font-size: .7rem; color: var(--text-muted); border-top: 1px solid var(--border); padding: 14px 32px; display: flex; justify-content: space-between; }
 .footer-links a { color: var(--text-muted); text-decoration: none; margin-left: 18px; }
 
-/* Activity Log Styles */
-.activity-item { display: flex; align-items: center; margin-bottom: 16px; }
-.activity-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px; font-size: 0.9rem; }
+/* Activity Log */
+.activity-item { display: flex; align-items: flex-start; margin-bottom: 16px; gap: 12px; }
+.activity-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
 .activity-info .title { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); margin-bottom: 1px; }
 .activity-info .subtitle { font-size: 0.7rem; color: var(--text-muted); }
 .activity-info .time { font-size: 0.65rem; color: var(--text-muted); }
+
+/* Status badges */
+.badge-waiting    { background: #fff4e5; color: #b07000; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+.badge-diagnosing { background: var(--accent-soft); color: var(--primary); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+
+/* Empty state */
+.empty-queue { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: .8rem; }
+.empty-queue i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: .2; }
 </style>
 </head>
 <body>
+
+{{-- ── Compute stats from $queue passed by controller ── --}}
+@php
+    $patientsSeen   = \App\Models\PatientQueue::whereDate('created_at', today())->where('status', 'done')->count();
+    $remainingCount = $queue->whereIn('status', ['waiting', 'diagnosing'])->count();
+
+    // Avg consultation time from today's done records
+    $doneTodayWithTimes = \App\Models\PatientQueue::whereDate('created_at', today())
+        ->where('status', 'done')
+        ->whereNotNull('called_at')
+        ->whereNotNull('completed_at')
+        ->get();
+
+    $avgMinutes = null;
+    if ($doneTodayWithTimes->count() > 0) {
+        $totalMinutes = $doneTodayWithTimes->sum(function($q) {
+            return \Carbon\Carbon::parse($q->called_at)->diffInMinutes(\Carbon\Carbon::parse($q->completed_at));
+        });
+        $avgMinutes = round($totalMinutes / $doneTodayWithTimes->count());
+    }
+
+    // Recent activity: today's done + diagnosing queue entries
+    $recentActivity = \App\Models\PatientQueue::with('patient')
+        ->whereDate('created_at', today())
+        ->whereIn('status', ['done', 'diagnosing'])
+        ->orderByDesc('updated_at')
+        ->take(5)
+        ->get();
+@endphp
 
 <aside class="sidebar">
     <div class="sidebar-brand">
@@ -287,8 +300,8 @@ body {
         <div class="brand-name">CuraSure</div>
     </div>
     <nav class="sidebar-nav">
-        <a href="#" class="sidebar-link active"><i class="bi bi-grid-1x2"></i> Dashboard</a>
-        <a href="#" class="sidebar-link"><i class="bi bi-people"></i> Patient Queue</a>
+        <a href="{{ route('doctor.dashboard') }}" class="sidebar-link active"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+        <a href="{{ route('doctor.queue') }}" class="sidebar-link"><i class="bi bi-people"></i> Patient Queue</a>
         <a href="#" class="sidebar-link"><i class="bi bi-journal-medical"></i> Medical Records</a>
     </nav>
     <div class="sidebar-bottom">
@@ -305,12 +318,12 @@ body {
     <header class="topbar">
         <div class="topbar-left">
             <h3>Dashboard</h3>
-            <p>Welcome back, {{ Auth::user()->name }}!</p>
+            <p>Welcome back, Dr. {{ Auth::user()->name }}! &nbsp;·&nbsp; {{ now()->format('l, F j, Y') }}</p>
         </div>
         <div class="topbar-actions">
             <div class="topbar-icon" id="notificationBell">
                 <i class="bi bi-bell"></i>
-                </div>
+            </div>
             <div class="avatar" data-bs-toggle="modal" data-bs-target="#doctorProfileModal">
                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
             </div>
@@ -318,93 +331,142 @@ body {
     </header>
 
     <main class="content">
+
+        {{-- ── Stat Cards ── --}}
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <div class="stat-card">
                     <div class="stat-label">Patients Seen Today</div>
-                    <div class="stat-value">14</div>
+                    <div class="stat-value">{{ $patientsSeen }}</div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="stat-card">
                     <div class="stat-label">Avg Consultation Time</div>
-                    <div class="stat-value">12m</div>
+                    <div class="stat-value">
+                        {{ $avgMinutes !== null ? $avgMinutes . 'm' : '—' }}
+                    </div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="stat-card">
                     <div class="stat-label">Remaining in Queue</div>
-                    <div class="stat-value green">2</div>
+                    <div class="stat-value green">{{ $remainingCount }}</div>
                 </div>
             </div>
         </div>
 
         <div class="row g-3">
+
+            {{-- ── Active Queue Overview ── --}}
             <div class="col-md-8">
                 <div class="card-panel">
                     <div class="d-flex align-items-start justify-content-between mb-3">
                         <div>
                             <div class="panel-title">Active Queue Overview</div>
                             <p class="text-muted small">Live patient queue status</p>
-                            
                         </div>
-                        <a href="#" class="btn btn-view-queue text-decoration-none">
-    View Full Queue
-</a>
+                        <a href="{{ route('doctor.queue') }}" class="btn-view-queue">
+                            View Full Queue
+                        </a>
                     </div>
                     <div class="table-responsive">
                         <table class="table align-middle">
                             <thead class="text-muted small text-uppercase">
-                                <tr><th>Queue ID</th><th>Patient Name</th><th>Status</th><th class="text-end">Action</th></tr>
+                                <tr>
+                                    <th>Queue ID</th>
+                                    <th>Patient Name</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
                             </thead>
                             <tbody>
+                                @forelse($queue->whereIn('status', ['waiting', 'diagnosing']) as $entry)
                                 <tr>
-                                    <td><strong>Q-001</strong></td>
-                                    <td>Elena Rodriguez</td>
-                                    <td><span class="badge" style="background:var(--accent-soft); color:var(--primary)">Diagnosing</span></td>
-                                    <td class="text-end"><button class="btn btn-sm btn-outline-success">Complete</button></td>
+                                    <td><strong>{{ $entry->queue_number }}</strong></td>
+                                    <td>{{ $entry->patient->name }}</td>
+                                    <td>
+                                        @if($entry->status === 'diagnosing')
+                                            <span class="badge-diagnosing">Diagnosing</span>
+                                        @else
+                                            <span class="badge-waiting">Waiting</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end">
+                                        @if($entry->status === 'diagnosing')
+                                            <form method="POST" action="{{ route('doctor.queue.complete', $entry->id) }}" style="display:inline;">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-sm btn-outline-success">Complete</button>
+                                            </form>
+                                        @else
+                                            <form method="POST" action="{{ route('doctor.queue.call', $entry->id) }}" style="display:inline;">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-sm btn-outline-secondary">Call</button>
+                                            </form>
+                                        @endif
+                                    </td>
                                 </tr>
+                                @empty
                                 <tr>
-                                    <td><strong>Q-002</strong></td>
-                                    <td>Marcus Chen</td>
-                                    <td><span class="badge" style="background:#fff4e5; color:#b07000">Waiting</span></td>
-                                    <td class="text-end"><button class="btn btn-sm btn-outline-secondary">Call</button></td>
+                                    <td colspan="4">
+                                        <div class="empty-queue">
+                                            <i class="bi bi-people"></i>
+                                            No patients in queue today.
+                                        </div>
+                                    </td>
                                 </tr>
+                                @endforelse
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
+            {{-- ── Activity Log ── --}}
             <div class="col-md-4">
                 <div class="card-panel">
                     <div class="panel-title">Activity Log</div>
-                    <p class="text-muted small mb-3">Recent actions</p>
+                    <p class="text-muted small mb-3">Recent actions today</p>
                     <div class="activity-list">
-                        <div class="activity-item">
-                            <div class="activity-icon text-primary"><i class="bi bi-check2-circle"></i></div>
-                            <div class="activity-info">
-                                <div class="title">Session Completed</div>
-                                <div class="subtitle">Patient: Q-000 (Sarah Jenkins)</div>
-                                <div class="time">10:15 AM</div>
+                        @forelse($recentActivity as $activity)
+                            <div class="activity-item">
+                                @if($activity->status === 'done')
+                                    <div class="activity-icon text-success" style="background:#e8f5e9;">
+                                        <i class="bi bi-check2-circle"></i>
+                                    </div>
+                                    <div class="activity-info">
+                                        <div class="title">Session Completed</div>
+                                        <div class="subtitle">{{ $activity->queue_number }} · {{ $activity->patient->name }}</div>
+                                        <div class="time">{{ $activity->completed_at ? \Carbon\Carbon::parse($activity->completed_at)->format('g:i A') : '' }}</div>
+                                    </div>
+                                @else
+                                    <div class="activity-icon text-primary" style="background:#e8f0fe;">
+                                        <i class="bi bi-megaphone"></i>
+                                    </div>
+                                    <div class="activity-info">
+                                        <div class="title">Patient Called</div>
+                                        <div class="subtitle">{{ $activity->queue_number }} · {{ $activity->patient->name }}</div>
+                                        <div class="time">{{ $activity->called_at ? \Carbon\Carbon::parse($activity->called_at)->format('g:i A') : $activity->created_at->format('g:i A') }}</div>
+                                    </div>
+                                @endif
                             </div>
-                        </div>
-                        <div class="activity-item">
-                            <div class="activity-icon text-success"><i class="bi bi-megaphone"></i></div>
-                            <div class="activity-info">
-                                <div class="title">Patient Called</div>
-                                <div class="subtitle">Q-001 assigned to Room 01</div>
-                                <div class="time">10:30 AM</div>
+                        @empty
+                            <div style="text-align:center; color:var(--text-muted); font-size:.78rem; padding: 30px 0;">
+                                <i class="bi bi-clock-history" style="font-size:1.5rem; display:block; margin-bottom:6px; opacity:.2;"></i>
+                                No activity yet today.
                             </div>
-                        </div>
+                        @endforelse
                     </div>
                 </div>
             </div>
+
         </div>
     </main>
 
     <footer class="dash-footer">
-        <span>© 2024 CuraSure · Doctor Portal</span>
+        <span>© {{ date('Y') }} CuraSure · Doctor Portal</span>
         <div class="footer-links">
             <a href="#">Privacy Protocol</a>
             <a href="#">Support</a>
@@ -412,14 +474,15 @@ body {
     </footer>
 </div>
 
+{{-- ── Doctor Profile Modal ── --}}
 <div class="modal fade profile-modal" id="doctorProfileModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="profile-header">
-                <div class="profile-icon-container">D</div>
+                <div class="profile-icon-container">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
                 <div>
                     <h4 class="mb-0" style="font-family: 'DM Serif Display';">Dr. {{ Auth::user()->name }}</h4>
-                    <p class="text-muted small mb-0">Senior Medical Officer</p>
+                    <p class="text-muted small mb-0">{{ $doctor->specialization ?? 'Medical Officer' }}</p>
                 </div>
             </div>
 
@@ -437,36 +500,13 @@ body {
                     </div>
                 </div>
 
-                <div class="row">
-                    <div class="col-6">
-                        <div class="info-item">
-                            <div class="info-item-icon"><i class="bi bi-calendar-event"></i></div>
-                            <div>
-                                <div class="text-muted small fw-bold text-uppercase">Age</div>
-                                <div class="fw-bold">34 Years</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="info-item">
-                            <div class="info-item-icon"><i class="bi bi-gender-ambiguous"></i></div>
-                            <div>
-                                <div class="text-muted small fw-bold text-uppercase">Gender</div>
-                                <div class="fw-bold">Male</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <div class="info-item">
-                    <div class="info-item-icon"><i class="bi bi-geo-alt"></i></div>
+                    <div class="info-item-icon"><i class="bi bi-envelope"></i></div>
                     <div>
-                        <div class="text-muted small fw-bold text-uppercase">Address</div>
-                        <div class="fw-bold">123 Medical Ave, Davao City</div>
+                        <div class="text-muted small fw-bold text-uppercase">Email</div>
+                        <div class="fw-bold">{{ Auth::user()->email }}</div>
                     </div>
                 </div>
-
-                <hr class="my-3">
 
                 <div class="row">
                     <div class="col-6">
@@ -474,7 +514,7 @@ body {
                             <div class="info-item-icon"><i class="bi bi-card-checklist"></i></div>
                             <div>
                                 <div class="text-muted small fw-bold text-uppercase">License No.</div>
-                                <div class="fw-bold">PRC-7654321</div>
+                                <div class="fw-bold">{{ $doctor->license_number ?? '—' }}</div>
                             </div>
                         </div>
                     </div>
@@ -483,12 +523,19 @@ body {
                             <div class="info-item-icon"><i class="bi bi-hospital"></i></div>
                             <div>
                                 <div class="text-muted small fw-bold text-uppercase">Room</div>
-                                <div class="fw-bold">Room 04</div>
-                            </div>
+                                <div class="fw-bold">{{ $doctor?->assigned_room ? 'Room ' . $doctor->assigned_room : '1' }}</div>
                         </div>
                     </div>
                 </div>
-                
+
+                <div class="info-item">
+                    <div class="info-item-icon"><i class="bi bi-activity"></i></div>
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Patients Seen Today</div>
+                        <div class="fw-bold">{{ $patientsSeen }}</div>
+                    </div>
+                </div>
+
                 <button type="button" class="btn w-100 rounded-pill border text-muted fw-bold mt-2" data-bs-dismiss="modal">Close</button>
             </div>
         </div>

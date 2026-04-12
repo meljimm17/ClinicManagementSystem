@@ -15,7 +15,8 @@ class PatientController extends Controller
                         ->latest()
                         ->take(5)
                         ->get();
-        return view('dashboard', compact('recentQueue'));
+
+        return view('staff.dashboard', compact('recentQueue'));
     }
 
     // Register a new patient and add to queue
@@ -34,7 +35,7 @@ class PatientController extends Controller
             'height'                   => 'nullable|string|max:20',
             'weight'                   => 'nullable|string|max:20',
             // Administrative
-            'philhealth_no'            => 'nullable|string|max:30',   // FIXED: was philhealth_number
+            'philhealth_no'            => 'nullable|string|max:30',
             'hmo_insurance'            => 'nullable|string|max:100',
             'emergency_contact_name'   => 'nullable|string|max:100',
             'emergency_contact_number' => 'nullable|string|max:20',
@@ -43,12 +44,12 @@ class PatientController extends Controller
             'existing_conditions'      => 'nullable|string',
             'current_medications'      => 'nullable|string',
             // Visit
-            'primary_symptoms'         => 'nullable|string',          // FIXED: was symptoms
+            'primary_symptoms'         => 'nullable|string',
         ]);
 
         // Convert "N/A" from the UI toggle to null before saving
         $adminFields = [
-            'philhealth_no',                                          // FIXED: was philhealth_number
+            'philhealth_no',
             'hmo_insurance',
             'emergency_contact_name',
             'emergency_contact_number',
@@ -66,23 +67,25 @@ class PatientController extends Controller
         $patient = Patient::create($request->only([
             'name', 'date_of_birth', 'age', 'gender', 'civil_status',
             'contact_number', 'address', 'blood_type', 'height', 'weight',
-            'philhealth_no',                                          // FIXED: was philhealth_number
+            'philhealth_no',
             'hmo_insurance',
             'emergency_contact_name', 'emergency_contact_number',
             'known_allergies', 'existing_conditions', 'current_medications',
         ]));
 
         // Generate queue number (e.g. Q-001, Q-002...)
-        $queueCount  = PatientQueue::whereDate('created_at', today())->count();
-        $queueNumber = 'Q-' . str_pad($queueCount + 1, 3, '0', STR_PAD_LEFT);
+        $lastQueue   = PatientQueue::whereDate('created_at', today())->max('queue_number');
+        $lastNumber  = $lastQueue ? (int) substr($lastQueue, 2) : 0;
+        $queueNumber = 'Q-' . str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
 
         // Add to queue
         PatientQueue::create([
             'queue_number'  => $queueNumber,
             'patient_id'    => $patient->id,
             'registered_by' => auth()->id(),
-            'symptoms'      => $request->primary_symptoms,           // FIXED: was $request->symptoms
+            'symptoms'      => $request->primary_symptoms,
             'status'        => 'waiting',
+            'queued_at'     => now(), // fixed: was never being set
         ]);
 
         return redirect()->back()->with('success', 'Patient registered and added to queue as ' . $queueNumber . '!');
@@ -102,7 +105,7 @@ class PatientController extends Controller
                         'philhealth_no', 'hmo_insurance',
                         'emergency_contact_name', 'emergency_contact_number',
                         'known_allergies', 'existing_conditions', 'current_medications',
-                    ]);                                               // FIXED: now returns all fields
+                    ]);
 
         return response()->json($patients);
     }

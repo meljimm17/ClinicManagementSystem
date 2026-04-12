@@ -12,25 +12,25 @@ class MedicalRecord extends Model
         'doctor_id',
         'symptoms',
         'diagnosis',
+        'prescription',      // NEW
+        'notes',             // NEW
+        'record_status',     // NEW
         'assigned_room',
         'duration_minutes',
         'consultation_date',
         'consultation_time',
     ];
 
-    // Belongs to a patient
     public function patient()
     {
         return $this->belongsTo(Patient::class);
     }
 
-    // Belongs to a doctor
     public function doctor()
     {
         return $this->belongsTo(Doctor::class);
     }
 
-    // Belongs to a queue entry
     public function queue()
     {
         return $this->belongsTo(PatientQueue::class, 'queue_id');

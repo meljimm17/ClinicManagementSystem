@@ -10,13 +10,15 @@ class PatientQueueController extends Controller
 {
     // Show patient queue page
     public function index()
-    {
-        $queue = PatientQueue::with('patient')
-                    ->whereDate('created_at', today())
-                    ->orderBy('queued_at')
-                    ->get();
-        return view('patientqueue', compact('queue'));
-    }
+{
+    $queue = PatientQueue::with('patient')
+                ->whereDate('created_at', today())
+                ->whereIn('status', ['waiting', 'diagnosing']) // ← add this line
+                ->orderBy('created_at')
+                ->get();
+
+    return view('staff.patientqueue', compact('queue'));
+}
 
     // Update patient status and room
     public function update(Request $request, PatientQueue $patientQueue)

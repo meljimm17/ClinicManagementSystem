@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class Doctor extends Model
 {
     protected $fillable = [
-        'name',
-        'specialization',
-        'license_number',
-    ];
+    'user_id', // Add this!
+    'name',
+    'specialization',
+    'license_number',
+    'assigned_room',
+];
 
-    // A doctor can have many medical records
     public function medicalRecords()
     {
         return $this->hasMany(MedicalRecord::class);

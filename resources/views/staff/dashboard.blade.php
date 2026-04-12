@@ -302,7 +302,7 @@ body {
 @endif
 
                     {{-- FIXED: added method, action, and @csrf --}}
-                    <form method="POST" action="{{ route('patients.store') }}">
+                    <form method="POST" action="{{ route('staff.store') }}">
                         @csrf
 
                         {{-- ── Returning Patient ── --}}
@@ -491,31 +491,27 @@ body {
                         <span class="badge-live">Live Updates</span>
                     </div>
                     <div class="recent-patients-list mb-3">
+                        @forelse($recentQueue as $entry)
                         <div class="patient-entry-item">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="entry-avatar">ER</div>
+                                <div class="entry-avatar">{{ strtoupper(substr($entry->patient->name, 0, 2)) }}</div>
                                 <div>
-                                    <div class="entry-name">Elena Rodriguez</div>
-                                    <div class="entry-meta">Q-001 • 08:30 AM</div>
+                                    <div class="entry-name">{{ $entry->patient->name }}</div>
+                                    <div class="entry-meta">{{ $entry->queue_number }} • {{ \Carbon\Carbon::parse($entry->queued_at)->format('h:i A') }}</div>
                                 </div>
                             </div>
-                            <span class="status-indicator diagnosing">Diagnosing</span>
+                            <span class="status-indicator {{ $entry->status }}">{{ ucfirst($entry->status) }}</span>
                         </div>
-                        <div class="patient-entry-item">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="entry-avatar">MC</div>
-                                <div>
-                                    <div class="entry-name">Marcus Chen</div>
-                                    <div class="entry-meta">Q-002 • 08:45 AM</div>
-                                </div>
-                            </div>
-                            <span class="status-indicator waiting">Waiting</span>
+                        @empty
+                        <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:.82rem;">
+                            No patients registered today yet.
                         </div>
+                        @endforelse
                     </div>
                     <a href="{{ route('staff.queue') }}" style="display:block; text-align:center; font-size:.78rem; color:var(--primary); text-decoration:none; margin:15px 0; font-weight:600;">View all recent registrations →</a>
                     <div class="row g-3">
-                        <div class="col-6"><div class="mini-stat-card green-dark"><i class="bi bi-clock-history"></i> Avg Intake Time <div class="h5 mb-0 fw-bold">12m</div></div></div>
-                        <div class="col-6"><div class="mini-stat-card green-light"><i class="bi bi-people"></i> Daily Total<div class="h5 mb-0 fw-bold">03</div></div></div>
+                        <div class="col-6"><div class="mini-stat-card green-dark"><i class="bi bi-clock-history"></i> Avg Intake Time <div class="h5 mb-0 fw-bold">—</div></div></div>
+                        <div class="col-6"><div class="mini-stat-card green-light"><i class="bi bi-people"></i> Daily Total<div class="h5 mb-0 fw-bold">{{ $recentQueue->count() }}</div></div></div>
                     </div>
                 </div>
             </div>
