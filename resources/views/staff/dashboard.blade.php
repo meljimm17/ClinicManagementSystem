@@ -251,6 +251,11 @@ body {
 .btn-close-custom { width: 100%; padding: 14px; border-radius: 50px; border: 1px solid #e9ecef; background: white; font-weight: 700; color: #718096; margin-top: 35px; }
 
 .dash-footer { text-align: center; font-size: .7rem; color: var(--text-muted); border-top: 1px solid var(--border); padding: 14px 32px; display: flex; justify-content: space-between; }
+
+@keyframes bellPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: .7; }
+}
 </style>
 </head>
 <body>
@@ -279,11 +284,45 @@ body {
             <p>Welcome back, {{ Auth::user()->name }}</p>
         </div>
         <div class="topbar-actions">
-            <div class="topbar-icon"><i class="bi bi-bell"></i></div>
-            <div class="avatar" data-bs-toggle="modal" data-bs-target="#staffProfileModal">
-                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-            </div>
+    {{-- Bell with red dot + dropdown --}}
+    <div style="position:relative;" id="staffBellBtn" onclick="toggleStaffNotif()">
+        <div class="topbar-icon" style="cursor:pointer; position:relative;">
+            <i class="bi bi-bell"></i>
+            @php $diagnosingCount = \App\Models\PatientQueue::whereDate('created_at', today())->where('status','diagnosing')->count(); @endphp
+            @if($diagnosingCount > 0)
+                <span id="staffBellBadge" style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#e53935;border-radius:50%;border:2px solid #fff;display:block;animation:bellPulse 1.5s infinite;"></span>
+            @else
+                <span id="staffBellBadge" style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#e53935;border-radius:50%;border:2px solid #fff;display:none;"></span>
+            @endif
         </div>
+
+        <div id="staffNotifDropdown" style="display:none;position:absolute;top:44px;right:0;width:290px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:200;overflow:hidden;">
+            <div style="padding:12px 16px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);border-bottom:1px solid var(--border);">
+                <i class="bi bi-activity me-1"></i> Doctor Activity
+            </div>
+            @php $diagnosing = \App\Models\PatientQueue::with('patient')->whereDate('created_at', today())->where('status','diagnosing')->get(); @endphp
+            @forelse($diagnosing as $d)
+                <a href="{{ route('staff.queue') }}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text-primary);">
+                    <span style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;"></span>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;font-size:.8rem;">{{ $d->patient->name }}</div>
+                        <div style="font-size:.7rem;color:var(--text-muted);">{{ $d->queue_number }} · Being diagnosed {{ $d->called_at ? '· '.\Carbon\Carbon::parse($d->called_at)->format('g:i A') : '' }}</div>
+                    </div>
+                    <span style="font-size:.7rem;font-weight:700;color:var(--primary);white-space:nowrap;">View →</span>
+                </a>
+            @empty
+                <div style="padding:20px 16px;text-align:center;color:var(--text-muted);font-size:.78rem;">No active diagnoses</div>
+            @endforelse
+            <a href="{{ route('staff.queue') }}" style="display:block;text-align:center;padding:10px;font-size:.78rem;font-weight:700;color:var(--primary);text-decoration:none;border-top:1px solid var(--border);">
+                Go to Patient Queue →
+            </a>
+        </div>
+    </div>
+
+    <div class="avatar" data-bs-toggle="modal" data-bs-target="#staffProfileModal">
+        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+    </div>
+</div>
     </header>
 
     <main class="content">
@@ -697,6 +736,16 @@ body {
         document.getElementById('conditions').value              = p.existing_conditions ?? '';
         document.getElementById('medications').value             = p.current_medications ?? '';
     }
+
+    function toggleStaffNotif() {
+    const d = document.getElementById('staffNotifDropdown');
+    d.style.display = d.style.display === 'block' ? 'none' : 'block';
+}
+document.addEventListener('click', function(e) {
+    const btn = document.getElementById('staffBellBtn');
+    const dropdown = document.getElementById('staffNotifDropdown');
+    if (btn && !btn.contains(e.target)) dropdown.style.display = 'none';
+});
 </script>
 
 </body>

@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>CuraSure – Doctor Dashboard</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -44,7 +45,6 @@ body {
     top: 0; left: 0;
     z-index: 100;
 }
-
 .sidebar-brand {
     padding: 28px 22px 20px;
     border-bottom: 1px solid rgba(255,255,255,.08);
@@ -52,7 +52,6 @@ body {
     align-items: center;
     gap: 10px;
 }
-
 .brand-logo {
     width: 40px; height: 40px;
     background: rgba(255,255,255,.1);
@@ -60,9 +59,7 @@ body {
     display: flex; align-items: center; justify-content: center;
     flex-shrink: 0;
 }
-
 .brand-logo i { color: #4fce9e; font-size: 1.2rem; }
-
 .brand-name {
     font-family: 'DM Serif Display', serif;
     font-size: 1.1rem;
@@ -70,9 +67,7 @@ body {
     line-height: 1.2;
     letter-spacing: .01em;
 }
-
 .sidebar-nav { flex: 1; padding: 14px 0; }
-
 .sidebar-link {
     display: flex;
     align-items: center;
@@ -85,25 +80,19 @@ body {
     border-left: 3px solid transparent;
     transition: all .18s ease;
 }
-
 .sidebar-link:hover { background: var(--sidebar-hover); color: #fff; }
-
 .sidebar-link.active {
     background: var(--sidebar-active);
     color: #fff;
     border-left-color: var(--accent-light);
     font-weight: 500;
 }
-
 .sidebar-link i { font-size: 1rem; width: 18px; text-align: center; }
-
 .sidebar-bottom {
     padding: 16px 16px 24px;
     border-top: 1px solid rgba(255,255,255,.08);
 }
-
 .sidebar-footer { padding: 6px 0 0; }
-
 .btn-logout {
     display: flex;
     align-items: center;
@@ -120,7 +109,6 @@ body {
     transition: all .18s;
     text-align: left;
 }
-
 .btn-logout:hover { background: var(--sidebar-hover); color: #fff; }
 
 .btn-view-queue {
@@ -136,14 +124,12 @@ body {
     align-items: center;
     transition: all 0.2s ease;
 }
-
 .btn-view-queue:hover {
     background-color: var(--accent);
     color: #ffffff;
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
-
 .btn-view-queue:active { transform: translateY(0); }
 
 /* ── Main ── */
@@ -168,7 +154,6 @@ body {
     top: 0;
     z-index: 50;
 }
-
 .topbar-left h3 {
     font-size: 1rem;
     font-weight: 700;
@@ -176,15 +161,12 @@ body {
     margin: 0;
     letter-spacing: .01em;
 }
-
 .topbar-left p {
     font-size: .75rem;
     color: var(--text-muted);
     margin: 2px 0 0;
 }
-
 .topbar-actions { display: flex; align-items: center; gap: 12px; }
-
 .topbar-icon {
     width: 36px; height: 36px;
     border-radius: 8px;
@@ -197,9 +179,7 @@ body {
     transition: background .15s;
     position: relative;
 }
-
 .topbar-icon:hover { background: var(--accent-soft); color: var(--accent); }
-
 .avatar {
     width: 36px; height: 36px;
     border-radius: 10px;
@@ -212,6 +192,60 @@ body {
     transition: transform 0.2s;
 }
 .avatar:hover { transform: scale(1.05); }
+
+/* ── Bell notification ── */
+.bell-wrapper { position: relative; }
+.bell-badge {
+    position: absolute;
+    top: -4px; right: -4px;
+    width: 10px; height: 10px;
+    background: #e53935;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    display: none;
+    animation: bellPulse 1.5s infinite;
+}
+.bell-badge.show { display: block; }
+@keyframes bellPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: .7; }
+}
+
+/* Notification dropdown */
+.notif-dropdown {
+    display: none;
+    position: absolute;
+    top: 44px; right: 0;
+    width: 280px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.1);
+    z-index: 200;
+    overflow: hidden;
+}
+.notif-dropdown.open { display: block; }
+.notif-header {
+    padding: 12px 16px;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-muted);
+    border-bottom: 1px solid var(--border);
+}
+.notif-item {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .8rem;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-dot { width: 8px; height: 8px; border-radius: 50%; background: #f0a500; flex-shrink: 0; }
+.notif-dot.diagnosing { background: var(--primary); }
+.notif-empty { padding: 20px 16px; text-align: center; color: var(--text-muted); font-size: .78rem; }
 
 /* Modal Design Elements */
 .profile-modal .modal-content { border-radius: 24px; border: none; overflow: hidden; }
@@ -260,17 +294,16 @@ body {
 
 /* Empty state */
 .empty-queue { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: .8rem; }
-.empty-queue i { font-size: 2rem; display: block; margin-bottom: 8px; opacity: .2; }
+.empty-queue i { font-size: 2rem; display:block; margin-bottom: 8px; opacity: .2; }
 </style>
 </head>
 <body>
 
-{{-- ── Compute stats from $queue passed by controller ── --}}
+{{-- ── Compute stats ── --}}
 @php
-    $patientsSeen   = \App\Models\PatientQueue::whereDate('created_at', today())->where('status', 'done')->count();
+    $waitingCount   = $queue->where('status', 'waiting')->count();
     $remainingCount = $queue->whereIn('status', ['waiting', 'diagnosing'])->count();
 
-    // Avg consultation time from today's done records
     $doneTodayWithTimes = \App\Models\PatientQueue::whereDate('created_at', today())
         ->where('status', 'done')
         ->whereNotNull('called_at')
@@ -285,7 +318,6 @@ body {
         $avgMinutes = round($totalMinutes / $doneTodayWithTimes->count());
     }
 
-    // Recent activity: today's done + diagnosing queue entries
     $recentActivity = \App\Models\PatientQueue::with('patient')
         ->whereDate('created_at', today())
         ->whereIn('status', ['done', 'diagnosing'])
@@ -300,9 +332,27 @@ body {
         <div class="brand-name">CuraSure</div>
     </div>
     <nav class="sidebar-nav">
-        <a href="{{ route('doctor.dashboard') }}" class="sidebar-link active"><i class="bi bi-grid-1x2"></i> Dashboard</a>
-        <a href="{{ route('doctor.queue') }}" class="sidebar-link"><i class="bi bi-people"></i> Patient Queue</a>
-        <a href="#" class="sidebar-link"><i class="bi bi-journal-medical"></i> Medical Records</a>
+        @if(Auth::user()->role === 'doctor')
+            <a href="{{ route('doctor.dashboard') }}" class="sidebar-link {{ request()->routeIs('doctor.dashboard') ? 'active' : '' }}">
+                <i class="bi bi-grid-1x2"></i> <span>Dashboard</span>
+            </a>
+            <a href="{{ route('doctor.queue') }}" class="sidebar-link {{ request()->routeIs('doctor.queue') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> <span>Patient Queue</span>
+            </a>
+            <a href="{{ route('doctor.medical-records') }}" class="sidebar-link {{ request()->routeIs('doctor.medical-records') ? 'active' : '' }}">
+                <i class="bi bi-journal-medical"></i> <span>Medical Records</span>
+            </a>
+        @else
+            <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+                <i class="bi bi-grid-1x2"></i> <span>Admin Dashboard</span>
+            </a>
+            <a href="{{ route('admin.queue') }}" class="sidebar-link {{ request()->routeIs('admin.queue') ? 'active' : '' }}">
+                <i class="bi bi-people"></i> <span>Patient Queue</span>
+            </a>
+            <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
+                <i class="bi bi-journal-medical"></i> <span>Medical Records</span>
+            </a>
+        @endif
     </nav>
     <div class="sidebar-bottom">
         <div class="sidebar-footer">
@@ -321,9 +371,35 @@ body {
             <p>Welcome back, Dr. {{ Auth::user()->name }}! &nbsp;·&nbsp; {{ now()->format('l, F j, Y') }}</p>
         </div>
         <div class="topbar-actions">
-            <div class="topbar-icon" id="notificationBell">
+
+            {{-- Bell with red dot if waiting patients exist --}}
+            <div class="topbar-icon bell-wrapper" id="bellBtn" onclick="toggleNotif()" style="cursor:pointer;">
                 <i class="bi bi-bell"></i>
+                <span class="bell-badge {{ $waitingCount > 0 ? 'show' : '' }}" id="bellBadge"></span>
             </div>
+
+            {{-- Notification Dropdown --}}
+            <div class="notif-dropdown" id="notifDropdown">
+                <div class="notif-header">
+                    <i class="bi bi-bell-fill me-1"></i> Waiting Patients ({{ $waitingCount }})
+                </div>
+                @forelse($queue->where('status', 'waiting') as $w)
+                    <div class="notif-item">
+                        <span class="notif-dot"></span>
+                        <div style="flex:1;">
+                            <div style="font-weight:700;">{{ $w->patient->name }}</div>
+                            <div style="color:var(--text-muted); font-size:.72rem;">{{ $w->queue_number }} · {{ $w->created_at->format('g:i A') }}</div>
+                        </div>
+                        <a href="{{ route('doctor.queue') }}?call={{ $w->id }}"
+                           style="font-size:.72rem; font-weight:700; color:var(--primary); text-decoration:none; white-space:nowrap;">
+                           Call →
+                        </a>
+                    </div>
+                @empty
+                    <div class="notif-empty">No waiting patients</div>
+                @endforelse
+            </div>
+
             <div class="avatar" data-bs-toggle="modal" data-bs-target="#doctorProfileModal">
                 {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
             </div>
@@ -400,11 +476,11 @@ body {
                                                 <button type="submit" class="btn btn-sm btn-outline-success">Complete</button>
                                             </form>
                                         @else
-                                            <form method="POST" action="{{ route('doctor.queue.call', $entry->id) }}" style="display:inline;">
-                                                @csrf
-                                                @method('PATCH')
-                                                <button type="submit" class="btn btn-sm btn-outline-secondary">Call</button>
-                                            </form>
+                                            {{-- Call redirects to queue page and auto-loads patient --}}
+                                            <a href="{{ route('doctor.queue') }}?call={{ $entry->id }}"
+                                               class="btn btn-sm btn-outline-secondary">
+                                               <i class="bi bi-telephone-fill me-1"></i>Call
+                                            </a>
                                         @endif
                                     </td>
                                 </tr>
@@ -485,12 +561,10 @@ body {
                     <p class="text-muted small mb-0">{{ $doctor->specialization ?? 'Medical Officer' }}</p>
                 </div>
             </div>
-
             <div class="profile-tabs">
                 <div class="tab-link active">Information</div>
                 <div class="tab-link">Account</div>
             </div>
-
             <div class="p-4">
                 <div class="info-item">
                     <div class="info-item-icon"><i class="bi bi-person-badge"></i></div>
@@ -499,7 +573,6 @@ body {
                         <div class="fw-bold">{{ Auth::user()->name }}</div>
                     </div>
                 </div>
-
                 <div class="info-item">
                     <div class="info-item-icon"><i class="bi bi-envelope"></i></div>
                     <div>
@@ -507,7 +580,6 @@ body {
                         <div class="fw-bold">{{ Auth::user()->email }}</div>
                     </div>
                 </div>
-
                 <div class="row">
                     <div class="col-6">
                         <div class="info-item">
@@ -523,11 +595,11 @@ body {
                             <div class="info-item-icon"><i class="bi bi-hospital"></i></div>
                             <div>
                                 <div class="text-muted small fw-bold text-uppercase">Room</div>
-                                <div class="fw-bold">{{ $doctor?->assigned_room ? 'Room ' . $doctor->assigned_room : '1' }}</div>
+                                <div class="fw-bold">{{ $doctor?->assigned_room ? 'Room ' . $doctor->assigned_room : '—' }}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
-
                 <div class="info-item">
                     <div class="info-item-icon"><i class="bi bi-activity"></i></div>
                     <div>
@@ -535,7 +607,6 @@ body {
                         <div class="fw-bold">{{ $patientsSeen }}</div>
                     </div>
                 </div>
-
                 <button type="button" class="btn w-100 rounded-pill border text-muted fw-bold mt-2" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -543,5 +614,39 @@ body {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Toggle notification dropdown
+    function toggleNotif() {
+        document.getElementById('notifDropdown').classList.toggle('open');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        const bell = document.getElementById('bellBtn');
+        const dropdown = document.getElementById('notifDropdown');
+        if (!bell.contains(e.target)) {
+            dropdown.classList.remove('open');
+        }
+    });
+
+    // Poll every 10 seconds to check for new waiting patients and update bell
+    function checkWaitingPatients() {
+        fetch('/api/queue-status', {
+            headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content }
+        })
+        .then(r => r.json())
+        .then(data => {
+            const badge = document.getElementById('bellBadge');
+            if (data.waiting > 0) {
+                badge.classList.add('show');
+            } else {
+                badge.classList.remove('show');
+            }
+        })
+        .catch(() => {}); // silent fail
+    }
+
+    setInterval(checkWaitingPatients, 10000);
+</script>
 </body>
 </html>

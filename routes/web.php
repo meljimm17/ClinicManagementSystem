@@ -7,86 +7,74 @@ use App\Http\Controllers\PatientController;
 use App\Http\Controllers\PatientQueueController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\MedicalRecordController;
+use App\Http\Controllers\AdminController;
 
-// ── 1. Root redirect based on role ──────────────────────────────────────────
-Route::get('/', function () {
-    if (Auth::check()) {
-        return match (strtolower(trim(Auth::user()->role))) {
-            'admin'  => redirect()->route('admin.dashboard'),
-            'doctor' => redirect()->route('doctor.dashboard'),
-            'staff'  => redirect()->route('staff.dashboard'),
-            default  => redirect()->route('login'),
-        };
-    }
-    return redirect()->route('login');
-});
-
-// ── 2. Auth Routes ───────────────────────────────────────────────────────────
+// ── Public Routes ──
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
+    Route::get('/', function () { return redirect()->route('login'); });
 });
+
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-// ── 3. Protected Routes ──────────────────────────────────────────────────────
+// ── Protected Routes ──
 Route::middleware(['auth'])->group(function () {
+    
+    Route::get('/', function () {
+        return redirect()->route('dashboard');
+    });
 
-    // ── Admin ────────────────────────────────────────────────────────────────
+    // ── Admin Group ──
     Route::prefix('admin')->name('admin.')->group(function () {
-        Route::get('/dashboard', fn () => view('admin.dashboard'))->name('dashboard');
-        Route::get('/patientqueue', fn () => view('admin.patientqueue'))->name('queue');
-        Route::get('/medical-records', [MedicalRecordController::class, 'index'])->name('medical-records');
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::get('/medical-records', [MedicalRecordController::class, 'adminIndex'])->name('medical-records');
+        Route::get('/queue', [PatientQueueController::class, 'adminIndex'])->name('queue');
+        Route::get('/schedule', [AdminController::class, 'schedule'])->name('schedule');
+        Route::post('/schedule', [AdminController::class, 'storeSchedule'])->name('schedule.store');
+        Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
+        Route::get('/reports/export', [AdminController::class, 'exportReports'])->name('reports.export');
+        Route::get('/administration', [AdminController::class, 'administration'])->name('administration');
+        Route::post('/administration/users', [AdminController::class, 'storeUser'])->name('administration.users.store');
+        Route::put('/administration/users/{id}', [AdminController::class, 'updateUser'])->name('administration.users.update');
+        Route::delete('/administration/users/{id}', [AdminController::class, 'destroyUser'])->name('administration.users.destroy');
+        Route::post('/administration/settings', [AdminController::class, 'saveSettings'])->name('administration.settings.save');
     });
 
-    // ── Doctor ───────────────────────────────────────────────────────────────
+    // ── Doctor Group ──
     Route::prefix('doctor')->name('doctor.')->group(function () {
-        // Dashboard — loads queue filtered by doctor's assigned room
         Route::get('/dashboard', [DoctorController::class, 'dashboard'])->name('dashboard');
-
-        // Start consultation — marks queue entry as "diagnosing"
-        Route::patch('/queue/{patientQueue}/start', [DoctorController::class, 'startConsultation'])->name('queue.start');
-
-        // Save medical record + mark queue as done
+        Route::get('/patientqueue', [DoctorController::class, 'queue'])->name('queue');
+        Route::get('/medical-records', [MedicalRecordController::class, 'index'])->name('medical-records');
         Route::post('/record', [DoctorController::class, 'storeRecord'])->name('record.store');
-
-        Route::get('/patientqueue', [DoctorController::class, 'queue'])->name('queue'); 
-        Route::patch('/queue/{patientQueue}/call', [DoctorController::class, 'callPatient'])->name('queue.call');
-Route::patch('/queue/{patientQueue}/complete', [DoctorController::class, 'completePatient'])->name('queue.complete');
+        Route::patch('/patientqueue/{patientQueue}/call', [DoctorController::class, 'callPatient'])->name('queue.call');
+        Route::patch('/patientqueue/{patientQueue}/complete', [DoctorController::class, 'completePatient'])->name('queue.complete');
     });
 
-    // ── Staff ────────────────────────────────────────────────────────────────
+    // ── Staff Group ──
     Route::prefix('staff')->name('staff.')->group(function () {
-        // Dashboard — shows registration form + recent entries
         Route::get('/dashboard', [PatientController::class, 'index'])->name('dashboard');
-
-        // Submit registration form → saves patient + adds to queue
         Route::post('/dashboard', [PatientController::class, 'store'])->name('store');
-
-        // Patient queue page
         Route::get('/patientqueue', [PatientQueueController::class, 'index'])->name('queue');
-
-        // Update queue entry (status, room, symptoms)
-        Route::patch('/patientqueue/{patientQueue}', [PatientQueueController::class, 'update'])->name('queue.update');
-
-        // Remove a patient from the queue
-        Route::delete('/patientqueue/{patientQueue}', [PatientQueueController::class, 'destroy'])->name('queue.destroy');
+        
+        // ADD THIS LINE TO FIX THE ERROR:
+        Route::delete('/patientqueue/{id}', [PatientQueueController::class, 'destroy'])->name('queue.destroy');
     });
 
-    // ── Patients ─────────────────────────────────────────────────────────────
+    // ── Patients (Search fix) ──
     Route::prefix('patients')->name('patients.')->group(function () {
-        Route::get('/search', [PatientController::class, 'search'])->name('search'); // must be before /{id}
-        Route::get('/', [PatientController::class, 'index'])->name('index');
+        Route::get('/search', [PatientController::class, 'search'])->name('search');
         Route::get('/{id}', [PatientController::class, 'show'])->name('show');
     });
 
-    // ── Generic dashboard redirect ────────────────────────────────────────────
+    // ── Universal Dashboard Redirect ──
     Route::get('/dashboard', function () {
-        return match (strtolower(trim(Auth::user()->role))) {
+        $role = strtolower(trim(Auth::user()->role));
+        return match ($role) {
             'admin'  => redirect()->route('admin.dashboard'),
             'doctor' => redirect()->route('doctor.dashboard'),
             'staff'  => redirect()->route('staff.dashboard'),
             default  => redirect()->route('login'),
         };
     })->name('dashboard');
-
 });

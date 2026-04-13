@@ -7,32 +7,27 @@ use Illuminate\Database\Eloquent\Model;
 class MedicalRecord extends Model
 {
     protected $fillable = [
-        'queue_id',
-        'patient_id',
-        'doctor_id',
-        'symptoms',
-        'diagnosis',
-        'prescription',      // NEW
-        'notes',             // NEW
-        'record_status',     // NEW
-        'assigned_room',
-        'duration_minutes',
-        'consultation_date',
-        'consultation_time',
+        'queue_id', 
+        'patient_id', 
+        'doctor_id', 
+        'doctor_name', 
+        'assigned_room', 
+        'symptoms', 
+        'diagnosis', 
+        'prescription', 
+        'notes', 
+        'record_status', 
+        'consultation_date', 
+        'consultation_time'
     ];
 
-    public function patient()
-    {
-        return $this->belongsTo(Patient::class);
+    public function patient() 
+    { 
+        return $this->belongsTo(Patient::class); 
     }
 
-    public function doctor()
-    {
-        return $this->belongsTo(Doctor::class);
-    }
-
-    public function queue()
-    {
-        return $this->belongsTo(PatientQueue::class, 'queue_id');
+    public function doctor() 
+    { 
+        return $this->belongsTo(Doctor::class); 
     }
 }

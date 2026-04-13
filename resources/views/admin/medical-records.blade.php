@@ -523,7 +523,7 @@
         <span>Patient Queue</span>
     </a>
 
-    <a href="#" class="sidebar-link">
+    <a href="{{ route('admin.schedule') }}" class="sidebar-link">
         <i class="bi bi-calendar3"></i>
         <span>Schedule</span>
     </a>
@@ -532,7 +532,7 @@
         <i class="bi bi-journal-medical"></i>           
         <span>Medical Records</span>
     </a>
-    <a href="#" class="sidebar-link">
+    <a href="{{ route('admin.reports') }}" class="sidebar-link">
             <i class="bi bi-graph-up-arrow"></i> Reports
         </a>
 
@@ -551,11 +551,11 @@
                 <i class="bi bi-question-circle"></i> Support
             </a>
             <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="btn-logout">
-                    <i class="bi bi-box-arrow-left"></i> Logout
-                </button>
-            </form>
+    @csrf
+    <button type="submit" class="sidebar-link" style="background:none; border:none; width:100%; text-align:left;">
+        <i class="bi bi-box-arrow-right"></i> <span>Logout</span>
+    </button>
+</form>
         </div>
     </div>
 </aside>

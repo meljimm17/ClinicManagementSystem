@@ -12,20 +12,45 @@ class DoctorController extends Controller
 {
     // Show doctor dashboard with queue filtered by their room
     public function dashboard()
-    {
-        $doctor     = Auth::user()->doctor;
-        $doctorRoom = $doctor?->assigned_room ?? null;
+{
+    $user       = Auth::user();
+    $doctor     = $user->doctor;
+    $doctorId   = $doctor?->id;
 
-        $queue = PatientQueue::with('patient')
-            ->whereDate('created_at', today())
-            ->whereIn('status', ['waiting', 'diagnosing']) // only show active patients
-            ->orderBy('created_at')
-            ->get();
+    $queue = PatientQueue::with('patient')
+        ->whereDate('created_at', today())
+        ->whereIn('status', ['waiting', 'diagnosing'])
+        ->orderBy('created_at')
+        ->get();
 
-        $activeQueue = $queue->firstWhere('status', 'diagnosing');
+    $activeQueue = $queue->firstWhere('status', 'diagnosing');
 
-        return view('doctor.dashboard', compact('queue', 'activeQueue', 'doctor'));
-    }
+    // Missing variables
+    $patientsSeen = MedicalRecord::where('doctor_id', $doctorId)
+        ->whereDate('consultation_date', today())
+        ->count();
+
+    $avgMinutes = MedicalRecord::where('doctor_id', $doctorId)
+        ->whereDate('consultation_date', today())
+        ->whereNotNull('duration_minutes')
+        ->avg('duration_minutes');
+
+    $avgMinutes = $avgMinutes ? round($avgMinutes) : null;
+
+    $remainingCount = $queue->where('status', 'waiting')->count();
+
+    $recentActivity = PatientQueue::with('patient')
+        ->whereDate('created_at', today())
+        ->whereIn('status', ['diagnosing', 'done'])
+        ->latest('updated_at')
+        ->take(10)
+        ->get();
+
+    return view('doctor.dashboard', compact(
+        'queue', 'activeQueue', 'doctor',
+        'patientsSeen', 'avgMinutes', 'remainingCount', 'recentActivity'
+    ));
+}
 
     // Show full patient queue page for doctor
     public function queue()
@@ -85,52 +110,47 @@ class DoctorController extends Controller
     }
 
     // Save the medical record and mark queue as done
-    public function storeRecord(Request $request)
-    {
-        $request->validate([
-            'queue_id'          => 'nullable|exists:patient_queue,id',
-            'patient_id'        => 'required|exists:patients,id',
-            'doctor_id'         => 'nullable|exists:doctors,id',
-            'diagnosis'         => 'nullable|string',
-            'prescription'      => 'nullable|string',
-            'notes'             => 'nullable|string',
-            'record_status'     => 'required|in:draft,held_for_labs,completed',
-            'consultation_date' => 'required|date',
-            'consultation_time' => 'nullable',
-        ]);
+     public function storeRecord(Request $request)
+{
+    $request->validate([
+        'patient_id' => 'required',
+        'diagnosis'  => 'required|string',
+    ]);
 
-        // Save the medical record
-        MedicalRecord::create([
-            'queue_id'          => $request->queue_id,
-            'patient_id'        => $request->patient_id,
-            'doctor_id'         => $request->doctor_id,
-            'symptoms'          => PatientQueue::find($request->queue_id)?->symptoms,
-            'diagnosis'         => $request->diagnosis,
-            'prescription'      => $request->prescription,
-            'notes'             => $request->notes,
-            'record_status'     => $request->record_status,
-            'assigned_room'     => Auth::user()->doctor?->assigned_room,
-            'consultation_date' => $request->consultation_date,
-            'consultation_time' => $request->consultation_time,
-        ]);
+    // 1. Get the authenticated doctor's profile
+    $doctor = Auth::user()->doctor;
 
-        // Mark queue entry as done — patient disappears from queue and goes to medical records
-        if ($request->queue_id) {
-            PatientQueue::find($request->queue_id)?->update([
-                'status'       => 'done',
-                'completed_at' => now(),
-            ]);
-        }
-
-        $messages = [
-            'completed'     => 'Medical record saved and patient marked as done!',
-            'held_for_labs' => 'Patient held for labs. Record saved as pending.',
-            'draft'         => 'Draft saved.',
-        ];
-
-        return redirect()->route('doctor.queue')
-            ->with('success', $messages[$request->record_status]);
+    if (!$doctor) {
+        return back()->with('error', 'Critical Error: No doctor profile found for your account.');
     }
+
+    // 2. Save the record with automatic fields
+    MedicalRecord::create([
+        'queue_id'          => $request->queue_id,
+        'patient_id'        => $request->patient_id,
+        'doctor_id'         => $doctor->id,
+        'doctor_name'       => $doctor->name,          // Automatically pulls from doctors table
+        'assigned_room'     => $doctor->assigned_room, // Automatically pulls from doctors table
+        'symptoms'          => $request->symptoms ?? PatientQueue::find($request->queue_id)?->symptoms,
+        'diagnosis'         => $request->diagnosis,
+        'prescription'      => $request->prescription,
+        'notes'             => $request->notes,
+        'record_status'     => $request->record_status ?? 'completed',
+        'consultation_date' => now()->format('Y-m-d'),
+        'consultation_time' => now()->format('H:i:s'),
+    ]);
+
+    // 3. Close the queue entry
+    if ($request->queue_id) {
+        PatientQueue::find($request->queue_id)?->update([
+            'status'       => 'done',
+            'completed_at' => now(),
+        ]);
+    }
+
+    return redirect()->route('doctor.queue')
+        ->with('success', 'Consultation saved for ' . $doctor->assigned_room);
+}
 
     // Manage doctors list (admin use)
     public function index()

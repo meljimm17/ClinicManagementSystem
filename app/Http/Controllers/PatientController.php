@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\PatientQueue;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PatientController extends Controller
 {
@@ -63,7 +65,7 @@ class PatientController extends Controller
             }
         }
 
-        // Create patient
+        // Create the patient first (outside the retry loop — only created once)
         $patient = Patient::create($request->only([
             'name', 'date_of_birth', 'age', 'gender', 'civil_status',
             'contact_number', 'address', 'blood_type', 'height', 'weight',
@@ -73,20 +75,45 @@ class PatientController extends Controller
             'known_allergies', 'existing_conditions', 'current_medications',
         ]));
 
-        // Generate queue number (e.g. Q-001, Q-002...)
-        $lastQueue   = PatientQueue::whereDate('created_at', today())->max('queue_number');
-        $lastNumber  = $lastQueue ? (int) substr($lastQueue, 2) : 0;
-        $queueNumber = 'Q-' . str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
+        // Retry up to 5 times in case of a concurrent duplicate queue number.
+        // Each attempt re-reads count() so it always picks the correct next slot
+        // after any competing insert has committed.
+        $queueNumber = null;
+        $attempts    = 0;
 
-        // Add to queue
-        PatientQueue::create([
-            'queue_number'  => $queueNumber,
-            'patient_id'    => $patient->id,
-            'registered_by' => auth()->id(),
-            'symptoms'      => $request->primary_symptoms,
-            'status'        => 'waiting',
-            'queued_at'     => now(), // fixed: was never being set
-        ]);
+        while ($attempts < 5) {
+            try {
+                $queueNumber = DB::transaction(function () use ($patient, $request) {
+                    // Use COUNT so the next number is always based on how many
+                    // rows actually exist today — avoids string-sort issues with MAX.
+                    $count       = PatientQueue::whereDate('created_at', today())->count();
+                    $queueNumber = 'Q-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+
+                    PatientQueue::create([
+                        'queue_number'  => $queueNumber,
+                        'patient_id'    => $patient->id,
+                        'registered_by' => auth()->id(),
+                        'symptoms'      => $request->primary_symptoms,
+                        'status'        => 'waiting',
+                        'queued_at'     => now(),
+                    ]);
+
+                    return $queueNumber;
+                });
+
+                break; // success — exit the loop
+
+            } catch (UniqueConstraintViolationException $e) {
+                $attempts++;
+
+                if ($attempts >= 5) {
+                    throw $e; // give up after 5 collisions
+                }
+
+                // Small random pause so competing requests don't retry in lockstep
+                usleep(random_int(50000, 150000)); // 50–150 ms
+            }
+        }
 
         return redirect()->back()->with('success', 'Patient registered and added to queue as ' . $queueNumber . '!');
     }

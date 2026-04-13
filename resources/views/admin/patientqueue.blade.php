@@ -706,17 +706,17 @@
         <i class="bi bi-people"></i>
         <span>Patient Queue</span>
     </a>
-        <a href="#" class="sidebar-link">
+        <a href="{{ route('admin.schedule') }}" class="sidebar-link">
             <i class="bi bi-calendar3"></i> Schedule
         </a>
         <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
             <i class="bi bi-journal-medical"></i>
             <span>Medical Records</span>
         </a>
-        <a href="#" class="sidebar-link">
+        <a href="{{ route('admin.reports') }}" class="sidebar-link">
             <i class="bi bi-graph-up-arrow"></i> Reports
         </a>
-        <a href="#" class="sidebar-link">
+        <a href="{{ route('admin.administration') }}" class="sidebar-link">
             <i class="bi bi-shield-lock"></i> Administration
         </a>
     </nav>
@@ -730,11 +730,11 @@
                 <i class="bi bi-question-circle"></i> Support
             </a>
             <form action="{{ route('logout') }}" method="POST">
-                @csrf
-                <button type="submit" class="sidebar-link w-100 text-start" style="background:none;border:none;padding:8px 6px;cursor:pointer;">
-                    <i class="bi bi-box-arrow-left"></i> Logout
-                </button>
-            </form>
+    @csrf
+    <button type="submit" class="sidebar-link" style="background:none; border:none; width:100%; text-align:left;">
+        <i class="bi bi-box-arrow-right"></i> <span>Logout</span>
+    </button>
+</form>
         </div>
     </div>
 </aside>
