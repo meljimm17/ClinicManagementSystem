@@ -16,9 +16,9 @@ class MedicalRecordController extends Controller
         if ($user->role === 'doctor') {
             $doctorId = $user->doctor ? $user->doctor->id : null;
 
-            $records = MedicalRecord::where(function($query) use ($doctorId) {
+            $records = MedicalRecord::where(function ($query) use ($doctorId) {
                     $query->where('doctor_id', $doctorId)
-                          ->orWhereNull('doctor_id'); 
+                          ->orWhereNull('doctor_id');
                 })
                 ->with(['patient', 'doctor.user'])
                 ->latest('consultation_date')
@@ -27,7 +27,7 @@ class MedicalRecordController extends Controller
             $records = MedicalRecord::with(['patient', 'doctor.user'])->latest()->get();
         }
 
-        $mappedRecords = $records->map(function($r) {
+        $mappedRecords = $records->map(function ($r) {
             return [
                 'id'           => $r->id,
                 'patient_name' => $r->patient->name,
@@ -39,21 +39,26 @@ class MedicalRecordController extends Controller
                 'blood_type'   => $r->patient->blood_type,
                 'height'       => $r->patient->height,
                 'weight'       => $r->patient->weight,
+                // FIXED: correct column names from the patients migration
                 'philhealth'   => $r->patient->philhealth_no,
-                'hmo'          => $r->patient->hmo_provider,
+                'hmo'          => $r->patient->hmo_insurance,
                 'emg_name'     => $r->patient->emergency_contact_name,
                 'emg_contact'  => $r->patient->emergency_contact_number,
-                'allergies'    => $r->patient->allergies,
-                'conditions'   => $r->patient->medical_conditions,
+                'allergies'    => $r->patient->known_allergies,
+                'conditions'   => $r->patient->existing_conditions,
                 'medications'  => $r->patient->current_medications,
                 'symptoms'     => $r->symptoms,
-                'doctor'       => $r->doctor_name ?? $r->doctor?->user?->name,
+                'doctor'       => $r->doctor_name ?? $r->doctor?->name,
                 'room'         => $r->assigned_room,
                 'duration'     => $r->duration_minutes,
                 'diagnosis'    => $r->diagnosis,
                 'prescription' => $r->prescription,
                 'notes'        => $r->notes,
-                'date'         => date('M d, Y', strtotime($r->consultation_date))
+                'status'       => $r->record_status,
+                'date'         => date('M d, Y', strtotime($r->consultation_date)),
+                'time'         => $r->consultation_time
+                    ? date('h:i A', strtotime($r->consultation_time))
+                    : null,
             ];
         });
 
@@ -61,10 +66,13 @@ class MedicalRecordController extends Controller
         return view($viewPath, compact('records', 'mappedRecords'));
     }
 
+    /**
+     * Admin-specific index — uses the shared index() logic above.
+     * Kept as an alias so both routes work.
+     */
     public function adminIndex()
     {
-        $records = MedicalRecord::with('patient')->latest()->get();
-        return view('admin.medical-records', compact('records'));
+        return $this->index();
     }
 
     public function store(Request $request)
@@ -127,16 +135,16 @@ class MedicalRecordController extends Controller
         ]);
 
         $medicalRecord->update($request->only([
-            'doctor_id', 
-            'doctor_name', 
-            'assigned_room', 
-            'symptoms', 
+            'doctor_id',
+            'doctor_name',
+            'assigned_room',
+            'symptoms',
             'diagnosis',
-            'prescription', 
-            'notes', 
-            'record_status', 
+            'prescription',
+            'notes',
+            'record_status',
             'duration_minutes',
-            'consultation_date', 
+            'consultation_date',
             'consultation_time',
         ]));
 
