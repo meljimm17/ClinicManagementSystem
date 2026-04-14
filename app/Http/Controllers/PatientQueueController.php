@@ -14,7 +14,8 @@ class PatientQueueController extends Controller
     $queue = PatientQueue::with('patient')
                 ->whereDate('created_at', today())
                 ->whereIn('status', ['waiting', 'diagnosing']) 
-                ->orderBy('created_at')
+                ->orderBy('queued_at', 'asc')
+                ->orderBy('id', 'asc')
                 ->get();
 
     return view('staff.patientqueue', compact('queue'));
@@ -27,7 +28,8 @@ public function adminIndex()
     // Fetches all queue entries for today with their associated patient data
     $queueEntries = \App\Models\PatientQueue::with('patient')
                     ->whereDate('created_at', today())
-                    ->orderBy('created_at', 'asc')
+                    ->orderBy('queued_at', 'asc')
+                    ->orderBy('id', 'asc')
                     ->get();
 
     return view('admin.patientqueue', compact('queueEntries'));
@@ -38,9 +40,14 @@ public function adminIndex()
 {
     $request->validate([
         'status'        => 'required|in:waiting,diagnosing,done',
-        'assigned_room' => 'nullable|string|max:50',
-        'symptoms'      => 'nullable|string',
+        'assigned_room' => 'nullable|string|max:50|regex:/^[A-Za-z0-9\-\s#]+$/',
+        'symptoms'      => 'nullable|string|max:1000',
         'diagnosis'     => 'nullable|string', // Add this for the 'done' state
+    ], [
+        'status.required' => 'Status is required.',
+        'status.in' => 'Selected status is invalid.',
+        'assigned_room.regex' => 'Assigned room contains invalid characters.',
+        'symptoms.max' => 'Symptoms must not exceed 1000 characters.',
     ]);
 
     $patientQueue->update($request->only(['status', 'assigned_room', 'symptoms']));
@@ -49,7 +56,6 @@ public function adminIndex()
     if ($request->status === 'done') {
         \App\Models\MedicalRecord::create([
             'queue_id'          => $patientQueue->id,
-            'patient_id'        => $patientQueue->patient_id,
             'doctor_id'         => auth()->user()->doctor?->id, 
             'symptoms'          => $request->symptoms ?? $patientQueue->symptoms,
             'diagnosis'         => $request->diagnosis,

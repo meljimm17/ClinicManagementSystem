@@ -3,13 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PatientQueue extends Model
 {
+    use SoftDeletes;
+
     protected $table = 'patient_queue';
 
     protected $fillable = [
         'queue_number',
+        'queue_date',
         'patient_id',
         'registered_by',
         'symptoms',

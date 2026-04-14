@@ -370,6 +370,7 @@ body {
             <h3>Dashboard</h3>
             <p>Welcome back, Dr. {{ Auth::user()->name }}! &nbsp;·&nbsp; {{ now()->format('l, F j, Y') }}</p>
         </div>
+        
         <div class="topbar-actions">
 
             {{-- Bell with red dot if waiting patients exist --}}

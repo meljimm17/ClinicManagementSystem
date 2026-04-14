@@ -184,7 +184,7 @@
                     <tr>
                         <th>Name</th>
                         <th>Role</th>
-                        <th>Email</th>
+                        <th>Username</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -197,15 +197,13 @@
                             <div class="user-role">{{ ucfirst($user->role) }}</div>
                         </td>
                         <td><span class="status-badge status-active">{{ ucfirst($user->role) }}</span></td>
-                        <td style="color:var(--text-muted);font-size:.8rem;">{{ $user->email }}</td>
+                        <td style="color:var(--text-muted);font-size:.8rem;">{{ $user->username }}</td>
                         <td>
-                            <span class="status-badge {{ ($user->status ?? 'active') === 'active' ? 'status-active' : 'status-disabled' }}">
-                                {{ ucfirst($user->status ?? 'active') }}
-                            </span>
+                            <span class="status-badge status-active">Active</span>
                         </td>
                         <td>
                             <button class="action-btn btn-edit"
-                                onclick="openEditModal({{ $user->id }}, '{{ $user->name }}', '{{ $user->email }}', '{{ $user->role }}', '{{ $user->status ?? 'active' }}')">
+                                onclick="openEditModal({{ $user->id }}, '{{ $user->name }}', '{{ $user->username }}', '{{ $user->role }}')">
                                 Edit
                             </button>
                             <form action="{{ route('admin.administration.users.destroy', $user->id) }}" method="POST" style="display:inline;">
@@ -328,8 +326,8 @@
                             <input type="text" name="name" class="form-ctrl" placeholder="e.g. Dr. Juan dela Cruz" required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label-sm">Email Address</label>
-                            <input type="email" name="email" class="form-ctrl" placeholder="user@curasure.ph" required>
+                            <label class="form-label-sm">Username</label>
+                            <input type="text" name="username" class="form-ctrl" placeholder="e.g. juandelacruz" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Role</label>
@@ -376,8 +374,8 @@
                             <input type="text" name="name" id="editName" class="form-ctrl" required>
                         </div>
                         <div class="col-12">
-                            <label class="form-label-sm">Email Address</label>
-                            <input type="email" name="email" id="editEmail" class="form-ctrl" required>
+                            <label class="form-label-sm">Username</label>
+                            <input type="text" name="username" id="editUsername" class="form-ctrl" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Role</label>
@@ -387,13 +385,7 @@
                                 <option value="staff">Staff</option>
                             </select>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label-sm">Status</label>
-                            <select name="status" id="editStatus" class="form-ctrl" required>
-                                <option value="active">Active</option>
-                                <option value="inactive">Inactive</option>
-                            </select>
-                        </div>
+                        <div class="col-md-6"></div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -407,11 +399,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function openEditModal(id, name, email, role, status) {
+function openEditModal(id, name, username, role) {
     document.getElementById('editName').value = name;
-    document.getElementById('editEmail').value = email;
+    document.getElementById('editUsername').value = username;
     document.getElementById('editRole').value = role;
-    document.getElementById('editStatus').value = status;
     document.getElementById('editUserForm').action = '/admin/administration/users/' + id;
     new bootstrap.Modal(document.getElementById('editUserModal')).show();
 }

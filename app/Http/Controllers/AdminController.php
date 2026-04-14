@@ -9,6 +9,9 @@ use App\Models\Doctor;
 use App\Models\PatientQueue;
 use App\Models\MedicalRecord;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
@@ -17,7 +20,10 @@ class AdminController extends Controller
      */
     public function dashboard()
     {
-        $recentQueue = PatientQueue::with('patient')->latest()->take(5)->get();
+        $recentQueue = PatientQueue::with('patient')
+            ->latest('queued_at')
+            ->take(5)
+            ->get();
 
         // Real stats from DB
         $totalPatients          = Patient::count();
@@ -66,16 +72,57 @@ class AdminController extends Controller
      */
     public function administration()
     {
-        $users = User::all();
+        $users = User::orderByDesc('created_at')->orderByDesc('id')->get();
         return view('admin.administration', compact('users'));
     }
 
     public function schedule()
     {
-        return view('admin.schedule');
+        $staffList = Doctor::with('user')->orderBy('name')->get();
+
+        $todayAssignments = MedicalRecord::with(['doctor.user', 'queue'])
+            ->whereDate('consultation_date', today())
+            ->whereNotNull('doctor_id')
+            ->latest('consultation_time')
+            ->get()
+            ->groupBy('doctor_id')
+            ->map(function ($records) {
+                $record = $records->first();
+                $doctorName = $record->doctor?->name
+                    ?: $record->doctor?->user?->name
+                    ?: 'Unknown Staff';
+
+                $startTime = $record->consultation_time
+                    ? Carbon::parse($record->consultation_time)->format('h:i A')
+                    : 'N/A';
+
+                return [
+                    'name' => $doctorName,
+                    'room' => $record->queue?->assigned_room ?: $record->doctor?->assigned_room ?: '1',
+                    'shift' => $startTime . ' onwards',
+                ];
+            })
+            ->values();
+
+        $calendarEvents = MedicalRecord::selectRaw('DATE(consultation_date) as event_date, COUNT(*) as total')
+            ->whereNotNull('consultation_date')
+            ->whereBetween('consultation_date', [now()->subMonths(3)->startOfMonth(), now()->addMonths(3)->endOfMonth()])
+            ->groupBy('event_date')
+            ->get()
+            ->keyBy('event_date')
+            ->map(fn ($row) => (int) $row->total);
+
+        return view('admin.schedule', compact('staffList', 'todayAssignments', 'calendarEvents'));
     }
 
     public function reports()
+    {
+        $data = $this->getReportData();
+
+        return view('admin.reports', $data);
+    }
+
+    private function getReportData(): array
     {
         $totalPatients          = Patient::count();
         $totalConsultations     = MedicalRecord::where('record_status', 'completed')->count();
@@ -113,15 +160,30 @@ class AdminController extends Controller
                 'medicalRecords as patients_seen' => fn($q) =>
                     $q->whereMonth('consultation_date', now()->month),
             ])
-            ->withAvg(
-                ['medicalRecords as avg_duration' => fn($q) =>
-                    $q->whereMonth('consultation_date', now()->month)
-                      ->whereNotNull('duration_minutes')],
-                'duration_minutes'
-            )
+            ->orderBy('name', 'asc')
             ->get();
 
-        return view('admin.reports', compact(
+        // Better consultation-time metric: use queue timestamps (called -> completed)
+        $queueBasedAverages = MedicalRecord::query()
+            ->join('patient_queue', 'medical_records.queue_id', '=', 'patient_queue.id')
+            ->whereNotNull('medical_records.doctor_id')
+            ->whereNull('patient_queue.deleted_at')
+            ->whereNotNull('patient_queue.called_at')
+            ->whereNotNull('patient_queue.completed_at')
+            ->whereMonth('medical_records.consultation_date', now()->month)
+            ->selectRaw('medical_records.doctor_id, AVG(TIMESTAMPDIFF(MINUTE, patient_queue.called_at, patient_queue.completed_at)) as avg_consultation')
+            ->groupBy('medical_records.doctor_id')
+            ->pluck('avg_consultation', 'medical_records.doctor_id');
+
+        $doctorStats = $doctorStats->map(function ($doctor) use ($queueBasedAverages) {
+            $queueAvg = $queueBasedAverages->get($doctor->id);
+            $doctor->consultation_avg = $queueAvg !== null
+                ? round((float) $queueAvg, 1)
+                : null;
+            return $doctor;
+        });
+
+        return compact(
             'totalPatients',
             'totalConsultations',
             'recordsFiled',
@@ -130,7 +192,7 @@ class AdminController extends Controller
             'topDiagnoses',
             'diagTotal',
             'doctorStats'
-        ));
+        );
     }
 
     /**
@@ -138,9 +200,19 @@ class AdminController extends Controller
      */
     public function storeSchedule(Request $request)
     {
-        $request->validate(['title' => 'required', 'date' => 'required']);
-        // Add your Appointment model creation logic here
-        return back()->with('success', 'Appointment scheduled successfully.');
+        $validated = $request->validate([
+            'staff_id' => 'required|exists:doctors,id',
+            'room_number' => 'required|string|max:20',
+            'shift_type' => 'nullable|string|max:50',
+            'start_at' => 'required|date',
+            'end_at' => 'required|date|after:start_at',
+        ]);
+
+        Doctor::whereKey($validated['staff_id'])->update([
+            'assigned_room' => $validated['room_number'],
+        ]);
+
+        return back()->with('success', 'Room assignment updated successfully.');
     }
 
     /**
@@ -150,17 +222,22 @@ class AdminController extends Controller
     {
         $request->validate([
             'name'     => 'required|string|max:255',
-            'email'    => 'required|email|unique:users',
+            'username' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'username')->whereNull('deleted_at'),
+            ],
             'password' => 'required|min:8',
+            'password_confirmation' => 'required|same:password',
             'role'     => 'required',
         ]);
 
         User::create([
             'name'     => $request->name,
-            'email'    => $request->email,
+            'username' => $request->username,
             'password' => Hash::make($request->password),
             'role'     => $request->role,
-            'status'   => 'active',
         ]);
 
         return back()->with('success', 'User created successfully.');
@@ -169,7 +246,20 @@ class AdminController extends Controller
     public function updateUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $user->update($request->only(['name', 'email', 'role', 'status']));
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'username')
+                    ->whereNull('deleted_at')
+                    ->ignore($user->id),
+            ],
+            'role' => 'required|in:admin,doctor,staff',
+        ]);
+
+        $user->update($request->only(['name', 'username', 'role']));
         return back()->with('success', 'User updated successfully.');
     }
 
@@ -186,7 +276,11 @@ class AdminController extends Controller
 
     public function exportReports()
     {
-        // Logic for CSV export
-        return back()->with('success', 'Report export started.');
+        $data = $this->getReportData();
+        $data['generatedAt'] = now();
+
+        $pdf = Pdf::loadView('admin.reports_pdf', $data)->setPaper('a4', 'portrait');
+
+        return $pdf->download('CuraSure-Report-' . now()->format('Y-m-d') . '.pdf');
     }
 }

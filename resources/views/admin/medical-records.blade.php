@@ -66,15 +66,22 @@
         .act-btn { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border); background: var(--page-bg); color: var(--text-muted); display: inline-flex; align-items: center; justify-content: center; font-size: .85rem; cursor: pointer; transition: all .15s; }
         .act-btn:hover { background: var(--accent-soft); border-color: #c0dfd0; color: var(--primary); }
         /* Modal */
-        .modal-content { border: 1px solid var(--border); border-radius: 14px; font-family: 'DM Sans', sans-serif; }
+        .modal-content { border: 1px solid var(--border); border-radius: 16px; font-family: 'DM Sans', sans-serif; overflow: hidden; }
         .modal-header { padding: 20px 24px 16px; border-bottom: 1px solid var(--border); }
         .modal-title { font-weight: 700; font-size: .95rem; }
-        .modal-body { padding: 22px 24px; }
+        .modal-body { padding: 22px 24px; max-height: 60vh; overflow-y: auto; }
         .modal-footer { padding: 14px 24px; border-top: 1px solid var(--border); }
-        .info-label { font-size: .65rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
-        .info-value { font-size: .875rem; font-weight: 500; color: var(--text-primary); padding: 9px 14px; background: var(--page-bg); border: 1px solid var(--border); border-radius: 8px; }
-        .patient-avatar-lg { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, var(--sidebar-bg), var(--accent-light)); color: #fff; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'DM Serif Display', serif; }
-        .view-only-chip { background: #f0f4f8; color: #5a6a7a; border: 1px solid #d8e2ec; border-radius: 20px; font-size: .65rem; font-weight: 700; letter-spacing: .06em; padding: 3px 10px; text-transform: uppercase; }
+        .modal-tabs { display: flex; gap: 6px; padding: 10px 24px; background: var(--page-bg); border-bottom: 1px solid var(--border); }
+        .modal-tab-btn { display: flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 8px; border: 1px solid transparent; background: none; font-size: .8rem; font-weight: 600; font-family: 'DM Sans', sans-serif; color: var(--text-muted); cursor: pointer; transition: all .18s; }
+        .modal-tab-btn i { font-size: .88rem; }
+        .modal-tab-btn:hover { background: var(--card-bg); border-color: var(--border); color: var(--text-primary); }
+        .modal-tab-btn.active { background: var(--card-bg); border-color: var(--border); color: var(--primary); box-shadow: 0 1px 4px rgba(0,0,0,.07); }
+        .modal-section-title { font-size: .63rem; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); margin: 4px 0 12px; display: flex; align-items: center; gap: 8px; }
+        .modal-section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .info-label { font-size: .63rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px; }
+        .info-value { font-size: .875rem; font-weight: 500; color: var(--text-primary); padding: 9px 14px; background: var(--page-bg); border: 1px solid var(--border); border-radius: 8px; min-height: 38px; line-height: 1.5; }
+        .patient-avatar-lg { width: 52px; height: 52px; border-radius: 14px; background: linear-gradient(135deg, var(--sidebar-bg), var(--accent-light)); color: #fff; font-size: 1.3rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-family: 'DM Serif Display', serif; }
+        .view-only-chip { background: var(--accent-soft); color: var(--primary); border: 1px solid #c0dfd0; border-radius: 20px; font-size: .62rem; font-weight: 700; letter-spacing: .06em; padding: 2px 10px; text-transform: uppercase; }
         .btn-ghost { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 9px 18px; font-size: .845rem; font-family: 'DM Sans', sans-serif; color: var(--text-muted); cursor: pointer; transition: all .15s; }
         .btn-ghost:hover { background: var(--page-bg); color: var(--text-primary); }
         .dash-footer { font-size: .7rem; color: var(--text-muted); border-top: 1px solid var(--border); padding: 14px 32px; display: flex; justify-content: space-between; }
@@ -141,7 +148,10 @@
         @php
             $totalCompleted  = $records->where('record_status', 'completed')->count();
             $todayCompleted  = $records->where('consultation_date', today()->toDateString())->count();
-            $avgDuration     = $records->whereNotNull('duration_minutes')->avg('duration_minutes');
+            $durationValues  = $records
+                ->filter(fn($r) => $r->queue?->called_at && $r->queue?->completed_at)
+                ->map(fn($r) => \Carbon\Carbon::parse($r->queue->called_at)->diffInMinutes(\Carbon\Carbon::parse($r->queue->completed_at)));
+            $avgDuration     = $durationValues->isNotEmpty() ? $durationValues->avg() : null;
         @endphp
         <div class="row g-3 mb-4">
             <div class="col-md-4">
@@ -212,26 +222,7 @@
                     <tr data-date="{{ $dateKey }}">
                         <td><span class="q-id">{{ $records[$loop->index]->queue_id ?? '—' }}</span></td>
                         <td>
-                            <button class="patient-name-btn" onclick="openViewModal({
-                                id: '{{ $records[$loop->index]->queue_id ?? '—' }}',
-                                name: '{{ addslashes($r['patient_name']) }}',
-                                date: '{{ $r['date'] }}',
-                                time: '{{ $r['time'] ?? '—' }}',
-                                age: '{{ $r['age'] ?? '—' }}',
-                                gender: '{{ $r['gender'] ?? '—' }}',
-                                contact: '{{ addslashes($r['contact'] ?? '—') }}',
-                                address: '{{ addslashes($r['address'] ?? '—') }}',
-                                blood: '{{ $r['blood_type'] ?? '—' }}',
-                                height: '{{ $r['height'] ?? '—' }}',
-                                weight: '{{ $r['weight'] ?? '—' }}',
-                                symptoms: '{{ addslashes($r['symptoms'] ?? '—') }}',
-                                diagnosis: '{{ addslashes($r['diagnosis'] ?? '—') }}',
-                                prescription: '{{ addslashes($r['prescription'] ?? '—') }}',
-                                notes: '{{ addslashes($r['notes'] ?? '—') }}',
-                                doctor: '{{ addslashes($r['doctor'] ?? '—') }}',
-                                duration: '{{ $r['duration'] ? $r['duration'].' min' : '—' }}',
-                                room: '{{ $r['room'] ?? '—' }}'
-                            })">{{ $r['patient_name'] }}</button>
+                            <button class="patient-name-btn" onclick="openRecord({{ $r['id'] }})">{{ $r['patient_name'] }}</button>
                             <div style="font-size:.72rem; color:var(--text-muted);">
                                 {{ $r['gender'] ?? '' }}{{ $r['age'] ? ' · '.$r['age'].' yrs' : '' }}
                             </div>
@@ -263,26 +254,7 @@
                             </span>
                         </td>
                         <td style="text-align:right;">
-                            <button class="act-btn" title="View Record" onclick="openViewModal({
-                                id: '{{ $records[$loop->index]->queue_id ?? '—' }}',
-                                name: '{{ addslashes($r['patient_name']) }}',
-                                date: '{{ $r['date'] }}',
-                                time: '{{ $r['time'] ?? '—' }}',
-                                age: '{{ $r['age'] ?? '—' }}',
-                                gender: '{{ $r['gender'] ?? '—' }}',
-                                contact: '{{ addslashes($r['contact'] ?? '—') }}',
-                                address: '{{ addslashes($r['address'] ?? '—') }}',
-                                blood: '{{ $r['blood_type'] ?? '—' }}',
-                                height: '{{ $r['height'] ?? '—' }}',
-                                weight: '{{ $r['weight'] ?? '—' }}',
-                                symptoms: '{{ addslashes($r['symptoms'] ?? '—') }}',
-                                diagnosis: '{{ addslashes($r['diagnosis'] ?? '—') }}',
-                                prescription: '{{ addslashes($r['prescription'] ?? '—') }}',
-                                notes: '{{ addslashes($r['notes'] ?? '—') }}',
-                                doctor: '{{ addslashes($r['doctor'] ?? '—') }}',
-                                duration: '{{ $r['duration'] ? $r['duration'].' min' : '—' }}',
-                                room: '{{ $r['room'] ?? '—' }}'
-                            })"><i class="bi bi-eye"></i></button>
+                            <button class="act-btn" title="View Record" onclick="openRecord({{ $r['id'] }})"><i class="bi bi-eye"></i></button>
                         </td>
                     </tr>
                     @empty
@@ -306,7 +278,7 @@
 </div>
 
 <!-- VIEW MODAL -->
-<div class="modal fade" id="viewModal" tabindex="-1">
+<div class="modal fade" id="recordModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -324,22 +296,65 @@
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
+            <div class="modal-tabs">
+                <button class="modal-tab-btn active" id="tab-info" onclick="switchTab('info')">
+                    <i class="bi bi-person-vcard"></i> Patient Info
+                </button>
+                <button class="modal-tab-btn" id="tab-medical" onclick="switchTab('medical')">
+                    <i class="bi bi-heart-pulse"></i> Medical History
+                </button>
+                <button class="modal-tab-btn" id="tab-consult" onclick="switchTab('consult')">
+                    <i class="bi bi-clipboard2-pulse"></i> Consultation
+                </button>
+            </div>
             <div class="modal-body">
-                <div class="row g-3">
-                    <div class="col-md-4"><div class="info-label">Age</div><div class="info-value" id="viewAge">—</div></div>
-                    <div class="col-md-4"><div class="info-label">Gender</div><div class="info-value" id="viewGender">—</div></div>
-                    <div class="col-md-4"><div class="info-label">Contact Number</div><div class="info-value" id="viewContact">—</div></div>
-                    <div class="col-md-12"><div class="info-label">Address</div><div class="info-value" id="viewAddress">—</div></div>
-                    <div class="col-md-4"><div class="info-label">Blood Type</div><div class="info-value" id="viewBlood">—</div></div>
-                    <div class="col-md-4"><div class="info-label">Height</div><div class="info-value" id="viewHeight">—</div></div>
-                    <div class="col-md-4"><div class="info-label">Weight</div><div class="info-value" id="viewWeight">—</div></div>
-                    <div class="col-md-12"><div class="info-label">Primary Symptoms</div><div class="info-value" id="viewSymptoms" style="white-space:pre-wrap;line-height:1.6;">—</div></div>
-                    <div class="col-md-6"><div class="info-label">Final Diagnosis</div><div class="info-value" id="viewDiagnosis" style="font-weight:700;color:var(--primary);">—</div></div>
-                    <div class="col-md-6"><div class="info-label">Attending Physician</div><div class="info-value" id="viewDoctor">—</div></div>
-                    <div class="col-md-12"><div class="info-label">Prescription</div><div class="info-value" id="viewPrescription" style="white-space:pre-wrap;">—</div></div>
-                    <div class="col-md-12"><div class="info-label">Notes</div><div class="info-value" id="viewNotes" style="white-space:pre-wrap;">—</div></div>
-                    <div class="col-md-6"><div class="info-label">Assigned Room</div><div class="info-value" id="viewRoom">—</div></div>
-                    <div class="col-md-6"><div class="info-label">Consultation Duration</div><div class="info-value" id="viewDuration">—</div></div>
+                <div id="panel-info">
+                    <div class="modal-section-title">Personal Details</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4"><div class="info-label">Age</div><div class="info-value" id="viewAge">—</div></div>
+                        <div class="col-md-4"><div class="info-label">Gender</div><div class="info-value" id="viewGender">—</div></div>
+                        <div class="col-md-4"><div class="info-label">Civil Status</div><div class="info-value" id="viewCivil">—</div></div>
+                        <div class="col-md-6"><div class="info-label">Contact Number</div><div class="info-value" id="viewContact">—</div></div>
+                        <div class="col-md-6"><div class="info-label">Address</div><div class="info-value" id="viewAddress">—</div></div>
+                    </div>
+                    <div class="modal-section-title">Vitals</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4"><div class="info-label">Blood Type</div><div class="info-value" id="viewBlood">—</div></div>
+                        <div class="col-md-4"><div class="info-label">Height</div><div class="info-value" id="viewHeight">—</div></div>
+                        <div class="col-md-4"><div class="info-label">Weight</div><div class="info-value" id="viewWeight">—</div></div>
+                    </div>
+                    <div class="modal-section-title">Administrative</div>
+                    <div class="row g-3">
+                        <div class="col-md-6"><div class="info-label">PhilHealth No.</div><div class="info-value" id="viewPhilhealth">—</div></div>
+                        <div class="col-md-6"><div class="info-label">HMO / Insurance</div><div class="info-value" id="viewHmo">—</div></div>
+                        <div class="col-md-6"><div class="info-label">Emergency Contact Name</div><div class="info-value" id="viewEmgName">—</div></div>
+                        <div class="col-md-6"><div class="info-label">Emergency Contact Number</div><div class="info-value" id="viewEmgContact">—</div></div>
+                    </div>
+                </div>
+
+                <div id="panel-medical" style="display:none;">
+                    <div class="modal-section-title">Medical Background</div>
+                    <div class="row g-3">
+                        <div class="col-md-12"><div class="info-label">Known Allergies</div><div class="info-value" id="viewAllergies" style="white-space:pre-wrap;line-height:1.6;">—</div></div>
+                        <div class="col-md-12"><div class="info-label">Existing Conditions</div><div class="info-value" id="viewConditions" style="white-space:pre-wrap;line-height:1.6;">—</div></div>
+                        <div class="col-md-12"><div class="info-label">Current Medications</div><div class="info-value" id="viewMedications" style="white-space:pre-wrap;line-height:1.6;">—</div></div>
+                    </div>
+                </div>
+
+                <div id="panel-consult" style="display:none;">
+                    <div class="modal-section-title">Visit Details</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6"><div class="info-label">Attending Physician</div><div class="info-value" id="viewDoctor">—</div></div>
+                        <div class="col-md-6"><div class="info-label">Assigned Room</div><div class="info-value" id="viewRoom">—</div></div>
+                    </div>
+                    <div class="modal-section-title">Clinical Notes</div>
+                    <div class="row g-3">
+                        <div class="col-md-12"><div class="info-label">Primary Symptoms</div><div class="info-value" id="viewSymptoms" style="white-space:pre-wrap;line-height:1.6;">—</div></div>
+                        <div class="col-md-12"><div class="info-label">Final Diagnosis</div><div class="info-value" id="viewDiagnosis" style="font-weight:700;color:var(--primary);">—</div></div>
+                        <div class="col-md-12"><div class="info-label">Prescription / Treatment Plan</div><div class="info-value" id="viewPrescription" style="white-space:pre-wrap;line-height:1.6;">—</div></div>
+                        <div class="col-md-12"><div class="info-label">Additional Notes</div><div class="info-value" id="viewNotes" style="white-space:pre-wrap;line-height:1.6;">—</div></div>
+                        <div class="col-md-6"><div class="info-label">Consultation Duration</div><div class="info-value" id="viewDuration">—</div></div>
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -351,27 +366,48 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    function openViewModal(p) {
-        document.getElementById('viewAvatar').textContent      = p.name.charAt(0).toUpperCase();
-        document.getElementById('viewName').textContent        = p.name;
+    const allRecords = @json($mappedRecords);
+
+    function openRecord(id) {
+        const p = allRecords.find(r => r.id == id);
+        if (!p) return;
+
+        document.getElementById('viewAvatar').textContent      = (p.patient_name || '?').charAt(0).toUpperCase();
+        document.getElementById('viewName').textContent        = p.patient_name || 'Unknown Patient';
         document.getElementById('viewId').textContent          = p.id;
         document.getElementById('viewDate').textContent        = p.date;
-        document.getElementById('viewTime').textContent        = p.time;
-        document.getElementById('viewAge').textContent         = p.age + ' yrs';
-        document.getElementById('viewGender').textContent      = p.gender;
-        document.getElementById('viewContact').textContent     = p.contact;
-        document.getElementById('viewAddress').textContent     = p.address;
-        document.getElementById('viewBlood').textContent       = p.blood;
-        document.getElementById('viewHeight').textContent      = p.height;
-        document.getElementById('viewWeight').textContent      = p.weight;
-        document.getElementById('viewSymptoms').textContent    = p.symptoms;
-        document.getElementById('viewDiagnosis').textContent   = p.diagnosis;
-        document.getElementById('viewPrescription').textContent = p.prescription;
-        document.getElementById('viewNotes').textContent       = p.notes;
-        document.getElementById('viewDoctor').textContent      = p.doctor;
-        document.getElementById('viewRoom').textContent        = p.room;
-        document.getElementById('viewDuration').textContent    = p.duration;
-        new bootstrap.Modal(document.getElementById('viewModal')).show();
+        document.getElementById('viewTime').textContent        = p.time || '—';
+        document.getElementById('viewAge').textContent         = p.age ? `${p.age} yrs` : '—';
+        document.getElementById('viewGender').textContent      = p.gender || '—';
+        document.getElementById('viewCivil').textContent       = p.civil_status || '—';
+        document.getElementById('viewContact').textContent     = p.contact || '—';
+        document.getElementById('viewAddress').textContent     = p.address || '—';
+        document.getElementById('viewBlood').textContent       = p.blood_type || '—';
+        document.getElementById('viewHeight').textContent      = p.height ? `${p.height} cm` : '—';
+        document.getElementById('viewWeight').textContent      = p.weight ? `${p.weight} kg` : '—';
+        document.getElementById('viewPhilhealth').textContent  = p.philhealth || '—';
+        document.getElementById('viewHmo').textContent         = p.hmo || '—';
+        document.getElementById('viewEmgName').textContent     = p.emg_name || '—';
+        document.getElementById('viewEmgContact').textContent  = p.emg_contact || '—';
+        document.getElementById('viewAllergies').textContent   = p.allergies || 'None reported';
+        document.getElementById('viewConditions').textContent  = p.conditions || 'None reported';
+        document.getElementById('viewMedications').textContent = p.medications || 'None reported';
+        document.getElementById('viewSymptoms').textContent    = p.symptoms || 'None reported';
+        document.getElementById('viewDiagnosis').textContent   = p.diagnosis || 'No diagnosis recorded';
+        document.getElementById('viewPrescription').textContent = p.prescription || 'None';
+        document.getElementById('viewNotes').textContent       = p.notes || 'None';
+        document.getElementById('viewDoctor').textContent      = p.doctor ? `Dr. ${p.doctor}` : '—';
+        document.getElementById('viewRoom').textContent        = p.room ? `Room ${p.room}` : '—';
+        document.getElementById('viewDuration').textContent    = p.duration ? `${p.duration} min` : '—';
+        switchTab('info');
+        new bootstrap.Modal(document.getElementById('recordModal')).show();
+    }
+
+    function switchTab(tab) {
+        ['info', 'medical', 'consult'].forEach(t => {
+            document.getElementById('panel-' + t).style.display = (t === tab) ? '' : 'none';
+            document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+        });
     }
 
     function filterTable() {

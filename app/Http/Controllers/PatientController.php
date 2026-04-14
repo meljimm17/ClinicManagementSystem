@@ -14,7 +14,7 @@ class PatientController extends Controller
     public function index()
     {
         $recentQueue = PatientQueue::with('patient')
-                        ->latest()
+                        ->latest('queued_at')
                         ->take(5)
                         ->get();
 
@@ -25,28 +25,45 @@ class PatientController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'returning_patient_id'     => 'nullable|exists:patients,id',
             // Personal
             'name'                     => 'required|string|max:255',
-            'date_of_birth'            => 'nullable|date',
-            'age'                      => 'nullable|integer',
+            'date_of_birth'            => 'required|date|before_or_equal:today',
+            'age'                      => 'required|integer|min:0|max:130',
             'gender'                   => 'required|in:Male,Female',
             'civil_status'             => 'nullable|in:Single,Married,Widowed,Separated',
-            'contact_number'           => 'nullable|string|max:20',
-            'address'                  => 'nullable|string',
+            'contact_number'           => 'required|string|max:20|regex:/^[0-9+\-\s()]+$/',
+            'address'                  => 'required|string|max:255',
             'blood_type'               => 'nullable|string|max:5',
-            'height'                   => 'nullable|string|max:20',
-            'weight'                   => 'nullable|string|max:20',
+            'height'                   => 'nullable|numeric|min:20|max:300',
+            'weight'                   => 'nullable|numeric|min:1|max:700',
             // Administrative
             'philhealth_no'            => 'nullable|string|max:30',
             'hmo_insurance'            => 'nullable|string|max:100',
             'emergency_contact_name'   => 'nullable|string|max:100',
-            'emergency_contact_number' => 'nullable|string|max:20',
+            'emergency_contact_number' => 'nullable|string|max:20|regex:/^[0-9+\-\s()]+$/',
             // Medical history
             'known_allergies'          => 'nullable|string',
             'existing_conditions'      => 'nullable|string',
             'current_medications'      => 'nullable|string',
             // Visit
-            'primary_symptoms'         => 'nullable|string',
+            'primary_symptoms'         => 'required|string|max:1000',
+        ], [
+            'name.required' => 'Patient name is required.',
+            'date_of_birth.required' => 'Date of birth is required.',
+            'age.required' => 'Age is required.',
+            'gender.required' => 'Please select the patient gender.',
+            'gender.in' => 'Gender must be either Male or Female.',
+            'date_of_birth.before_or_equal' => 'Date of birth cannot be in the future.',
+            'age.min' => 'Age cannot be negative.',
+            'age.max' => 'Age looks invalid. Please check again.',
+            'contact_number.required' => 'Contact number is required.',
+            'contact_number.regex' => 'Contact number format is invalid.',
+            'address.required' => 'Address is required.',
+            'emergency_contact_number.regex' => 'Emergency contact number format is invalid.',
+            'height.numeric' => 'Height must be a valid number.',
+            'weight.numeric' => 'Weight must be a valid number.',
+            'primary_symptoms.required' => 'Primary symptoms are required.',
         ]);
 
         // Convert "N/A" from the UI toggle to null before saving
@@ -65,15 +82,33 @@ class PatientController extends Controller
             }
         }
 
-        // Create the patient first (outside the retry loop — only created once)
-        $patient = Patient::create($request->only([
+        $patientData = $request->only([
             'name', 'date_of_birth', 'age', 'gender', 'civil_status',
             'contact_number', 'address', 'blood_type', 'height', 'weight',
             'philhealth_no',
             'hmo_insurance',
             'emergency_contact_name', 'emergency_contact_number',
             'known_allergies', 'existing_conditions', 'current_medications',
-        ]));
+        ]);
+
+        // Reuse existing patient when staff selected from Returning Patient search.
+        if ($request->filled('returning_patient_id')) {
+            $patient = Patient::findOrFail($request->returning_patient_id);
+            $patient->update($patientData);
+        } else {
+            // Prevent accidental duplicates by matching a strong patient identity.
+            $existingPatient = Patient::where('name', $request->name)
+                ->whereDate('date_of_birth', $request->date_of_birth)
+                ->where('contact_number', $request->contact_number)
+                ->first();
+
+            if ($existingPatient) {
+                $patient = $existingPatient;
+                $patient->update($patientData);
+            } else {
+                $patient = Patient::create($patientData);
+            }
+        }
 
         // Retry up to 5 times in case of a concurrent duplicate queue number.
         // Each attempt re-reads count() so it always picks the correct next slot
@@ -91,6 +126,7 @@ class PatientController extends Controller
 
                     PatientQueue::create([
                         'queue_number'  => $queueNumber,
+                        'queue_date'    => today()->toDateString(),
                         'patient_id'    => $patient->id,
                         'registered_by' => auth()->id(),
                         'symptoms'      => $request->primary_symptoms,

@@ -12,15 +12,25 @@ return new class extends Migration
    public function up(): void
 {
     Schema::table('doctors', function (Blueprint $table) {
-        $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
-        $table->string('room')->nullable()->after('license_number');
+        if (! Schema::hasColumn('doctors', 'user_id')) {
+            $table->foreignId('user_id')->nullable()->constrained()->onDelete('cascade');
+        }
+        if (! Schema::hasColumn('doctors', 'room')) {
+            $table->string('room')->nullable()->after('license_number');
+        }
     });
 }
 
 public function down(): void
 {
-    Schema::table('medical_records', function (Blueprint $table) {
-        $table->dropColumn(['prescription', 'notes', 'record_status']);
+    Schema::table('doctors', function (Blueprint $table) {
+        if (Schema::hasColumn('doctors', 'user_id')) {
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
+        }
+        if (Schema::hasColumn('doctors', 'room')) {
+            $table->dropColumn('room');
+        }
     });
 }
 };

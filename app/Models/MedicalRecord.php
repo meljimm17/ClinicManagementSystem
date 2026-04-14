@@ -8,10 +8,7 @@ class MedicalRecord extends Model
 {
     protected $fillable = [
         'queue_id', 
-        'patient_id', 
         'doctor_id', 
-        'doctor_name', 
-        'assigned_room', 
         'symptoms', 
         'diagnosis', 
         'prescription', 
@@ -21,13 +18,13 @@ class MedicalRecord extends Model
         'consultation_time'
     ];
 
-    public function patient() 
-    { 
-        return $this->belongsTo(Patient::class); 
-    }
-
     public function doctor() 
     { 
         return $this->belongsTo(Doctor::class); 
+    }
+
+    public function queue()
+    {
+        return $this->belongsTo(PatientQueue::class, 'queue_id');
     }
 }

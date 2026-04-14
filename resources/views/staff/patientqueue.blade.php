@@ -463,6 +463,21 @@ body {
     </header>
 
     <div class="content">
+        @if(session('success'))
+            <div class="alert mb-3" style="background:#e8f5f0; border:1px solid #c0dfd0; color:#1b7a4e; border-radius:8px; padding:10px 14px; font-size:.82rem; font-weight:600;">
+                {{ session('success') }}
+            </div>
+        @endif
+        @if($errors->any())
+            <div class="alert mb-3" style="background:#fff5f5; border:1px solid #f1b0b7; color:#b02a37; border-radius:8px; padding:10px 14px; font-size:.8rem;">
+                <strong>Unable to save changes:</strong>
+                <ul style="margin:6px 0 0 16px; padding:0;">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
         {{-- Stats --}}
         @php

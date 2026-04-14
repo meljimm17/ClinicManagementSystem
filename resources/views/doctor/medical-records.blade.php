@@ -330,10 +330,10 @@
                         <td><span class="q-id">#{{ $r->id }}</span></td>
                         <td>
                             <button class="patient-name-btn" onclick="openRecord({{ $r->id }})">
-                                {{ $r->patient->name }}
+                                {{ $r->queue?->patient?->name ?? 'Unknown Patient' }}
                             </button>
                             <div style="font-size:.72rem; color:var(--text-muted);">
-                                {{ $r->patient->gender ?? '' }}{{ ($r->patient->age ?? null) ? ' · ' . $r->patient->age . ' yrs' : '' }}
+                                {{ $r->queue?->patient?->gender ?? '' }}{{ ($r->queue?->patient?->age ?? null) ? ' · ' . $r->queue?->patient?->age . ' yrs' : '' }}
                             </div>
                         </td>
                         <td><span class="diag-chip">{{ $r->diagnosis ?? 'No diagnosis' }}</span></td>

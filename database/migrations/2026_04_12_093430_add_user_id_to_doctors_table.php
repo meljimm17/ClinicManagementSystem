@@ -11,16 +11,20 @@ return new class extends Migration
      */
    public function up(): void
 {
-    Schema::table('doctors', function (Blueprint $table) {
-        $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete()->after('id');
-    });
+    if (! Schema::hasColumn('doctors', 'user_id')) {
+        Schema::table('doctors', function (Blueprint $table) {
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete()->after('id');
+        });
+    }
 }
 
 public function down(): void
 {
-    Schema::table('doctors', function (Blueprint $table) {
-        $table->dropForeign(['user_id']);
-        $table->dropColumn('user_id');
-    });
+    if (Schema::hasColumn('doctors', 'user_id')) {
+        Schema::table('doctors', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
+        });
+    }
 }
 };

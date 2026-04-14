@@ -20,37 +20,49 @@ class MedicalRecordController extends Controller
                     $query->where('doctor_id', $doctorId)
                           ->orWhereNull('doctor_id');
                 })
-                ->with(['patient', 'doctor.user'])
-                ->latest('consultation_date')
+                ->with(['doctor.user', 'queue.patient'])
+                ->orderByDesc('consultation_date')
+                ->orderByDesc('consultation_time')
+                ->orderByDesc('id')
                 ->get();
         } else {
-            $records = MedicalRecord::with(['patient', 'doctor.user'])->latest()->get();
+            $records = MedicalRecord::with(['doctor.user', 'queue.patient'])
+                ->orderByDesc('consultation_date')
+                ->orderByDesc('consultation_time')
+                ->orderByDesc('id')
+                ->get();
         }
 
         $mappedRecords = $records->map(function ($r) {
+            $patient = $r->queue?->patient;
+            $duration = null;
+            if ($r->queue?->called_at && $r->queue?->completed_at) {
+                $duration = \Carbon\Carbon::parse($r->queue->called_at)
+                    ->diffInMinutes(\Carbon\Carbon::parse($r->queue->completed_at));
+            }
+
             return [
                 'id'           => $r->id,
-                'patient_name' => $r->patient->name,
-                'age'          => $r->patient->age,
-                'gender'       => $r->patient->gender,
-                'civil_status' => $r->patient->civil_status,
-                'contact'      => $r->patient->contact_number,
-                'address'      => $r->patient->address,
-                'blood_type'   => $r->patient->blood_type,
-                'height'       => $r->patient->height,
-                'weight'       => $r->patient->weight,
-                // FIXED: correct column names from the patients migration
-                'philhealth'   => $r->patient->philhealth_no,
-                'hmo'          => $r->patient->hmo_insurance,
-                'emg_name'     => $r->patient->emergency_contact_name,
-                'emg_contact'  => $r->patient->emergency_contact_number,
-                'allergies'    => $r->patient->known_allergies,
-                'conditions'   => $r->patient->existing_conditions,
-                'medications'  => $r->patient->current_medications,
+                'patient_name' => $patient?->name,
+                'age'          => $patient?->age,
+                'gender'       => $patient?->gender,
+                'civil_status' => $patient?->civil_status,
+                'contact'      => $patient?->contact_number,
+                'address'      => $patient?->address,
+                'blood_type'   => $patient?->blood_type,
+                'height'       => $patient?->height,
+                'weight'       => $patient?->weight,
+                'philhealth'   => $patient?->philhealth_no,
+                'hmo'          => $patient?->hmo_insurance,
+                'emg_name'     => $patient?->emergency_contact_name,
+                'emg_contact'  => $patient?->emergency_contact_number,
+                'allergies'    => $patient?->known_allergies,
+                'conditions'   => $patient?->existing_conditions,
+                'medications'  => $patient?->current_medications,
                 'symptoms'     => $r->symptoms,
-                'doctor'       => $r->doctor_name ?? $r->doctor?->name,
-                'room'         => $r->assigned_room,
-                'duration'     => $r->duration_minutes,
+                'doctor'       => $r->doctor?->name,
+                'room'         => $r->queue?->assigned_room ?? $r->doctor?->assigned_room,
+                'duration'     => $duration,
                 'diagnosis'    => $r->diagnosis,
                 'prescription' => $r->prescription,
                 'notes'        => $r->notes,
@@ -79,10 +91,7 @@ class MedicalRecordController extends Controller
     {
         $request->validate([
             'queue_id'          => 'required|integer',
-            'patient_id'        => 'required|exists:patients,id',
             'doctor_id'         => 'required|exists:doctors,id',
-            'doctor_name'       => 'required|string|max:255',
-            'assigned_room'     => 'required|string|max:50',
             'symptoms'          => 'required|string',
             'diagnosis'         => 'nullable|string',
             'prescription'      => 'nullable|string',
@@ -94,16 +103,12 @@ class MedicalRecordController extends Controller
 
         $record = MedicalRecord::create([
             'queue_id'          => $request->queue_id,
-            'patient_id'        => $request->patient_id,
             'doctor_id'         => $request->doctor_id ?? Auth::user()->doctor?->id,
-            'doctor_name'       => $request->doctor_name,
-            'assigned_room'     => $request->assigned_room,
             'symptoms'          => $request->symptoms ?? PatientQueue::find($request->queue_id)?->symptoms,
             'diagnosis'         => $request->diagnosis,
             'prescription'      => $request->prescription,
             'notes'             => $request->notes,
             'record_status'     => $request->record_status ?? 'completed',
-            'duration_minutes'  => $request->duration_minutes,
             'consultation_date' => $request->consultation_date,
             'consultation_time' => $request->consultation_time,
         ]);
@@ -122,28 +127,22 @@ class MedicalRecordController extends Controller
     {
         $request->validate([
             'doctor_id'         => 'nullable|exists:doctors,id',
-            'doctor_name'       => 'nullable|string|max:255',
-            'assigned_room'     => 'nullable|string|max:50',
             'symptoms'          => 'nullable|string',
             'diagnosis'         => 'nullable|string',
             'prescription'      => 'nullable|string',
             'notes'             => 'nullable|string',
             'record_status'     => 'nullable|in:draft,held_for_labs,completed',
-            'duration_minutes'  => 'nullable|integer',
             'consultation_date' => 'required|date',
             'consultation_time' => 'nullable',
         ]);
 
         $medicalRecord->update($request->only([
             'doctor_id',
-            'doctor_name',
-            'assigned_room',
             'symptoms',
             'diagnosis',
             'prescription',
             'notes',
             'record_status',
-            'duration_minutes',
             'consultation_date',
             'consultation_time',
         ]));

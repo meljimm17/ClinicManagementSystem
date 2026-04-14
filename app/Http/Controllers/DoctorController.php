@@ -20,7 +20,8 @@ class DoctorController extends Controller
     $queue = PatientQueue::with('patient')
         ->whereDate('created_at', today())
         ->whereIn('status', ['waiting', 'diagnosing'])
-        ->orderBy('created_at')
+        ->orderBy('queued_at', 'asc')
+        ->orderBy('id', 'asc')
         ->get();
 
     $activeQueue = $queue->firstWhere('status', 'diagnosing');
@@ -30,10 +31,15 @@ class DoctorController extends Controller
         ->whereDate('consultation_date', today())
         ->count();
 
-    $avgMinutes = MedicalRecord::where('doctor_id', $doctorId)
-        ->whereDate('consultation_date', today())
-        ->whereNotNull('duration_minutes')
-        ->avg('duration_minutes');
+    $avgMinutes = MedicalRecord::query()
+        ->join('patient_queue', 'medical_records.queue_id', '=', 'patient_queue.id')
+        ->where('medical_records.doctor_id', $doctorId)
+        ->whereNull('patient_queue.deleted_at')
+        ->whereDate('medical_records.consultation_date', today())
+        ->whereNotNull('patient_queue.called_at')
+        ->whereNotNull('patient_queue.completed_at')
+        ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, patient_queue.called_at, patient_queue.completed_at)) as avg_minutes')
+        ->value('avg_minutes');
 
     $avgMinutes = $avgMinutes ? round($avgMinutes) : null;
 
@@ -42,7 +48,8 @@ class DoctorController extends Controller
     $recentActivity = PatientQueue::with('patient')
         ->whereDate('created_at', today())
         ->whereIn('status', ['diagnosing', 'done'])
-        ->latest('updated_at')
+        ->orderByDesc('updated_at')
+        ->orderByDesc('id')
         ->take(10)
         ->get();
 
@@ -62,7 +69,8 @@ class DoctorController extends Controller
         $queue = PatientQueue::with('patient')
             ->whereDate('created_at', today())
             ->whereIn('status', ['waiting', 'diagnosing'])
-            ->orderBy('created_at')
+            ->orderBy('queued_at', 'asc')
+            ->orderBy('id', 'asc')
             ->get();
 
         return view('doctor.patientqueue', compact('queue', 'doctor'));
@@ -71,9 +79,12 @@ class DoctorController extends Controller
     // Mark a queue entry as "diagnosing" when doctor starts consultation
     public function startConsultation(PatientQueue $patientQueue)
     {
+        $doctorRoom = Auth::user()?->doctor?->assigned_room;
+
         $patientQueue->update([
             'status'    => 'diagnosing',
             'called_at' => now(),
+            'assigned_room' => $doctorRoom ?: $patientQueue->assigned_room,
         ]);
 
         return response()->json(['success' => true]);
@@ -82,6 +93,8 @@ class DoctorController extends Controller
     // Mark patient as "diagnosing" when clicked by doctor (AJAX)
     public function callPatient(PatientQueue $patientQueue)
     {
+        $doctorRoom = Auth::user()?->doctor?->assigned_room;
+
         // Reset any previously diagnosing patient back to waiting
         PatientQueue::where('status', 'diagnosing')
             ->whereDate('created_at', today())
@@ -92,6 +105,7 @@ class DoctorController extends Controller
         $patientQueue->update([
             'status'    => 'diagnosing',
             'called_at' => now(),
+            'assigned_room' => $doctorRoom ?: $patientQueue->assigned_room,
         ]);
 
         return response()->json(['success' => true]);
@@ -113,7 +127,6 @@ class DoctorController extends Controller
      public function storeRecord(Request $request)
 {
     $request->validate([
-        'patient_id' => 'required',
         'diagnosis'  => 'required|string',
     ]);
 
@@ -127,10 +140,7 @@ class DoctorController extends Controller
     // 2. Save the record with automatic fields
     MedicalRecord::create([
         'queue_id'          => $request->queue_id,
-        'patient_id'        => $request->patient_id,
         'doctor_id'         => $doctor->id,
-        'doctor_name'       => $doctor->name,          // Automatically pulls from doctors table
-        'assigned_room'     => $doctor->assigned_room, // Automatically pulls from doctors table
         'symptoms'          => $request->symptoms ?? PatientQueue::find($request->queue_id)?->symptoms,
         'diagnosis'         => $request->diagnosis,
         'prescription'      => $request->prescription,
@@ -145,6 +155,7 @@ class DoctorController extends Controller
         PatientQueue::find($request->queue_id)?->update([
             'status'       => 'done',
             'completed_at' => now(),
+            'assigned_room' => $doctor->assigned_room,
         ]);
     }
 

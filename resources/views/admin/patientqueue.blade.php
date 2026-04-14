@@ -146,6 +146,23 @@
     </header>
 
     <main class="content">
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;font-size:.845rem;">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+        @if($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;font-size:.845rem;">
+                <strong>Unable to save changes:</strong>
+                <ul class="mb-0 mt-1">
+                    @foreach($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
 
         <!-- Stat Chips — computed from $queueEntries -->
         @php
@@ -256,16 +273,16 @@
                             {{ $entry->queued_at ? \Carbon\Carbon::parse($entry->queued_at)->format('h:i A') : '—' }}
                         </td>
                         <td style="text-align:right;">
-                            {{-- Admin can update status/room --}}
-                            <form action="{{ route('staff.queue') }}" method="POST" style="display:inline;">
-                                @csrf @method('PATCH')
-                                {{-- If you have a PatientQueue update route for admin, replace with it --}}
-                            </form>
-                            <form action="{{ route('staff.queue.destroy', $entry->id) }}" method="POST"
+                            <button type="button"
+                                    class="act-btn edit"
+                                    onclick="openEditQueueModal({{ $entry->id }}, '{{ $entry->status }}', '{{ $entry->assigned_room ?? '' }}', '{{ addslashes($entry->symptoms ?? '') }}')">
+                                Edit
+                            </button>
+                            <form action="{{ route('admin.queue.destroy', $entry->id) }}" method="POST"
                                   style="display:inline;"
                                   onsubmit="return confirm('Remove {{ $entry->patient->name ?? 'this patient' }} from queue?')">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="act-btn remove">Remove</button>
+                                <button type="submit" class="act-btn remove ms-1">Remove</button>
                             </form>
                         </td>
                     </tr>
@@ -329,8 +346,54 @@
     </div>
 </div>
 
+<!-- EDIT MODAL -->
+<div class="modal fade" id="editQueueModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Edit Queue Entry</span>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editQueueForm" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="info-label">Status</label>
+                        <select name="status" id="editQueueStatus" class="info-value" style="width:100%;">
+                            <option value="waiting">Waiting</option>
+                            <option value="diagnosing">Diagnosing</option>
+                            <option value="done">Done</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="info-label">Assigned Room</label>
+                        <input type="text" name="assigned_room" id="editQueueRoom" class="info-value" style="width:100%;" placeholder="e.g. Room 1">
+                    </div>
+                    <div>
+                        <label class="info-label">Symptoms</label>
+                        <textarea name="symptoms" id="editQueueSymptoms" class="info-value" style="width:100%; min-height:90px; white-space:pre-wrap;"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-ghost" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="act-btn edit">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    function openEditQueueModal(id, status, room, symptoms) {
+        document.getElementById('editQueueForm').action = '/admin/queue/' + id;
+        document.getElementById('editQueueStatus').value = status;
+        document.getElementById('editQueueRoom').value = room;
+        document.getElementById('editQueueSymptoms').value = symptoms;
+        new bootstrap.Modal(document.getElementById('editQueueModal')).show();
+    }
+
     function openViewModal(p) {
         document.getElementById('viewAvatar').textContent  = p.name.charAt(0).toUpperCase();
         document.getElementById('viewName').textContent    = p.name;

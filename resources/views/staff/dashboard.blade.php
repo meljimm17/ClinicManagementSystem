@@ -166,6 +166,8 @@ body {
 .form-label-custom { font-size: .68rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); margin-bottom: 5px; display: block; }
 .form-control-custom { border: 1px solid var(--border); border-radius: 8px; padding: 9px 14px; font-size: .845rem; font-family: 'DM Sans', sans-serif; color: var(--text-primary); background: var(--page-bg); width: 100%; outline: none; transition: border-color .15s; }
 .form-control-custom:focus { border-color: var(--accent); background: #fff; }
+.input-invalid { border-color: #dc3545 !important; background: #fff5f5 !important; }
+.input-error-text { color: #b02a37; font-size: .72rem; margin-top: 4px; }
 .form-control-custom[readonly], .form-control-custom:disabled { background-color: #f0f4f2; color: #9aada6; border-color: #dce6e1; cursor: not-allowed; }
 
 /* N/A Toggle */
@@ -339,10 +341,21 @@ body {
         <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
     </div>
 @endif
+@if($errors->any())
+    <div class="alert" style="background:#fff5f5; border:1px solid #f1b0b7; color:#b02a37; border-radius:8px; padding:10px 14px; font-size:.8rem; margin-bottom:16px;">
+        <strong>Please fix the following:</strong>
+        <ul style="margin:6px 0 0 16px; padding:0;">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
 
                     {{-- FIXED: added method, action, and @csrf --}}
                     <form method="POST" action="{{ route('staff.store') }}">
                         @csrf
+                        <input type="hidden" name="returning_patient_id" id="returning_patient_id" value="{{ old('returning_patient_id') }}">
 
                         {{-- ── Returning Patient ── --}}
                         <div class="returning-toggle" onclick="toggleReturning(this)">
@@ -366,38 +379,38 @@ body {
                         <div class="mb-3">
                             <label class="form-label-custom">Full Patient Name</label>
                             {{-- FIXED: added name="name" --}}
-                            <input type="text" name="name" class="form-control-custom" placeholder="e.g. Elena Rodriguez" required>
+                            <input type="text" name="name" value="{{ old('name') }}" class="form-control-custom {{ $errors->has('name') ? 'input-invalid' : '' }}" placeholder="e.g. Elena Rodriguez" required>
                         </div>
 
                         <div class="row mb-3 g-2">
                             <div class="col-md-4">
                                 <label class="form-label-custom">Date of Birth</label>
                                 {{-- FIXED: added name="date_of_birth" --}}
-                                <input type="date" name="date_of_birth" class="form-control-custom" id="dob" onchange="calcAge()">
+                                <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" class="form-control-custom {{ $errors->has('date_of_birth') ? 'input-invalid' : '' }}" id="dob" onchange="calcAge()">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label-custom">Age</label>
                                 {{-- FIXED: added name="age" --}}
-                                <input type="number" name="age" class="form-control-custom" id="age" placeholder="—" readonly>
+                                <input type="number" name="age" value="{{ old('age') }}" class="form-control-custom {{ $errors->has('age') ? 'input-invalid' : '' }}" id="age" placeholder="—" readonly>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label-custom">Gender</label>
                                 {{-- FIXED: added name="gender" --}}
-                                <select name="gender" class="form-control-custom" style="appearance: auto;">
-                                    <option selected disabled>Select</option>
-                                    <option>Male</option>
-                                    <option>Female</option>
+                                <select name="gender" class="form-control-custom {{ $errors->has('gender') ? 'input-invalid' : '' }}" style="appearance: auto;" required>
+                                    <option value="" disabled {{ old('gender') ? '' : 'selected' }}>Select</option>
+                                    <option value="Male" {{ old('gender') === 'Male' ? 'selected' : '' }}>Male</option>
+                                    <option value="Female" {{ old('gender') === 'Female' ? 'selected' : '' }}>Female</option>
                                 </select>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label-custom">Civil Status</label>
                                 {{-- FIXED: added name="civil_status" --}}
-                                <select name="civil_status" class="form-control-custom" style="appearance: auto;">
-                                    <option selected disabled>Select</option>
-                                    <option>Single</option>
-                                    <option>Married</option>
-                                    <option>Widowed</option>
-                                    <option>Separated</option>
+                                <select name="civil_status" class="form-control-custom {{ $errors->has('civil_status') ? 'input-invalid' : '' }}" style="appearance: auto;">
+                                    <option value="" {{ old('civil_status') ? '' : 'selected' }}>Select</option>
+                                    <option value="Single" {{ old('civil_status') === 'Single' ? 'selected' : '' }}>Single</option>
+                                    <option value="Married" {{ old('civil_status') === 'Married' ? 'selected' : '' }}>Married</option>
+                                    <option value="Widowed" {{ old('civil_status') === 'Widowed' ? 'selected' : '' }}>Widowed</option>
+                                    <option value="Separated" {{ old('civil_status') === 'Separated' ? 'selected' : '' }}>Separated</option>
                                 </select>
                             </div>
                         </div>
@@ -406,12 +419,12 @@ body {
                             <div class="col-md-6">
                                 <label class="form-label-custom">Contact Number</label>
                                 {{-- FIXED: added name="contact_number" --}}
-                                <input type="text" name="contact_number" class="form-control-custom" placeholder="+63 (555) 000-0000">
+                                <input type="text" name="contact_number" value="{{ old('contact_number') }}" class="form-control-custom {{ $errors->has('contact_number') ? 'input-invalid' : '' }}" placeholder="+63 (555) 000-0000" required>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom">Address</label>
                                 {{-- FIXED: added name="address" --}}
-                                <input type="text" name="address" class="form-control-custom" placeholder="123 Health St, Davao City">
+                                <input type="text" name="address" value="{{ old('address') }}" class="form-control-custom {{ $errors->has('address') ? 'input-invalid' : '' }}" placeholder="123 Health St, Davao City" required>
                             </div>
                         </div>
 
@@ -419,21 +432,21 @@ body {
                             <div class="col-md-4">
                                 <label class="form-label-custom">Blood Type</label>
                                 {{-- FIXED: added name="blood_type" --}}
-                                <select name="blood_type" class="form-control-custom" style="appearance: auto;">
-                                    <option>Select Type</option>
-                                    <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-                                    <option>O+</option><option>O-</option><option>AB+</option><option>AB-</option>
+                                <select name="blood_type" class="form-control-custom {{ $errors->has('blood_type') ? 'input-invalid' : '' }}" style="appearance: auto;">
+                                    <option value="">Select Type</option>
+                                    <option value="A+" {{ old('blood_type') === 'A+' ? 'selected' : '' }}>A+</option><option value="A-" {{ old('blood_type') === 'A-' ? 'selected' : '' }}>A-</option><option value="B+" {{ old('blood_type') === 'B+' ? 'selected' : '' }}>B+</option><option value="B-" {{ old('blood_type') === 'B-' ? 'selected' : '' }}>B-</option>
+                                    <option value="O+" {{ old('blood_type') === 'O+' ? 'selected' : '' }}>O+</option><option value="O-" {{ old('blood_type') === 'O-' ? 'selected' : '' }}>O-</option><option value="AB+" {{ old('blood_type') === 'AB+' ? 'selected' : '' }}>AB+</option><option value="AB-" {{ old('blood_type') === 'AB-' ? 'selected' : '' }}>AB-</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label-custom">Height (cm)</label>
                                 {{-- FIXED: added name="height" --}}
-                                <input type="number" name="height" class="form-control-custom" placeholder="170">
+                                <input type="number" name="height" value="{{ old('height') }}" class="form-control-custom {{ $errors->has('height') ? 'input-invalid' : '' }}" placeholder="170">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label-custom">Weight (kg)</label>
                                 {{-- FIXED: added name="weight" --}}
-                                <input type="number" name="weight" class="form-control-custom" placeholder="70">
+                                <input type="number" name="weight" value="{{ old('weight') }}" class="form-control-custom {{ $errors->has('weight') ? 'input-invalid' : '' }}" placeholder="70">
                             </div>
                         </div>
 
@@ -447,7 +460,7 @@ body {
                                     <button type="button" class="na-btn" onclick="toggleNA(this, 'philhealth')">N/A</button>
                                 </div>
                                 {{-- FIXED: added name="philhealth_no" --}}
-                                <input type="text" name="philhealth_no" class="form-control-custom" id="philhealth" placeholder="XX-XXXXXXXXX-X">
+                                <input type="text" name="philhealth_no" value="{{ old('philhealth_no') }}" class="form-control-custom {{ $errors->has('philhealth_no') ? 'input-invalid' : '' }}" id="philhealth" placeholder="XX-XXXXXXXXX-X">
                             </div>
                             <div class="col-md-6">
                                 <div class="na-toggle-row">
@@ -455,7 +468,7 @@ body {
                                     <button type="button" class="na-btn" onclick="toggleNA(this, 'hmo')">N/A</button>
                                 </div>
                                 {{-- FIXED: added name="hmo_insurance" --}}
-                                <input type="text" name="hmo_insurance" class="form-control-custom" id="hmo" placeholder="Provider & Member No.">
+                                <input type="text" name="hmo_insurance" value="{{ old('hmo_insurance') }}" class="form-control-custom {{ $errors->has('hmo_insurance') ? 'input-invalid' : '' }}" id="hmo" placeholder="Provider & Member No.">
                             </div>
                         </div>
 
@@ -467,11 +480,11 @@ body {
                             <div class="row g-2">
                                 <div class="col-md-6">
                                     {{-- FIXED: added name="emergency_contact_name" --}}
-                                    <input type="text" name="emergency_contact_name" class="form-control-custom" id="emgName" placeholder="Contact Person Name">
+                                    <input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" class="form-control-custom {{ $errors->has('emergency_contact_name') ? 'input-invalid' : '' }}" id="emgName" placeholder="Contact Person Name">
                                 </div>
                                 <div class="col-md-6">
                                     {{-- FIXED: added name="emergency_contact_number" --}}
-                                    <input type="text" name="emergency_contact_number" class="form-control-custom" id="emgContact" placeholder="+63 (555) 000-0000">
+                                    <input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" class="form-control-custom {{ $errors->has('emergency_contact_number') ? 'input-invalid' : '' }}" id="emgContact" placeholder="+63 (555) 000-0000">
                                 </div>
                             </div>
                         </div>
@@ -485,7 +498,7 @@ body {
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'allergies')">N/A</button>
                             </div>
                             {{-- FIXED: added name="allergies" --}}
-                            <input type="text" name="known_allergies" class="form-control-custom" id="allergies" placeholder="e.g. Penicillin, Shellfish, Dust">
+                            <input type="text" name="known_allergies" value="{{ old('known_allergies') }}" class="form-control-custom {{ $errors->has('known_allergies') ? 'input-invalid' : '' }}" id="allergies" placeholder="e.g. Penicillin, Shellfish, Dust">
                         </div>
 
                         <div class="mb-3">
@@ -494,7 +507,7 @@ body {
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'conditions')">N/A</button>
                             </div>
                             {{-- FIXED: added name="existing_conditions" --}}
-                            <input type="text" name="existing_conditions" class="form-control-custom" id="conditions" placeholder="e.g. Hypertension, Diabetes Type 2">
+                            <input type="text" name="existing_conditions" value="{{ old('existing_conditions') }}" class="form-control-custom {{ $errors->has('existing_conditions') ? 'input-invalid' : '' }}" id="conditions" placeholder="e.g. Hypertension, Diabetes Type 2">
                         </div>
 
                         <div class="mb-4">
@@ -503,7 +516,7 @@ body {
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'medications')">N/A</button>
                             </div>
                             {{-- FIXED: added name="current_medications" --}}
-                            <input type="text" name="current_medications" class="form-control-custom" id="medications" placeholder="e.g. Metformin 500mg, Losartan 50mg">
+                            <input type="text" name="current_medications" value="{{ old('current_medications') }}" class="form-control-custom {{ $errors->has('current_medications') ? 'input-invalid' : '' }}" id="medications" placeholder="e.g. Metformin 500mg, Losartan 50mg">
                         </div>
 
                         {{-- ── Visit Info ── --}}
@@ -512,7 +525,7 @@ body {
                         <div class="mb-4">
                             <label class="form-label-custom">Primary Symptoms</label>
                             {{-- FIXED: added name="primary_symptoms" --}}
-                            <textarea name="primary_symptoms" class="form-control-custom" rows="3" placeholder="Describe symptoms…"></textarea>
+                            <textarea name="primary_symptoms" class="form-control-custom {{ $errors->has('primary_symptoms') ? 'input-invalid' : '' }}" rows="3" placeholder="Describe symptoms…" required>{{ old('primary_symptoms') }}</textarea>
                         </div>
 
                         <button type="submit" class="btn-register">
@@ -655,6 +668,15 @@ body {
     document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.getElementById('patientSearchInput');
         const results     = document.getElementById('searchResults');
+        const returningId = document.getElementById('returning_patient_id');
+
+        if (searchInput && returningId) {
+            searchInput.addEventListener('input', function () {
+                if (!this.value.trim()) {
+                    returningId.value = '';
+                }
+            });
+        }
 
         searchInput.addEventListener('keydown', function(e) {
     if (e.key === 'Enter') {
@@ -710,6 +732,7 @@ body {
     function fillPatient(p) {
         document.getElementById('searchResults').style.display = 'none';
         document.getElementById('patientSearchInput').value = p.name;
+        document.getElementById('returning_patient_id').value = p.id ?? '';
 
         // Personal
         document.querySelector('[name="name"]').value            = p.name ?? '';

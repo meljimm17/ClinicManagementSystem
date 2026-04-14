@@ -30,6 +30,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
         Route::get('/medical-records', [MedicalRecordController::class, 'adminIndex'])->name('medical-records');
         Route::get('/queue', [PatientQueueController::class, 'adminIndex'])->name('queue');
+        Route::patch('/queue/{patientQueue}', [PatientQueueController::class, 'update'])->name('queue.update');
+        Route::delete('/queue/{patientQueue}', [PatientQueueController::class, 'destroy'])->name('queue.destroy');
         Route::get('/schedule', [AdminController::class, 'schedule'])->name('schedule');
         Route::post('/schedule', [AdminController::class, 'storeSchedule'])->name('schedule.store');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
@@ -56,9 +58,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [PatientController::class, 'index'])->name('dashboard');
         Route::post('/dashboard', [PatientController::class, 'store'])->name('store');
         Route::get('/patientqueue', [PatientQueueController::class, 'index'])->name('queue');
-        
-        // ADD THIS LINE TO FIX THE ERROR:
-        Route::delete('/patientqueue/{id}', [PatientQueueController::class, 'destroy'])->name('queue.destroy');
+        Route::patch('/patientqueue/{patientQueue}', [PatientQueueController::class, 'update'])->name('queue.update');
+        Route::delete('/patientqueue/{patientQueue}', [PatientQueueController::class, 'destroy'])->name('queue.destroy');
     });
 
     // ── Patients (Search fix) ──

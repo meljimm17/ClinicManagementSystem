@@ -11,17 +11,20 @@ return new class extends Migration
      */
   public function up(): void
 {
-    Schema::table('doctors', function (Blueprint $table) {
-        // Add user_id after the id column
-        $table->foreignId('user_id')->after('id')->nullable()->constrained()->onDelete('cascade');
-    });
+    if (! Schema::hasColumn('doctors', 'user_id')) {
+        Schema::table('doctors', function (Blueprint $table) {
+            $table->foreignId('user_id')->after('id')->nullable()->constrained()->onDelete('cascade');
+        });
+    }
 }
 
 public function down(): void
 {
-    Schema::table('doctors', function (Blueprint $table) {
-        $table->dropForeign(['user_id']);
-        $table->dropColumn('user_id');
-    });
+    if (Schema::hasColumn('doctors', 'user_id')) {
+        Schema::table('doctors', function (Blueprint $table) {
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
+        });
+    }
 }
 };

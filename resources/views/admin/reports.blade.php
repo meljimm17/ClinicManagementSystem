@@ -151,7 +151,7 @@
                 <div class="section-sub">Monthly summary and export tools.</div>
             </div>
             <a href="{{ route('admin.reports.export') }}" class="btn-export">
-                <i class="bi bi-download"></i> Export CSV
+                <i class="bi bi-file-earmark-pdf"></i> Export PDF
             </a>
         </div>
 
@@ -160,28 +160,28 @@
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-label">Total Patients</div>
-                    <div class="stat-value">1,284</div>
-                    <div class="stat-meta"><span class="stat-up">+13%</span> from last month</div>
+                    <div class="stat-value">{{ number_format($totalPatients) }}</div>
+                    <div class="stat-meta">Registered in system</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-label">Consultations</div>
-                    <div class="stat-value">432</div>
-                    <div class="stat-meta">Daily avg: 24</div>
+                    <div class="stat-value">{{ number_format($totalConsultations) }}</div>
+                    <div class="stat-meta">Completed consultations</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-label">Avg Wait Time</div>
-                    <div class="stat-value">22m</div>
-                    <div class="stat-meta"><span class="stat-up">−8%</span> improved</div>
+                    <div class="stat-value">{{ $avgWaitMinutes }}m</div>
+                    <div class="stat-meta">Queue to call time</div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="stat-card">
                     <div class="stat-label">Records Filed</div>
-                    <div class="stat-value">390</div>
+                    <div class="stat-value">{{ number_format($recordsFiled) }}</div>
                     <div class="stat-meta">This month</div>
                 </div>
             </div>
@@ -202,12 +202,18 @@
             <div class="col-md-6">
                 <div class="card-panel" style="height:100%;">
                     <div class="panel-title mb-3">Common Diagnoses</div>
-                    <div class="diag-item"><div class="diag-header"><span>Upper Respiratory Infection</span><span class="diag-pct">28%</span></div><div class="diag-bar"><div class="diag-fill" style="width:28%"></div></div></div>
-                    <div class="diag-item"><div class="diag-header"><span>Hypertension</span><span class="diag-pct">22%</span></div><div class="diag-bar"><div class="diag-fill" style="width:22%"></div></div></div>
-                    <div class="diag-item"><div class="diag-header"><span>Acute Gastritis</span><span class="diag-pct">18%</span></div><div class="diag-bar"><div class="diag-fill" style="width:18%"></div></div></div>
-                    <div class="diag-item"><div class="diag-header"><span>Migraine</span><span class="diag-pct">15%</span></div><div class="diag-bar"><div class="diag-fill" style="width:15%"></div></div></div>
-                    <div class="diag-item"><div class="diag-header"><span>Type 2 Diabetes</span><span class="diag-pct">10%</span></div><div class="diag-bar"><div class="diag-fill" style="width:10%"></div></div></div>
-                    <div class="diag-item" style="margin-bottom:0;"><div class="diag-header"><span>Lumbar Disc Issues</span><span class="diag-pct">7%</span></div><div class="diag-bar"><div class="diag-fill" style="width:7%"></div></div></div>
+                    @forelse($topDiagnoses as $item)
+                        @php $pct = round(($item->total / $diagTotal) * 100, 1); @endphp
+                        <div class="diag-item" @if($loop->last) style="margin-bottom:0;" @endif>
+                            <div class="diag-header">
+                                <span>{{ $item->diagnosis }}</span>
+                                <span class="diag-pct">{{ $pct }}%</span>
+                            </div>
+                            <div class="diag-bar"><div class="diag-fill" style="width:{{ $pct }}%"></div></div>
+                        </div>
+                    @empty
+                        <div class="panel-sub">No diagnosis data available yet.</div>
+                    @endforelse
                 </div>
             </div>
         </div>
@@ -227,9 +233,9 @@
                     </select>
                     <select class="filter-select">
                         <option>All Doctors</option>
-                        <option>Dr. Isabel Santos</option>
-                        <option>Dr. Ramon Reyes</option>
-                        <option>Dr. Ana Cruz</option>
+                        @foreach($doctorStats as $doctor)
+                            <option>{{ $doctor->name ?: ($doctor->user->name ?? 'Unknown Doctor') }}</option>
+                        @endforeach
                     </select>
                 </div>
             </div>
@@ -239,37 +245,31 @@
                         <th>Doctor</th>
                         <th>Specialty</th>
                         <th>Patients Seen</th>
-                        <th>Avg Duration</th>
-                        <th>Records Filed</th>
-                        <th>Completion Rate</th>
+                        <th>Avg Consultation Time (min)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td><strong>Dr. Isabel Santos</strong></td>
-                        <td style="color:var(--text-muted);">General Medicine</td>
-                        <td>162</td><td>32 min</td><td>158</td>
-                        <td><span style="color:var(--success);font-weight:600;">97.5%</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Dr. Ramon Reyes</strong></td>
-                        <td style="color:var(--text-muted);">Internal Medicine</td>
-                        <td>148</td><td>28 min</td><td>145</td>
-                        <td><span style="color:var(--success);font-weight:600;">97.9%</span></td>
-                    </tr>
-                    <tr>
-                        <td><strong>Dr. Ana Cruz</strong></td>
-                        <td style="color:var(--text-muted);">Family Medicine</td>
-                        <td>122</td><td>35 min</td><td>120</td>
-                        <td><span style="color:var(--success);font-weight:600;">98.3%</span></td>
-                    </tr>
+                    @php
+                        $totalSeen = $doctorStats->sum('patients_seen');
+                        $avgDurationAll = $doctorStats->pluck('consultation_avg')->filter(fn($v) => $v !== null)->avg();
+                    @endphp
+                    @forelse($doctorStats as $doctor)
+                        <tr>
+                            <td><strong>{{ $doctor->name ?: ($doctor->user->name ?? 'Unknown Doctor') }}</strong></td>
+                            <td style="color:var(--text-muted);">{{ $doctor->specialization ?: 'N/A' }}</td>
+                            <td>{{ number_format($doctor->patients_seen) }}</td>
+                            <td>{{ $doctor->consultation_avg !== null ? number_format($doctor->consultation_avg, 1) : 'N/A' }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4" class="text-muted">No monthly doctor data available.</td>
+                        </tr>
+                    @endforelse
                     <tr>
                         <td style="font-weight:700;">Total</td>
                         <td></td>
-                        <td style="font-weight:700;">432</td>
-                        <td style="font-weight:700;">31.6 min</td>
-                        <td style="font-weight:700;">423</td>
-                        <td style="font-weight:700;color:var(--success);">97.9%</td>
+                        <td style="font-weight:700;">{{ number_format($totalSeen) }}</td>
+                        <td style="font-weight:700;">{{ $avgDurationAll ? number_format($avgDurationAll, 1) : 'N/A' }}</td>
                     </tr>
                 </tbody>
             </table>
@@ -285,12 +285,14 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const heights = [55, 72, 60, 90, 80, 35, 45];
+    const heights = @json(collect($weekData)->pluck('count')->values());
+    const maxCount = Math.max(...heights, 1);
     const chart = document.getElementById('barChart');
     heights.forEach(h => {
+        const scaledHeight = Math.max(6, Math.round((h / maxCount) * 100));
         const col = document.createElement('div');
         col.className = 'bar-col';
-        col.innerHTML = `<div class="bar" style="height:${h}px"></div>`;
+        col.innerHTML = `<div class="bar" style="height:${scaledHeight}px" title="${h} patients"></div>`;
         chart.appendChild(col);
     });
 </script>

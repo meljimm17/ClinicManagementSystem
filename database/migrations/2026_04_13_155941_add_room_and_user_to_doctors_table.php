@@ -12,18 +12,28 @@ return new class extends Migration
     public function up(): void
 {
     Schema::table('doctors', function (Blueprint $table) {
-        $table->unsignedBigInteger('user_id')->nullable()->after('id');
-        $table->string('assigned_room')->nullable()->after('license_number');
+        if (! Schema::hasColumn('doctors', 'user_id')) {
+            $table->unsignedBigInteger('user_id')->nullable()->after('id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+        }
 
-        $table->foreign('user_id')->references('id')->on('users')->onDelete('set null');
+        if (! Schema::hasColumn('doctors', 'assigned_room')) {
+            $table->string('assigned_room')->nullable()->after('license_number');
+        }
     });
 }
 
 public function down(): void
 {
     Schema::table('doctors', function (Blueprint $table) {
-        $table->dropForeign(['user_id']);
-        $table->dropColumn(['user_id', 'assigned_room']);
+        if (Schema::hasColumn('doctors', 'user_id')) {
+            $table->dropForeign(['user_id']);
+            $table->dropColumn('user_id');
+        }
+
+        if (Schema::hasColumn('doctors', 'assigned_room')) {
+            $table->dropColumn('assigned_room');
+        }
     });
 }
 };
