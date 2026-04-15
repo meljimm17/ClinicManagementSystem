@@ -270,9 +270,38 @@ body {
 
 /* Content & Panels */
 .content { padding: 28px 32px 40px; flex: 1; }
-.stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; }
-.stat-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; }
-.stat-value { font-size: 2.1rem; font-weight: 700; color: var(--text-primary); }
+.stat-card {
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 8px 18px rgba(27, 61, 47, 0.06);
+}
+.stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 72px;
+    height: 72px;
+    border-radius: 0 0 0 64px;
+    background: rgba(46, 139, 94, 0.18);
+}
+.stat-card::before {
+    content: '';
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 3px;
+    background: linear-gradient(90deg, #2d7a50, #4fa882);
+    opacity: .8;
+}
+.stat-card.stat-teal { background: linear-gradient(135deg, #edf8f3, #dff1e8); border-color: #b8dccb; }
+.stat-card.stat-mint { background: linear-gradient(135deg, #e8f5f0, #d8ece2); border-color: #abd4c2; }
+.stat-card.stat-sage { background: linear-gradient(135deg, #eef7f2, #e0eee7); border-color: #bfdacc; }
+.stat-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: #2e6048; margin-bottom: 7px; }
+.stat-value { font-size: 2rem; font-weight: 700; color: #153126; }
 .stat-value.green { color: var(--primary); }
 .card-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; height: 100%; }
 .panel-title { font-size: .9rem; font-weight: 700; }
@@ -291,10 +320,24 @@ body {
 /* Status badges */
 .badge-waiting    { background: #fff4e5; color: #b07000; padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
 .badge-diagnosing { background: var(--accent-soft); color: var(--primary); padding: 3px 10px; border-radius: 20px; font-size: .72rem; font-weight: 700; }
+.badge-priority { background: #ffe8e8; color: #b42318; padding: 3px 10px; border-radius: 20px; font-size: .68rem; font-weight: 700; margin-left: 6px; }
 
 /* Empty state */
 .empty-queue { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: .8rem; }
 .empty-queue i { font-size: 2rem; display:block; margin-bottom: 8px; opacity: .2; }
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes softRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    body { animation: pageFadeIn .35s ease-out; }
+    .stat-chip, .card-panel, .queue-table-wrap, .modal-content { animation: softRise .35s ease-out both; }
+    .btn, button, .sidebar-link, .act-btn, .filter-btn, .topbar-icon {
+        transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+    }
+    .btn:hover, button:hover, .act-btn:hover, .filter-btn:hover, .topbar-icon:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(27, 61, 47, 0.12);
+    }
+}
 </style>
 </head>
 <body>
@@ -389,7 +432,7 @@ body {
                         <span class="notif-dot"></span>
                         <div style="flex:1;">
                             <div style="font-weight:700;">{{ $w->patient->name }}</div>
-                            <div style="color:var(--text-muted); font-size:.72rem;">{{ $w->queue_number }} · {{ $w->created_at->format('g:i A') }}</div>
+                            <div style="color:var(--text-muted); font-size:.72rem;">{{ $w->display_queue_number }} · {{ $w->created_at->format('g:i A') }} @if($w->priority) · PRIORITY ({{ strtoupper($w->priority->priority_type) }}) @endif</div>
                         </div>
                         <a href="{{ route('doctor.queue') }}?call={{ $w->id }}"
                            style="font-size:.72rem; font-weight:700; color:var(--primary); text-decoration:none; white-space:nowrap;">
@@ -412,13 +455,13 @@ body {
         {{-- ── Stat Cards ── --}}
         <div class="row g-3 mb-4">
             <div class="col-md-4">
-                <div class="stat-card">
+                <div class="stat-card stat-teal">
                     <div class="stat-label">Patients Seen Today</div>
                     <div class="stat-value">{{ $patientsSeen }}</div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="stat-card">
+                <div class="stat-card stat-mint">
                     <div class="stat-label">Avg Consultation Time</div>
                     <div class="stat-value">
                         {{ $avgMinutes !== null ? $avgMinutes . 'm' : '—' }}
@@ -426,7 +469,7 @@ body {
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="stat-card">
+                <div class="stat-card stat-sage">
                     <div class="stat-label">Remaining in Queue</div>
                     <div class="stat-value green">{{ $remainingCount }}</div>
                 </div>
@@ -460,13 +503,16 @@ body {
                             <tbody>
                                 @forelse($queue->whereIn('status', ['waiting', 'diagnosing']) as $entry)
                                 <tr>
-                                    <td><strong>{{ $entry->queue_number }}</strong></td>
+                                    <td><strong>{{ $entry->display_queue_number }}</strong></td>
                                     <td>{{ $entry->patient->name }}</td>
                                     <td>
                                         @if($entry->status === 'diagnosing')
                                             <span class="badge-diagnosing">Diagnosing</span>
                                         @else
                                             <span class="badge-waiting">Waiting</span>
+                                        @endif
+                                        @if($entry->priority)
+                                            <span class="badge-priority">Priority · {{ strtoupper($entry->priority->priority_type) }}</span>
                                         @endif
                                     </td>
                                     <td class="text-end">
@@ -515,7 +561,7 @@ body {
                                     </div>
                                     <div class="activity-info">
                                         <div class="title">Session Completed</div>
-                                        <div class="subtitle">{{ $activity->queue_number }} · {{ $activity->patient->name }}</div>
+                                        <div class="subtitle">{{ $activity->display_queue_number }} · {{ $activity->patient->name }}</div>
                                         <div class="time">{{ $activity->completed_at ? \Carbon\Carbon::parse($activity->completed_at)->format('g:i A') : '' }}</div>
                                     </div>
                                 @else
@@ -524,7 +570,7 @@ body {
                                     </div>
                                     <div class="activity-info">
                                         <div class="title">Patient Called</div>
-                                        <div class="subtitle">{{ $activity->queue_number }} · {{ $activity->patient->name }}</div>
+                                        <div class="subtitle">{{ $activity->display_queue_number }} · {{ $activity->patient->name }}</div>
                                         <div class="time">{{ $activity->called_at ? \Carbon\Carbon::parse($activity->called_at)->format('g:i A') : $activity->created_at->format('g:i A') }}</div>
                                     </div>
                                 @endif

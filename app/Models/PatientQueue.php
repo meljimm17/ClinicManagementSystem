@@ -41,4 +41,17 @@ class PatientQueue extends Model
     {
         return $this->hasOne(MedicalRecord::class, 'queue_id');
     }
+
+    public function priority()
+    {
+        return $this->hasOne(PatientQueuePriority::class, 'patient_queue_id');
+    }
+
+    public function getDisplayQueueNumberAttribute(): string
+    {
+        $queueNumber = (string) ($this->queue_number ?? '');
+
+        // Hide legacy date prefixes like 20260414-001 or 20260414Q-001.
+        return preg_replace('/^\d{8}[-_]?/', '', $queueNumber) ?: $queueNumber;
+    }
 }

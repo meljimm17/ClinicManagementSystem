@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Patient;
 use App\Models\PatientQueue;
+use App\Models\PatientQueuePriority;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,9 @@ class PatientController extends Controller
             'current_medications'      => 'nullable|string',
             // Visit
             'primary_symptoms'         => 'required|string|max:1000',
+            'is_priority'              => 'nullable|boolean',
+            'priority_type'            => 'required_if:is_priority,1|nullable|in:senior,pwd,pregnant,urgent,other',
+            'priority_notes'           => 'nullable|string|max:255',
         ], [
             'name.required' => 'Patient name is required.',
             'date_of_birth.required' => 'Date of birth is required.',
@@ -124,7 +128,7 @@ class PatientController extends Controller
                     $count       = PatientQueue::whereDate('created_at', today())->count();
                     $queueNumber = 'Q-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
 
-                    PatientQueue::create([
+                    $queueEntry = PatientQueue::create([
                         'queue_number'  => $queueNumber,
                         'queue_date'    => today()->toDateString(),
                         'patient_id'    => $patient->id,
@@ -133,6 +137,15 @@ class PatientController extends Controller
                         'status'        => 'waiting',
                         'queued_at'     => now(),
                     ]);
+
+                    if ($request->boolean('is_priority')) {
+                        PatientQueuePriority::create([
+                            'patient_queue_id' => $queueEntry->id,
+                            'priority_type' => $request->priority_type,
+                            'notes' => $request->priority_notes,
+                            'created_by' => auth()->id(),
+                        ]);
+                    }
 
                     return $queueNumber;
                 });

@@ -8,10 +8,12 @@ use App\Models\Patient;
 use App\Models\Doctor;
 use App\Models\PatientQueue;
 use App\Models\MedicalRecord;
+use App\Models\ReportSnapshot;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Schema;
 
 class AdminController extends Controller
 {
@@ -35,12 +37,24 @@ class AdminController extends Controller
         // For the dashboard user table
         $recentUsers = User::latest()->take(6)->get();
 
-        // Daily patient volume for the bar chart (last 7 days, Mon–Sun of current week)
+        // Daily patient volume for this week (Mon -> Sun)
         $weekData = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $day = now()->subDays($i);
+        $weekStart = now()->copy()->startOfWeek(Carbon::MONDAY);
+        $today = now()->copy()->startOfDay();
+        $weekEnd = $weekStart->copy()->addDays(6);
+        for ($day = $weekStart->copy(); $day->lte($weekEnd); $day->addDay()) {
             $weekData[] = [
-                'label' => $day->format('D'),
+                'label' => $day->format('l'),
+                'count' => PatientQueue::whereDate('created_at', $day->toDateString())->count(),
+            ];
+        }
+
+        // Daily patient volume for this month (month start -> today)
+        $monthData = [];
+        $monthStart = now()->copy()->startOfMonth();
+        for ($day = $monthStart->copy(); $day->lte($today); $day->addDay()) {
+            $monthData[] = [
+                'label' => $day->format('M j'),
                 'count' => PatientQueue::whereDate('created_at', $day->toDateString())->count(),
             ];
         }
@@ -55,6 +69,14 @@ class AdminController extends Controller
 
         $diagTotal = $topDiagnoses->sum('total') ?: 1; // avoid division by zero
 
+        // Patient demographics distribution (age groups)
+        $demographicsData = [
+            ['label' => 'Children (0-12)', 'count' => Patient::whereBetween('age', [0, 12])->count()],
+            ['label' => 'Teens (13-17)', 'count' => Patient::whereBetween('age', [13, 17])->count()],
+            ['label' => 'Adults (18-59)', 'count' => Patient::whereBetween('age', [18, 59])->count()],
+            ['label' => 'Seniors (60+)', 'count' => Patient::where('age', '>=', 60)->count()],
+        ];
+
         return view('admin.dashboard', compact(
             'recentQueue',
             'totalPatients',
@@ -62,8 +84,10 @@ class AdminController extends Controller
             'activeQueueCount',
             'recentUsers',
             'weekData',
+            'monthData',
             'topDiagnoses',
-            'diagTotal'
+            'diagTotal',
+            'demographicsData'
         ));
     }
 
@@ -72,7 +96,7 @@ class AdminController extends Controller
      */
     public function administration()
     {
-        $users = User::orderByDesc('created_at')->orderByDesc('id')->get();
+        $users = User::with('doctor')->orderByDesc('created_at')->orderByDesc('id')->get();
         return view('admin.administration', compact('users'));
     }
 
@@ -134,12 +158,24 @@ class AdminController extends Controller
             ->value('avg_wait');
         $avgWaitMinutes = $avgWaitMinutes ? round($avgWaitMinutes) : 0;
 
-        // Daily volume for chart (last 7 days)
+        // Daily volume for this week (Mon -> Sun)
         $weekData = [];
-        for ($i = 6; $i >= 0; $i--) {
-            $day = now()->subDays($i);
+        $weekStart = now()->copy()->startOfWeek(Carbon::MONDAY);
+        $weekEnd = $weekStart->copy()->addDays(6);
+        for ($day = $weekStart->copy(); $day->lte($weekEnd); $day->addDay()) {
             $weekData[] = [
-                'label' => $day->format('D'),
+                'label' => $day->format('l'),
+                'count' => PatientQueue::whereDate('created_at', $day->toDateString())->count(),
+            ];
+        }
+
+        // Daily volume for this month (month start -> today)
+        $monthData = [];
+        $monthStart = now()->copy()->startOfMonth();
+        $today = now()->copy()->startOfDay();
+        for ($day = $monthStart->copy(); $day->lte($today); $day->addDay()) {
+            $monthData[] = [
+                'label' => $day->format('M j'),
                 'count' => PatientQueue::whereDate('created_at', $day->toDateString())->count(),
             ];
         }
@@ -153,6 +189,13 @@ class AdminController extends Controller
             ->get();
 
         $diagTotal = $topDiagnoses->sum('total') ?: 1;
+
+        $demographicsData = [
+            ['label' => 'Children (0-12)', 'count' => Patient::whereBetween('age', [0, 12])->count()],
+            ['label' => 'Teens (13-17)', 'count' => Patient::whereBetween('age', [13, 17])->count()],
+            ['label' => 'Adults (18-59)', 'count' => Patient::whereBetween('age', [18, 59])->count()],
+            ['label' => 'Seniors (60+)', 'count' => Patient::where('age', '>=', 60)->count()],
+        ];
 
         // Per-doctor summary for the monthly table
         $doctorStats = Doctor::with('user')
@@ -183,15 +226,44 @@ class AdminController extends Controller
             return $doctor;
         });
 
+        if (Schema::hasTable('report_snapshots')) {
+            ReportSnapshot::updateOrCreate(
+                ['snapshot_date' => now()->toDateString()],
+                [
+                    'total_patients' => $totalPatients,
+                    'total_consultations' => $totalConsultations,
+                    'records_filed' => $recordsFiled,
+                    'avg_wait_minutes' => $avgWaitMinutes,
+                    'top_diagnoses' => $topDiagnoses->map(fn ($item) => [
+                        'diagnosis' => $item->diagnosis,
+                        'total' => (int) $item->total,
+                    ])->values()->all(),
+                    'doctor_stats' => $doctorStats->map(fn ($doctor) => [
+                        'doctor_id' => $doctor->id,
+                        'name' => $doctor->name ?: ($doctor->user->name ?? 'Unknown Doctor'),
+                        'specialization' => $doctor->specialization ?: 'N/A',
+                        'patients_seen' => (int) $doctor->patients_seen,
+                        'consultation_avg' => $doctor->consultation_avg,
+                    ])->values()->all(),
+                    'meta' => [
+                        'generated_at' => now()->toDateTimeString(),
+                        'timezone' => config('app.timezone'),
+                    ],
+                ]
+            );
+        }
+
         return compact(
             'totalPatients',
             'totalConsultations',
             'recordsFiled',
             'avgWaitMinutes',
             'weekData',
+            'monthData',
             'topDiagnoses',
             'diagTotal',
-            'doctorStats'
+            'doctorStats',
+            'demographicsData'
         );
     }
 
@@ -228,17 +300,43 @@ class AdminController extends Controller
                 'max:255',
                 Rule::unique('users', 'username')->whereNull('deleted_at'),
             ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->whereNull('deleted_at'),
+            ],
+            'contact_number' => 'required|string|max:30',
+            'address' => 'required|string|max:255',
             'password' => 'required|min:8',
             'password_confirmation' => 'required|same:password',
             'role'     => 'required',
+            'specialization' => 'required_if:role,doctor|string|max:255',
+            'license_number' => 'required_if:role,doctor|string|max:255|unique:doctors,license_number',
+            'assigned_room' => 'required_if:role,doctor|string|max:50',
         ]);
 
-        User::create([
+        $user = User::create([
             'name'     => $request->name,
             'username' => $request->username,
+            'email' => $request->email,
+            'contact_number' => $request->contact_number,
+            'address' => $request->address,
             'password' => Hash::make($request->password),
             'role'     => $request->role,
         ]);
+
+        if ($request->role === 'doctor') {
+            Doctor::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'name' => $request->name,
+                    'specialization' => $request->specialization,
+                    'license_number' => $request->license_number,
+                    'assigned_room' => $request->assigned_room,
+                ]
+            );
+        }
 
         return back()->with('success', 'User created successfully.');
     }
@@ -256,10 +354,44 @@ class AdminController extends Controller
                     ->whereNull('deleted_at')
                     ->ignore($user->id),
             ],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')
+                    ->whereNull('deleted_at')
+                    ->ignore($user->id),
+            ],
+            'contact_number' => 'required|string|max:30',
+            'address' => 'required|string|max:255',
             'role' => 'required|in:admin,doctor,staff',
+            'specialization' => 'required_if:role,doctor|string|max:255',
+            'license_number' => [
+                'required_if:role,doctor',
+                'string',
+                'max:255',
+                Rule::unique('doctors', 'license_number')
+                    ->ignore($user->doctor?->id),
+            ],
+            'assigned_room' => 'required_if:role,doctor|string|max:50',
         ]);
 
-        $user->update($request->only(['name', 'username', 'role']));
+        $user->update($request->only(['name', 'username', 'email', 'contact_number', 'address', 'role']));
+
+        if ($request->role === 'doctor') {
+            Doctor::updateOrCreate(
+                ['user_id' => $user->id],
+                [
+                    'name' => $request->name,
+                    'specialization' => $request->specialization,
+                    'license_number' => $request->license_number,
+                    'assigned_room' => $request->assigned_room,
+                ]
+            );
+        } else {
+            Doctor::where('user_id', $user->id)->delete();
+        }
+
         return back()->with('success', 'User updated successfully.');
     }
 

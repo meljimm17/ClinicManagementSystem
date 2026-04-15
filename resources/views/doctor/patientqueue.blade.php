@@ -125,6 +125,12 @@ body {
     content: ''; width: 5px; height: 5px; background: #7fffd4;
     border-radius: 50%; animation: pulse 1.4s infinite;
 }
+.priority-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #ffe8e8; color: #b42318;
+    font-size: .58rem; font-weight: 700; padding: 2px 7px;
+    border-radius: 20px; text-transform: uppercase; margin-bottom: 4px;
+}
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
 /* ── Col 3: Main Content ── */
@@ -217,6 +223,19 @@ body {
 .tab-link.active { color: var(--primary); border-bottom: 2px solid var(--primary); }
 .info-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
 .info-item-icon { width: 34px; height: 34px; border-radius: 9px; background: var(--accent-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes softRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    body { animation: pageFadeIn .35s ease-out; }
+    .stat-chip, .card-panel, .queue-table-wrap, .modal-content { animation: softRise .35s ease-out both; }
+    .btn, button, .sidebar-link, .act-btn, .filter-btn, .topbar-icon {
+        transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+    }
+    .btn:hover, button:hover, .act-btn:hover, .filter-btn:hover, .topbar-icon:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(27, 61, 47, 0.12);
+    }
+}
 </style>
 </head>
 <body>
@@ -261,12 +280,15 @@ body {
                 @if($entry->status === 'diagnosing')
                     <div class="active-badge">Active</div>
                 @endif
+                @if($entry->priority)
+                    <div class="priority-badge">Priority · {{ strtoupper($entry->priority->priority_type) }}</div>
+                @endif
                 <div class="queue-card-top">
                     <div class="queue-card-name">{{ $entry->patient->name }}</div>
                     <div class="queue-card-time">{{ $entry->created_at->format('g:i A') }}</div>
                 </div>
                 <div class="queue-card-meta">
-                    Ref: {{ $entry->queue_number }} &bull; Age: {{ $entry->patient->age ?? '—' }}
+                    Ref: {{ $entry->display_queue_number }} &bull; Age: {{ $entry->patient->age ?? '—' }}
                 </div>
                 {{-- Call / Resume button on card --}}
                 @if($entry->status === 'waiting')
@@ -425,13 +447,15 @@ body {
         {{ $entry->id }}: {
             id: {{ $entry->id }},
             patient_id: {{ $entry->patient_id }},
-            queue_number: "{{ $entry->queue_number }}",
+            queue_number: "{{ $entry->display_queue_number }}",
             name: "{{ addslashes($entry->patient->name) }}",
             age: "{{ $entry->patient->age ?? '—' }}",
             blood_type: "{{ $entry->patient->blood_type ?? '—' }}",
             height: "{{ $entry->patient->height ?? '—' }}",
             weight: "{{ $entry->patient->weight ?? '—' }}",
             symptoms: "{{ addslashes($entry->symptoms ?? '—') }}",
+            priority_type: "{{ $entry->priority?->priority_type ?? '' }}",
+            priority_notes: "{{ addslashes($entry->priority?->notes ?? '') }}",
             status: "{{ $entry->status }}",
             registered: "{{ $entry->created_at->format('g:i A') }}",
         },
@@ -488,6 +512,9 @@ body {
         document.getElementById('v-hw').textContent = (p.height !== '—' ? p.height + 'cm' : '—') + ' / ' + (p.weight !== '—' ? p.weight + 'kg' : '—');
         document.getElementById('v-symptoms').textContent = p.symptoms;
         document.getElementById('v-submitted-by').textContent = 'Submitted at ' + p.registered;
+        if (p.priority_type) {
+            document.getElementById('v-submitted-by').textContent += ' · PRIORITY (' + p.priority_type.toUpperCase() + ')' + (p.priority_notes ? ' - ' + p.priority_notes : '');
+        }
 
         document.getElementById('f-queue-id').value = p.id;
         document.getElementById('f-patient-id').value = p.patient_id;

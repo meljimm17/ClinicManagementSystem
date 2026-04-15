@@ -28,6 +28,7 @@ Route::middleware(['auth'])->group(function () {
     // ── Admin Group ──
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+        Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
         Route::get('/medical-records', [MedicalRecordController::class, 'adminIndex'])->name('medical-records');
         Route::get('/queue', [PatientQueueController::class, 'adminIndex'])->name('queue');
         Route::patch('/queue/{patientQueue}', [PatientQueueController::class, 'update'])->name('queue.update');

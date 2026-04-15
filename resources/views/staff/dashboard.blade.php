@@ -258,6 +258,19 @@ body {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.3); opacity: .7; }
 }
+@media (prefers-reduced-motion: no-preference) {
+    @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes softRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    body { animation: pageFadeIn .35s ease-out; }
+    .stat-chip, .card-panel, .queue-table-wrap, .search-wrap, .modal-content { animation: softRise .35s ease-out both; }
+    .btn, button, .sidebar-link, .act-btn, .filter-btn, .topbar-icon {
+        transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+    }
+    .btn:hover, button:hover, .act-btn:hover, .filter-btn:hover, .topbar-icon:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(27, 61, 47, 0.12);
+    }
+}
 </style>
 </head>
 <body>
@@ -308,7 +321,7 @@ body {
                     <span style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;"></span>
                     <div style="flex:1;">
                         <div style="font-weight:700;font-size:.8rem;">{{ $d->patient->name }}</div>
-                        <div style="font-size:.7rem;color:var(--text-muted);">{{ $d->queue_number }} · Being diagnosed {{ $d->called_at ? '· '.\Carbon\Carbon::parse($d->called_at)->format('g:i A') : '' }}</div>
+                        <div style="font-size:.7rem;color:var(--text-muted);">{{ $d->display_queue_number }} · Being diagnosed {{ $d->called_at ? '· '.\Carbon\Carbon::parse($d->called_at)->format('g:i A') : '' }}</div>
                     </div>
                     <span style="font-size:.7rem;font-weight:700;color:var(--primary);white-space:nowrap;">View →</span>
                 </a>
@@ -528,6 +541,34 @@ body {
                             <textarea name="primary_symptoms" class="form-control-custom {{ $errors->has('primary_symptoms') ? 'input-invalid' : '' }}" rows="3" placeholder="Describe symptoms…" required>{{ old('primary_symptoms') }}</textarea>
                         </div>
 
+                        <span class="form-section-label"><i class="bi bi-exclamation-octagon me-1"></i> Priority Handling</span>
+                        <div class="returning-toggle mb-3" onclick="togglePriority(this)">
+                            <input type="checkbox" id="priorityCheck" name="is_priority" value="1" {{ old('is_priority') ? 'checked' : '' }}>
+                            <div>
+                                <label for="priorityCheck">Mark as Priority Patient?</label><br>
+                                <small>Use for seniors, PWD, pregnant, or urgent cases.</small>
+                            </div>
+                        </div>
+                        <div id="priorityFields" class="{{ old('is_priority') ? 'visible' : '' }}" style="display: {{ old('is_priority') ? 'block' : 'none' }};">
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Priority Type</label>
+                                    <select name="priority_type" class="form-control-custom {{ $errors->has('priority_type') ? 'input-invalid' : '' }}" style="appearance:auto;">
+                                        <option value="">Select priority type</option>
+                                        <option value="senior" {{ old('priority_type') === 'senior' ? 'selected' : '' }}>Senior Citizen</option>
+                                        <option value="pwd" {{ old('priority_type') === 'pwd' ? 'selected' : '' }}>PWD</option>
+                                        <option value="pregnant" {{ old('priority_type') === 'pregnant' ? 'selected' : '' }}>Pregnant</option>
+                                        <option value="urgent" {{ old('priority_type') === 'urgent' ? 'selected' : '' }}>Urgent Case</option>
+                                        <option value="other" {{ old('priority_type') === 'other' ? 'selected' : '' }}>Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label-custom">Priority Notes</label>
+                                    <input type="text" name="priority_notes" value="{{ old('priority_notes') }}" class="form-control-custom" placeholder="Optional note">
+                                </div>
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn-register">
                             <i class="bi bi-person-check me-2"></i> Complete Registration
                         </button>
@@ -549,7 +590,7 @@ body {
                                 <div class="entry-avatar">{{ strtoupper(substr($entry->patient->name, 0, 2)) }}</div>
                                 <div>
                                     <div class="entry-name">{{ $entry->patient->name }}</div>
-                                    <div class="entry-meta">{{ $entry->queue_number }} • {{ \Carbon\Carbon::parse($entry->queued_at)->format('h:i A') }}</div>
+                                    <div class="entry-meta">{{ $entry->display_queue_number }} • {{ \Carbon\Carbon::parse($entry->queued_at)->format('h:i A') }}</div>
                                 </div>
                             </div>
                             <span class="status-indicator {{ $entry->status }}">{{ ucfirst($entry->status) }}</span>
@@ -662,6 +703,13 @@ body {
         cb.checked = !cb.checked;
         const search = document.getElementById('returningSearch');
         search.classList.toggle('visible', cb.checked);
+    }
+
+    function togglePriority(wrapper) {
+        const cb = wrapper.querySelector('input[type="checkbox"]');
+        cb.checked = !cb.checked;
+        const fields = document.getElementById('priorityFields');
+        fields.style.display = cb.checked ? 'block' : 'none';
     }
 
     /* Live search — attached after DOM is ready */

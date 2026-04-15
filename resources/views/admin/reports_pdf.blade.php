@@ -47,6 +47,35 @@
         </tr>
     </table>
 
+    <div class="section-title">Patient Age Group Distribution</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Age Group</th>
+                <th class="text-right">Patients</th>
+                <th class="text-right">Share</th>
+            </tr>
+        </thead>
+        <tbody>
+            @php $demoTotal = collect($demographicsData ?? [])->sum('count'); @endphp
+            @forelse(($demographicsData ?? []) as $group)
+                @php
+                    $count = (int) ($group['count'] ?? 0);
+                    $pct = $demoTotal > 0 ? round(($count / $demoTotal) * 100, 1) : 0;
+                @endphp
+                <tr>
+                    <td>{{ $group['label'] ?? 'N/A' }}</td>
+                    <td class="text-right">{{ number_format($count) }}</td>
+                    <td class="text-right">{{ $pct }}%</td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="3">No demographics data available.</td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+
     <div class="section-title">Top Diagnoses</div>
     <table>
         <thead>

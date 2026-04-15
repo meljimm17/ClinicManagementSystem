@@ -87,6 +87,19 @@
         .dash-footer { font-size: .7rem; color: var(--text-muted); border-top: 1px solid var(--border); padding: 14px 32px; display: flex; justify-content: space-between; }
         .footer-links a { color: var(--text-muted); text-decoration: none; margin-left: 18px; font-size: .7rem; }
         .footer-links a:hover { color: var(--accent); }
+        @media (prefers-reduced-motion: no-preference) {
+            @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes softRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+            body { animation: pageFadeIn .35s ease-out; }
+            .stat-chip, .card-panel, .modal-content { animation: softRise .35s ease-out both; }
+            .btn, button, .sidebar-link, .act-btn, .filter-btn, .patient-name-btn, .topbar-icon, .modal-tab-btn {
+                transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+            }
+            .btn:hover, button:hover, .act-btn:hover, .filter-btn:hover, .topbar-icon:hover, .modal-tab-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 6px 16px rgba(27, 61, 47, 0.12);
+            }
+        }
     </style>
 </head>
 <body>
@@ -115,7 +128,7 @@
         </a>
     </nav>
     <div class="sidebar-bottom">
-        <button class="btn-new-appt"><i class="bi bi-plus-lg me-1"></i> New Appointment</button>
+        <button class="btn-new-appt" data-bs-toggle="modal" data-bs-target="#addPatientModal"><i class="bi bi-plus-lg me-1"></i> Add Patient</button>
         <div class="sidebar-footer mt-3">
             <a href="#" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
             <form action="{{ route('logout') }}" method="POST">
@@ -364,6 +377,7 @@
     </div>
 </div>
 
+@include('admin.partials.add-patient-modal')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     const allRecords = @json($mappedRecords);

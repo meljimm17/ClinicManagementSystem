@@ -97,6 +97,19 @@
         .form-ctrl:focus { border-color: var(--accent); background: #fff; }
         .btn-ghost { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 9px 18px; font-size: .845rem; font-family: 'DM Sans', sans-serif; color: var(--text-muted); cursor: pointer; transition: all .15s; }
         .btn-ghost:hover { background: var(--page-bg); }
+        @media (prefers-reduced-motion: no-preference) {
+            @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes softRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+            body { animation: pageFadeIn .35s ease-out; }
+            .stat-chip, .card-panel, .settings-card, .modal-content { animation: softRise .35s ease-out both; }
+            .btn, button, .sidebar-link, .act-btn, .filter-btn, .topbar-icon {
+                transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+            }
+            .btn:hover, button:hover, .act-btn:hover, .filter-btn:hover, .topbar-icon:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 6px 16px rgba(27, 61, 47, 0.12);
+            }
+        }
     </style>
 </head>
 <body>
@@ -125,7 +138,7 @@
         </a>
     </nav>
     <div class="sidebar-bottom">
-        <button class="btn-new-appt"><i class="bi bi-plus-lg me-1"></i> New Appointment</button>
+        <button class="btn-new-appt" data-bs-toggle="modal" data-bs-target="#addPatientModal"><i class="bi bi-plus-lg me-1"></i> Add Patient</button>
         <div class="sidebar-footer mt-3">
             <a href="#" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
             <form action="{{ route('logout') }}" method="POST">
@@ -185,6 +198,9 @@
                         <th>Name</th>
                         <th>Role</th>
                         <th>Username</th>
+                        <th>Email</th>
+                        <th>Contact</th>
+                        <th>Address</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -198,12 +214,26 @@
                         </td>
                         <td><span class="status-badge status-active">{{ ucfirst($user->role) }}</span></td>
                         <td style="color:var(--text-muted);font-size:.8rem;">{{ $user->username }}</td>
+                        <td style="color:var(--text-muted);font-size:.8rem;">{{ $user->email ?? '—' }}</td>
+                        <td style="color:var(--text-muted);font-size:.8rem;">{{ $user->contact_number ?? '—' }}</td>
+                        <td style="color:var(--text-muted);font-size:.8rem;">{{ $user->address ?? '—' }}</td>
                         <td>
                             <span class="status-badge status-active">Active</span>
                         </td>
                         <td>
                             <button class="action-btn btn-edit"
-                                onclick="openEditModal({{ $user->id }}, '{{ $user->name }}', '{{ $user->username }}', '{{ $user->role }}')">
+                                onclick="openEditModal(
+                                    {{ $user->id }},
+                                    '{{ addslashes($user->name) }}',
+                                    '{{ addslashes($user->username) }}',
+                                    '{{ addslashes($user->email ?? '') }}',
+                                    '{{ addslashes($user->contact_number ?? '') }}',
+                                    '{{ addslashes($user->address ?? '') }}',
+                                    '{{ addslashes($user->doctor->specialization ?? '') }}',
+                                    '{{ addslashes($user->doctor->license_number ?? '') }}',
+                                    '{{ addslashes($user->doctor->assigned_room ?? '') }}',
+                                    '{{ $user->role }}'
+                                )">
                                 Edit
                             </button>
                             <form action="{{ route('admin.administration.users.destroy', $user->id) }}" method="POST" style="display:inline;">
@@ -215,48 +245,7 @@
                     </tr>
                     @empty
                     {{-- Static fallback rows when no DB data --}}
-                    <tr>
-                        <td><div class="user-name">Dr. Isabel Santos</div><div class="user-role">Physician</div></td>
-                        <td><span class="status-badge status-active">Doctor</span></td>
-                        <td style="color:var(--text-muted);font-size:.8rem;">i.santos@curasure.ph</td>
-                        <td><span class="status-badge status-active">Active</span></td>
-                        <td><button class="action-btn btn-edit">Edit</button> <button class="action-btn btn-delete ms-1">Delete</button></td>
-                    </tr>
-                    <tr>
-                        <td><div class="user-name">Dr. Ramon Reyes</div><div class="user-role">Physician</div></td>
-                        <td><span class="status-badge status-active">Doctor</span></td>
-                        <td style="color:var(--text-muted);font-size:.8rem;">r.reyes@curasure.ph</td>
-                        <td><span class="status-badge status-active">Active</span></td>
-                        <td><button class="action-btn btn-edit">Edit</button> <button class="action-btn btn-delete ms-1">Delete</button></td>
-                    </tr>
-                    <tr>
-                        <td><div class="user-name">Dr. Ana Cruz</div><div class="user-role">Physician</div></td>
-                        <td><span class="status-badge status-active">Doctor</span></td>
-                        <td style="color:var(--text-muted);font-size:.8rem;">a.cruz@curasure.ph</td>
-                        <td><span class="status-badge status-active">Active</span></td>
-                        <td><button class="action-btn btn-edit">Edit</button> <button class="action-btn btn-delete ms-1">Delete</button></td>
-                    </tr>
-                    <tr>
-                        <td><div class="user-name">Nurse Patricia Lim</div><div class="user-role">Head Nurse</div></td>
-                        <td><span class="status-badge status-active">Staff</span></td>
-                        <td style="color:var(--text-muted);font-size:.8rem;">p.lim@curasure.ph</td>
-                        <td><span class="status-badge status-active">Active</span></td>
-                        <td><button class="action-btn btn-edit">Edit</button> <button class="action-btn btn-delete ms-1">Delete</button></td>
-                    </tr>
-                    <tr>
-                        <td><div class="user-name">Marco Villanueva</div><div class="user-role">Front Desk</div></td>
-                        <td><span class="status-badge status-active">Staff</span></td>
-                        <td style="color:var(--text-muted);font-size:.8rem;">m.villanueva@curasure.ph</td>
-                        <td><span class="status-badge status-active">Active</span></td>
-                        <td><button class="action-btn btn-edit">Edit</button> <button class="action-btn btn-delete ms-1">Delete</button></td>
-                    </tr>
-                    <tr>
-                        <td><div class="user-name">Carla Domingo</div><div class="user-role">Medical Records</div></td>
-                        <td><span class="status-badge status-disabled">Staff</span></td>
-                        <td style="color:var(--text-muted);font-size:.8rem;">c.domingo@curasure.ph</td>
-                        <td><span class="status-badge status-disabled">Inactive</span></td>
-                        <td><button class="action-btn btn-edit">Edit</button> <button class="action-btn btn-delete ms-1">Delete</button></td>
-                    </tr>
+                    <tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px 0;">No users found.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -329,14 +318,38 @@
                             <label class="form-label-sm">Username</label>
                             <input type="text" name="username" class="form-ctrl" placeholder="e.g. juandelacruz" required>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label-sm">Email</label>
+                            <input type="email" name="email" class="form-ctrl" placeholder="e.g. juan@curasure.ph" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-sm">Contact Number</label>
+                            <input type="text" name="contact_number" class="form-ctrl" placeholder="e.g. 09123456789" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-sm">Address</label>
+                            <input type="text" name="address" class="form-ctrl" placeholder="e.g. Davao City" required>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Role</label>
-                            <select name="role" class="form-ctrl" required>
+                            <select name="role" id="addRole" class="form-ctrl" required onchange="toggleDoctorFields('add')">
                                 <option value="">— Select Role —</option>
                                 <option value="admin">Admin</option>
                                 <option value="doctor">Doctor</option>
                                 <option value="staff">Staff</option>
                             </select>
+                        </div>
+                        <div class="col-md-6 add-doctor-fields" style="display:none;">
+                            <label class="form-label-sm">License Number</label>
+                            <input type="text" name="license_number" id="addLicenseNumber" class="form-ctrl" placeholder="e.g. LIC-2026-001">
+                        </div>
+                        <div class="col-md-6 add-doctor-fields" style="display:none;">
+                            <label class="form-label-sm">Specialization</label>
+                            <input type="text" name="specialization" id="addSpecialization" class="form-ctrl" placeholder="e.g. General Medicine">
+                        </div>
+                        <div class="col-md-6 add-doctor-fields" style="display:none;">
+                            <label class="form-label-sm">Assigned Room</label>
+                            <input type="text" name="assigned_room" id="addAssignedRoom" class="form-ctrl" placeholder="e.g. Room 1">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Password</label>
@@ -377,15 +390,38 @@
                             <label class="form-label-sm">Username</label>
                             <input type="text" name="username" id="editUsername" class="form-ctrl" required>
                         </div>
+                        <div class="col-12">
+                            <label class="form-label-sm">Email</label>
+                            <input type="email" name="email" id="editEmail" class="form-ctrl" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-sm">Contact Number</label>
+                            <input type="text" name="contact_number" id="editContactNumber" class="form-ctrl" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-sm">Address</label>
+                            <input type="text" name="address" id="editAddress" class="form-ctrl" required>
+                        </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Role</label>
-                            <select name="role" id="editRole" class="form-ctrl" required>
+                            <select name="role" id="editRole" class="form-ctrl" required onchange="toggleDoctorFields('edit')">
                                 <option value="admin">Admin</option>
                                 <option value="doctor">Doctor</option>
                                 <option value="staff">Staff</option>
                             </select>
                         </div>
-                        <div class="col-md-6"></div>
+                        <div class="col-md-6 edit-doctor-fields" style="display:none;">
+                            <label class="form-label-sm">License Number</label>
+                            <input type="text" name="license_number" id="editLicenseNumber" class="form-ctrl">
+                        </div>
+                        <div class="col-md-6 edit-doctor-fields" style="display:none;">
+                            <label class="form-label-sm">Specialization</label>
+                            <input type="text" name="specialization" id="editSpecialization" class="form-ctrl">
+                        </div>
+                        <div class="col-md-6 edit-doctor-fields" style="display:none;">
+                            <label class="form-label-sm">Assigned Room</label>
+                            <input type="text" name="assigned_room" id="editAssignedRoom" class="form-ctrl">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -397,15 +433,42 @@
     </div>
 </div>
 
+@include('admin.partials.add-patient-modal')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-function openEditModal(id, name, username, role) {
+function toggleDoctorFields(prefix) {
+    const roleEl = document.getElementById(prefix + 'Role');
+    const isDoctor = roleEl && roleEl.value === 'doctor';
+    const fieldClass = '.' + prefix + '-doctor-fields';
+    const fields = document.querySelectorAll(fieldClass);
+
+    fields.forEach((field) => {
+        field.style.display = isDoctor ? '' : 'none';
+        field.querySelectorAll('input').forEach((input) => {
+            input.required = isDoctor;
+            if (!isDoctor) input.value = '';
+        });
+    });
+}
+
+function openEditModal(id, name, username, email, contactNumber, address, specialization, licenseNumber, assignedRoom, role) {
     document.getElementById('editName').value = name;
     document.getElementById('editUsername').value = username;
+    document.getElementById('editEmail').value = email;
+    document.getElementById('editContactNumber').value = contactNumber;
+    document.getElementById('editAddress').value = address;
+    document.getElementById('editSpecialization').value = specialization;
+    document.getElementById('editLicenseNumber').value = licenseNumber;
+    document.getElementById('editAssignedRoom').value = assignedRoom;
     document.getElementById('editRole').value = role;
+    toggleDoctorFields('edit');
     document.getElementById('editUserForm').action = '/admin/administration/users/' + id;
     new bootstrap.Modal(document.getElementById('editUserModal')).show();
 }
+
+document.addEventListener('DOMContentLoaded', function () {
+    toggleDoctorFields('add');
+});
 </script>
 </body>
 </html>

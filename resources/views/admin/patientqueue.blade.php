@@ -90,6 +90,19 @@
         .view-only-chip { background: #fff4e5; color: #b07000; border: 1px solid #f0d9a0; border-radius: 20px; font-size: .65rem; font-weight: 700; letter-spacing: .06em; padding: 3px 10px; text-transform: uppercase; }
         .btn-ghost { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 9px 18px; font-size: .845rem; font-family: 'DM Sans', sans-serif; color: var(--text-muted); cursor: pointer; transition: all .15s; }
         .btn-ghost:hover { background: var(--page-bg); color: var(--text-primary); }
+        @media (prefers-reduced-motion: no-preference) {
+            @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
+            @keyframes softRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+            body { animation: pageFadeIn .35s ease-out; }
+            .stat-chip, .card-panel, .queue-table-wrap, .modal-content { animation: softRise .35s ease-out both; }
+            .btn, button, .sidebar-link, .act-btn, .filter-btn, .patient-name-btn, .topbar-icon {
+                transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+            }
+            .btn:hover, button:hover, .act-btn:hover, .filter-btn:hover, .topbar-icon:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 6px 16px rgba(27, 61, 47, 0.12);
+            }
+        }
     </style>
 </head>
 <body>
@@ -118,7 +131,7 @@
         </a>
     </nav>
     <div class="sidebar-bottom">
-        <button class="btn-new-appt"><i class="bi bi-plus-lg me-1"></i> New Appointment</button>
+        <button class="btn-new-appt" data-bs-toggle="modal" data-bs-target="#addPatientModal"><i class="bi bi-plus-lg me-1"></i> Add Patient</button>
         <div class="sidebar-footer mt-3">
             <a href="#" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
             <form action="{{ route('logout') }}" method="POST">
@@ -233,10 +246,10 @@
                 <tbody id="queueBody">
                     @forelse($queueEntries as $entry)
                     <tr data-status="{{ $entry->status }}">
-                        <td><span class="q-id">{{ $entry->queue_number }}</span></td>
+                        <td><span class="q-id">{{ $entry->display_queue_number }}</span></td>
                         <td>
                             <button class="patient-name-btn" onclick="openViewModal({
-                                id: '{{ $entry->queue_number }}',
+                                id: '{{ $entry->display_queue_number }}',
                                 name: '{{ addslashes($entry->patient->name ?? '—') }}',
                                 time: '{{ $entry->queued_at ? \Carbon\Carbon::parse($entry->queued_at)->format('h:i A') : '—' }}',
                                 age: '{{ $entry->patient->age ?? '—' }}',
@@ -384,6 +397,7 @@
     </div>
 </div>
 
+@include('admin.partials.add-patient-modal')
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function openEditQueueModal(id, status, room, symptoms) {

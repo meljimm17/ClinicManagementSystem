@@ -7,6 +7,7 @@ use App\Models\Doctor;
 use App\Models\PatientQueue;
 use App\Models\MedicalRecord;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class DoctorController extends Controller
 {
@@ -17,9 +18,15 @@ class DoctorController extends Controller
     $doctor     = $user->doctor;
     $doctorId   = $doctor?->id;
 
-    $queue = PatientQueue::with('patient')
+    $queue = PatientQueue::with(['patient', 'priority'])
         ->whereDate('created_at', today())
         ->whereIn('status', ['waiting', 'diagnosing'])
+        ->orderByDesc(
+            DB::table('patient_queue_priorities')
+                ->selectRaw('1')
+                ->whereColumn('patient_queue_priorities.patient_queue_id', 'patient_queue.id')
+                ->limit(1)
+        )
         ->orderBy('queued_at', 'asc')
         ->orderBy('id', 'asc')
         ->get();
@@ -66,9 +73,15 @@ class DoctorController extends Controller
         $doctorRoom = $doctor?->assigned_room ?? null;
 
         // Only show waiting/diagnosing — done patients go to medical records
-        $queue = PatientQueue::with('patient')
+        $queue = PatientQueue::with(['patient', 'priority'])
             ->whereDate('created_at', today())
             ->whereIn('status', ['waiting', 'diagnosing'])
+            ->orderByDesc(
+                DB::table('patient_queue_priorities')
+                    ->selectRaw('1')
+                    ->whereColumn('patient_queue_priorities.patient_queue_id', 'patient_queue.id')
+                    ->limit(1)
+            )
             ->orderBy('queued_at', 'asc')
             ->orderBy('id', 'asc')
             ->get();
@@ -120,7 +133,7 @@ class DoctorController extends Controller
         ]);
 
         return redirect()->route('doctor.queue')
-            ->with('success', 'Patient ' . $patientQueue->queue_number . ' marked as done.');
+            ->with('success', 'Patient ' . $patientQueue->display_queue_number . ' marked as done.');
     }
 
     // Save the medical record and mark queue as done
