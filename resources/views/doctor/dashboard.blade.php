@@ -431,7 +431,7 @@ body {
                     <div class="notif-item">
                         <span class="notif-dot"></span>
                         <div style="flex:1;">
-                            <div style="font-weight:700;">{{ $w->patient->name }}</div>
+                            <div style="font-weight:700;">{{ $w->patient_name ?? $w->patient?->name ?? 'Unknown Patient' }}</div>
                             <div style="color:var(--text-muted); font-size:.72rem;">{{ $w->display_queue_number }} · {{ $w->created_at->format('g:i A') }} @if($w->priority) · PRIORITY ({{ strtoupper($w->priority->priority_type) }}) @endif</div>
                         </div>
                         <a href="{{ route('doctor.queue') }}?call={{ $w->id }}"
@@ -504,7 +504,7 @@ body {
                                 @forelse($queue->whereIn('status', ['waiting', 'diagnosing']) as $entry)
                                 <tr>
                                     <td><strong>{{ $entry->display_queue_number }}</strong></td>
-                                    <td>{{ $entry->patient->name }}</td>
+                                    <td>{{ $entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient' }}</td>
                                     <td>
                                         @if($entry->status === 'diagnosing')
                                             <span class="badge-diagnosing">Diagnosing</span>
@@ -561,7 +561,7 @@ body {
                                     </div>
                                     <div class="activity-info">
                                         <div class="title">Session Completed</div>
-                                        <div class="subtitle">{{ $activity->display_queue_number }} · {{ $activity->patient->name }}</div>
+                                        <div class="subtitle">{{ $activity->display_queue_number }} · {{ $activity->patient_name ?? $activity->patient?->name ?? 'Unknown Patient' }}</div>
                                         <div class="time">{{ $activity->completed_at ? \Carbon\Carbon::parse($activity->completed_at)->format('g:i A') : '' }}</div>
                                     </div>
                                 @else
@@ -570,7 +570,7 @@ body {
                                     </div>
                                     <div class="activity-info">
                                         <div class="title">Patient Called</div>
-                                        <div class="subtitle">{{ $activity->display_queue_number }} · {{ $activity->patient->name }}</div>
+                                        <div class="subtitle">{{ $activity->display_queue_number }} · {{ $activity->patient_name ?? $activity->patient?->name ?? 'Unknown Patient' }}</div>
                                         <div class="time">{{ $activity->called_at ? \Carbon\Carbon::parse($activity->called_at)->format('g:i A') : $activity->created_at->format('g:i A') }}</div>
                                     </div>
                                 @endif

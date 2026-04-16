@@ -151,18 +151,37 @@ class DoctorController extends Controller
         return back()->with('error', 'Critical Error: No doctor profile found for your account.');
     }
 
+    $queue = $request->queue_id ? PatientQueue::with('patient')->find($request->queue_id) : null;
+
     // 2. Save the record with automatic fields
-    MedicalRecord::create([
+    $payload = [
         'queue_id'          => $request->queue_id,
         'doctor_id'         => $doctor->id,
-        'symptoms'          => $request->symptoms ?? PatientQueue::find($request->queue_id)?->symptoms,
+        'patient_id'        => $queue?->patient_id,
+        'patient_name'      => $queue?->patient_name ?? $queue?->patient?->name ?? 'Unknown Patient',
+        'symptoms'          => $request->symptoms ?? $queue?->symptoms,
         'diagnosis'         => $request->diagnosis,
         'prescription'      => $request->prescription,
         'notes'             => $request->notes,
         'record_status'     => $request->record_status ?? 'completed',
         'consultation_date' => now()->format('Y-m-d'),
         'consultation_time' => now()->format('H:i:s'),
-    ]);
+    ];
+    MedicalRecord::updateOrCreate(
+        ['queue_id' => $payload['queue_id']],
+        [
+            'patient_id'        => $payload['patient_id'],
+            'patient_name'      => $payload['patient_name'],
+            'doctor_id'         => $payload['doctor_id'],
+            'symptoms'          => $payload['symptoms'],
+            'diagnosis'         => $payload['diagnosis'],
+            'prescription'      => $payload['prescription'],
+            'notes'             => $payload['notes'],
+            'record_status'     => $payload['record_status'],
+            'consultation_date' => $payload['consultation_date'],
+            'consultation_time' => $payload['consultation_time'],
+        ]
+    );
 
     // 3. Close the queue entry
     if ($request->queue_id) {

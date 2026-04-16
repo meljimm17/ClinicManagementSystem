@@ -96,24 +96,10 @@ class PatientController extends Controller
             'known_allergies', 'existing_conditions', 'current_medications',
         ]);
 
-        // Reuse existing patient when staff selected from Returning Patient search.
-        if ($request->filled('returning_patient_id')) {
-            $patient = Patient::findOrFail($request->returning_patient_id);
-            $patient->update($patientData);
-        } else {
-            // Prevent accidental duplicates by matching a strong patient identity.
-            $existingPatient = Patient::where('name', $request->name)
-                ->whereDate('date_of_birth', $request->date_of_birth)
-                ->where('contact_number', $request->contact_number)
-                ->first();
-
-            if ($existingPatient) {
-                $patient = $existingPatient;
-                $patient->update($patientData);
-            } else {
-                $patient = Patient::create($patientData);
-            }
-        }
+        // Always create a new patient row for each registration,
+        // including returning patients, so every visit is recorded
+        // as a separate patient database entry.
+        $patient = Patient::create($patientData);
 
         // Retry up to 5 times in case of a concurrent duplicate queue number.
         // Each attempt re-reads existing queue numbers for today (including
@@ -149,6 +135,7 @@ class PatientController extends Controller
                         'queue_number'  => $queueNumber,
                         'queue_date'    => $today,
                         'patient_id'    => $patient->id,
+                        'patient_name'  => $patient->name,
                         'registered_by' => auth()->id(),
                         'symptoms'      => $request->primary_symptoms,
                         'status'        => 'waiting',

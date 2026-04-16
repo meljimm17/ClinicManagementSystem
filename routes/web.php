@@ -72,6 +72,7 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('patients')->name('patients.')->group(function () {
         Route::get('/search', [PatientController::class, 'search'])->name('search');
         Route::get('/{id}', [PatientController::class, 'show'])->name('show');
+        Route::post('/patient-queue', [PatientQueueController::class, 'store']);
     });
 
     // ── Universal Dashboard Redirect ──

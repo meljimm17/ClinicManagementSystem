@@ -21,13 +21,13 @@ class MedicalRecordController extends Controller
                     $query->where('doctor_id', $doctorId)
                           ->orWhereNull('doctor_id');
                 })
-                ->with(['doctor.user', 'queue.patient'])
+                ->with(['doctor.user', 'queue.patient', 'patient'])  // FIX: eager-load direct patient relationship
                 ->orderByDesc('consultation_date')
                 ->orderByDesc('consultation_time')
                 ->orderByDesc('id')
                 ->get();
         } else {
-            $records = MedicalRecord::with(['doctor.user', 'queue.patient'])
+            $records = MedicalRecord::with(['doctor.user', 'queue.patient', 'patient'])  // FIX: eager-load direct patient relationship
                 ->orderByDesc('consultation_date')
                 ->orderByDesc('consultation_time')
                 ->orderByDesc('id')
@@ -35,16 +35,26 @@ class MedicalRecordController extends Controller
         }
 
         $mappedRecords = $records->map(function ($r) {
-            $patient = $r->queue?->patient;
+            // FIX: Prefer the direct patient relationship, fall back to queue->patient,
+            // both of which may be null for old/deleted records.
+            // However, ALWAYS use the stored snapshot (patient_name) as the primary source
+            $patient = $r->patient ?? $r->queue?->patient;
+
             $duration = null;
             if ($r->queue?->called_at && $r->queue?->completed_at) {
                 $duration = \Carbon\Carbon::parse($r->queue->called_at)
                     ->diffInMinutes(\Carbon\Carbon::parse($r->queue->completed_at));
             }
 
+            $resolvedName = $r->patient_name ?? $patient?->name ?? 'Unknown Patient';
+
             return [
                 'id'           => $r->id,
-                'patient_name' => $patient?->name,
+                // FIX: CRITICAL - Use the stored patient_name snapshot FIRST
+                // This snapshot was captured when the medical record was created
+                // and remains accurate even if the queue entry is later deleted.
+                // Only fall back to relationship fetching if snapshot is missing (legacy records).
+                'patient_name' => $resolvedName,
                 'age'          => $patient?->age,
                 'gender'       => $patient?->gender,
                 'civil_status' => $patient?->civil_status,
@@ -89,10 +99,11 @@ class MedicalRecordController extends Controller
             abort(403, 'You are not authorized to print this prescription record.');
         }
 
-        $medicalRecord->load(['doctor.user', 'queue.patient']);
+        // FIX: Load direct patient relationship for PDF generation
+        $medicalRecord->load(['doctor.user', 'queue.patient', 'patient']);
 
         $data = [
-            'record' => $medicalRecord,
+            'record'      => $medicalRecord,
             'generatedAt' => now(),
         ];
 
@@ -103,7 +114,6 @@ class MedicalRecordController extends Controller
 
     /**
      * Admin-specific index — uses the shared index() logic above.
-     * Kept as an alias so both routes work.
      */
     public function adminIndex()
     {
@@ -124,10 +134,18 @@ class MedicalRecordController extends Controller
             'consultation_time' => 'required',
         ]);
 
+        // FIX: Load the queue with its patient BEFORE creating the record,
+        // so the name snapshot is captured even if the queue is later deleted.
+        $queue = PatientQueue::with('patient')->find($request->queue_id);
+
         $record = MedicalRecord::create([
             'queue_id'          => $request->queue_id,
+            // FIX: Capture patient_id from the queue
+            'patient_id'        => $queue?->patient_id,
+            // FIX: Capture patient_name snapshot from the queue's patient
+            'patient_name'      => $queue?->patient_name ?? $queue?->patient?->name ?? 'Unknown Patient',
             'doctor_id'         => $request->doctor_id ?? Auth::user()->doctor?->id,
-            'symptoms'          => $request->symptoms ?? PatientQueue::find($request->queue_id)?->symptoms,
+            'symptoms'          => $request->symptoms ?? $queue?->symptoms,
             'diagnosis'         => $request->diagnosis,
             'prescription'      => $request->prescription,
             'notes'             => $request->notes,

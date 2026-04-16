@@ -292,7 +292,7 @@ body {
                     <div class="priority-badge">Priority · {{ strtoupper($entry->priority->priority_type) }}</div>
                 @endif
                 <div class="queue-card-top">
-                    <div class="queue-card-name">{{ $entry->patient->name }}</div>
+                    <div class="queue-card-name">{{ $entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient' }}</div>
                     <div class="queue-card-time">{{ $entry->created_at->format('g:i A') }}</div>
                 </div>
                 <div class="queue-card-meta">
@@ -468,7 +468,7 @@ body {
             id: {{ $entry->id }},
             patient_id: {{ $entry->patient_id }},
             queue_number: "{{ $entry->display_queue_number }}",
-            name: "{{ addslashes($entry->patient->name) }}",
+            name: "{{ addslashes($entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient') }}",
             age: "{{ $entry->patient->age ?? '—' }}",
             blood_type: "{{ $entry->patient->blood_type ?? '—' }}",
             height: "{{ $entry->patient->height ?? '—' }}",

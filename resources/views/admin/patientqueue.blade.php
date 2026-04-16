@@ -250,7 +250,7 @@
                         <td>
                             <button class="patient-name-btn" onclick="openViewModal({
                                 id: '{{ $entry->display_queue_number }}',
-                                name: '{{ addslashes($entry->patient->name ?? '—') }}',
+                                name: '{{ addslashes($entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient') }}',
                                 time: '{{ $entry->queued_at ? \Carbon\Carbon::parse($entry->queued_at)->format('h:i A') : '—' }}',
                                 age: '{{ $entry->patient->age ?? '—' }}',
                                 gender: '{{ $entry->patient->gender ?? '—' }}',
@@ -262,7 +262,7 @@
                                 symptoms: '{{ addslashes($entry->symptoms ?? '—') }}',
                                 status: '{{ ucfirst($entry->status) }}',
                                 room: '{{ $entry->assigned_room ?? 'Waiting Area' }}'
-                            })">{{ $entry->patient->name ?? '—' }}</button>
+                            })">{{ $entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient' }}</button>
                             <div style="font-size:.72rem; color:var(--text-muted);">
                                 {{ $entry->patient->gender ?? '' }}{{ $entry->patient->age ? ' · '.$entry->patient->age.' yrs' : '' }}
                             </div>
@@ -293,7 +293,7 @@
                             </button>
                             <form action="{{ route('admin.queue.destroy', $entry->id) }}" method="POST"
                                   style="display:inline;"
-                                  onsubmit="return confirm('Remove {{ $entry->patient->name ?? 'this patient' }} from queue?')">
+                                  onsubmit="return confirm('Remove {{ $entry->patient_name ?? $entry->patient?->name ?? 'this patient' }} from queue?')">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="act-btn remove ms-1">Remove</button>
                             </form>

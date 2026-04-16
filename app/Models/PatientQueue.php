@@ -15,6 +15,7 @@ class PatientQueue extends Model
         'queue_number',
         'queue_date',
         'patient_id',
+        'patient_name', // ✅ ADDED - allows snapshot name to be saved
         'registered_by',
         'symptoms',
         'status',

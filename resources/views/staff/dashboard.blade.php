@@ -320,7 +320,7 @@ body {
                 <a href="{{ route('staff.queue') }}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text-primary);">
                     <span style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;"></span>
                     <div style="flex:1;">
-                        <div style="font-weight:700;font-size:.8rem;">{{ $d->patient->name }}</div>
+                        <div style="font-weight:700;font-size:.8rem;">{{ $d->patient_name ?? $d->patient?->name ?? 'Unknown Patient' }}</div>
                         <div style="font-size:.7rem;color:var(--text-muted);">{{ $d->display_queue_number }} · Being diagnosed {{ $d->called_at ? '· '.\Carbon\Carbon::parse($d->called_at)->format('g:i A') : '' }}</div>
                     </div>
                     <span style="font-size:.7rem;font-weight:700;color:var(--primary);white-space:nowrap;">View →</span>
@@ -587,9 +587,9 @@ body {
                         @forelse($recentQueue as $entry)
                         <div class="patient-entry-item">
                             <div class="d-flex align-items-center gap-3">
-                                <div class="entry-avatar">{{ strtoupper(substr($entry->patient->name, 0, 2)) }}</div>
+                                <div class="entry-avatar">{{ strtoupper(substr($entry->patient_name ?? $entry->patient?->name ?? 'UN', 0, 2)) }}</div>
                                 <div>
-                                    <div class="entry-name">{{ $entry->patient->name }}</div>
+                                    <div class="entry-name">{{ $entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient' }}</div>
                                     <div class="entry-meta">{{ $entry->display_queue_number }} • {{ \Carbon\Carbon::parse($entry->queued_at)->format('h:i A') }}</div>
                                 </div>
                             </div>

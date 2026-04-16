@@ -556,7 +556,7 @@ body {
                     <tr data-status="{{ $entry->status }}">
                         <td><div class="queue-id">{{ $entry->display_queue_number }}</div></td>
                         <td>
-                            <div class="patient-name">{{ $entry->patient->name }}</div>
+                            <div class="patient-name">{{ $entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient' }}</div>
                             <div class="patient-time">{{ $entry->created_at->format('g:i A') }}</div>
                         </td>
                         <td>
@@ -587,7 +587,7 @@ body {
                             <form method="POST"
                                   action="{{ route('staff.queue.destroy', $entry->id) }}"
                                   style="display:inline;"
-                                  onsubmit="return confirm('Remove {{ $entry->patient->name }} from queue?')">
+                                  onsubmit="return confirm('Remove {{ $entry->patient_name ?? $entry->patient?->name ?? 'this patient' }} from queue?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn-remove">Remove</button>
