@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Doctor;
 use App\Models\PatientQueue;
 use App\Models\MedicalRecord;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -175,6 +176,37 @@ class DoctorController extends Controller
     return redirect()->route('doctor.queue')
         ->with('success', 'Consultation saved for ' . $doctor->assigned_room);
 }
+
+    // Generate a printable PDF prescription from the current diagnosis form (without saving)
+    public function printPrescription(Request $request)
+    {
+        $request->validate([
+            'queue_id'     => 'required|exists:patient_queue,id',
+            'diagnosis'    => 'nullable|string',
+            'prescription' => 'nullable|string',
+            'notes'        => 'nullable|string',
+            'symptoms'     => 'nullable|string',
+        ]);
+
+        $doctor = Auth::user()->doctor;
+        $queue = PatientQueue::with('patient')->findOrFail($request->queue_id);
+
+        $data = [
+            'doctorName'       => $doctor?->name ?? Auth::user()->name,
+            'patientName'      => $queue->patient?->name ?? 'N/A',
+            'consultationDate' => now()->format('M d, Y'),
+            'consultationTime' => now()->format('h:i A'),
+            'symptoms'         => $request->symptoms ?? $queue->symptoms,
+            'diagnosis'        => $request->diagnosis,
+            'prescription'     => $request->prescription,
+            'notes'            => $request->notes,
+            'generatedAt'      => now(),
+        ];
+
+        $pdf = Pdf::loadView('doctor.prescription-draft-pdf', $data)->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Prescription-Draft-' . $queue->id . '.pdf');
+    }
 
     // Manage doctors list (admin use)
     public function index()

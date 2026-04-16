@@ -16,6 +16,9 @@ Route::middleware('guest')->group(function () {
     Route::get('/', function () { return redirect()->route('login'); });
 });
 
+// Public waiting area queue display (for clinic screens)
+Route::get('/clinic/queue', [PatientQueueController::class, 'waitingArea'])->name('clinic.queue');
+
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
 // ── Protected Routes ──
@@ -49,7 +52,9 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/dashboard', [DoctorController::class, 'dashboard'])->name('dashboard');
         Route::get('/patientqueue', [DoctorController::class, 'queue'])->name('queue');
         Route::get('/medical-records', [MedicalRecordController::class, 'index'])->name('medical-records');
+        Route::get('/medical-records/{medicalRecord}/print', [MedicalRecordController::class, 'printDoctorRecord'])->name('medical-records.print');
         Route::post('/record', [DoctorController::class, 'storeRecord'])->name('record.store');
+        Route::post('/record/print-prescription', [DoctorController::class, 'printPrescription'])->name('record.print');
         Route::patch('/patientqueue/{patientQueue}/call', [DoctorController::class, 'callPatient'])->name('queue.call');
         Route::patch('/patientqueue/{patientQueue}/complete', [DoctorController::class, 'completePatient'])->name('queue.complete');
     });

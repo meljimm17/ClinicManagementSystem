@@ -104,7 +104,6 @@
 </head>
 <body>
 
-<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
 <aside class="sidebar">
     <div class="sidebar-brand"><div class="brand-name">CuraSure</div></div>
     <nav class="sidebar-nav">
@@ -141,7 +140,6 @@
     </div>
 </aside>
 
-<!-- ═══════════════════ MAIN ═══════════════════ -->
 <div class="main-wrap">
     <header class="topbar">
         <div class="topbar-left">
@@ -157,8 +155,11 @@
 
     <main class="content">
 
-        <!-- Stat Chips — real counts -->
         @php
+            // Sort records and mappedRecords by ID descending
+            $records = $records->sortByDesc('id');
+            $mappedRecords = collect($mappedRecords)->sortByDesc('id')->values()->all();
+
             $totalCompleted  = $records->where('record_status', 'completed')->count();
             $todayCompleted  = $records->where('consultation_date', today()->toDateString())->count();
             $durationValues  = $records
@@ -196,7 +197,6 @@
             </div>
         </div>
 
-        <!-- Medical Record Table -->
         <div class="card-panel">
             <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
                 <div>
@@ -229,11 +229,13 @@
                 <tbody id="medicalRecordBody">
                     @forelse($mappedRecords as $r)
                     @php
-                        $recDate  = \Carbon\Carbon::parse($records[$loop->index]->consultation_date);
+                        // Correctly align original record after sorting
+                        $originalRecord = $records->where('id', $r['id'])->first();
+                        $recDate  = \Carbon\Carbon::parse($originalRecord->consultation_date);
                         $dateKey  = $recDate->isToday() ? 'today' : ($recDate->isYesterday() ? 'yesterday' : 'older');
                     @endphp
                     <tr data-date="{{ $dateKey }}">
-                        <td><span class="q-id">{{ $records[$loop->index]->queue_id ?? '—' }}</span></td>
+                        <td><span class="q-id">{{ $originalRecord->queue_id ?? '—' }}</span></td>
                         <td>
                             <button class="patient-name-btn" onclick="openRecord({{ $r['id'] }})">{{ $r['patient_name'] }}</button>
                             <div style="font-size:.72rem; color:var(--text-muted);">
@@ -290,7 +292,6 @@
     </footer>
 </div>
 
-<!-- VIEW MODAL -->
 <div class="modal fade" id="recordModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">

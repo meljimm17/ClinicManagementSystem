@@ -208,24 +208,11 @@
         .dash-footer { font-size: .7rem; color: var(--text-muted); border-top: 1px solid var(--border); padding: 14px 32px; display: flex; justify-content: space-between; }
         .footer-links a { color: var(--text-muted); text-decoration: none; margin-left: 18px; }
         .footer-links a:hover { color: var(--accent); }
-        @media (prefers-reduced-motion: no-preference) {
-            @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
-            @keyframes softRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-            body { animation: pageFadeIn .35s ease-out; }
-            .stat-chip, .card-panel, .modal-content { animation: softRise .35s ease-out both; }
-            .btn, button, .sidebar-link, .act-btn, .filter-btn, .patient-name-btn, .topbar-icon, .modal-tab-btn {
-                transition: transform .16s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
-            }
-            .btn:hover, button:hover, .act-btn:hover, .filter-btn:hover, .topbar-icon:hover, .modal-tab-btn:hover {
-                transform: translateY(-1px);
-                box-shadow: 0 6px 16px rgba(27, 61, 47, 0.12);
-            }
-        }
     </style>
 </head>
 <body>
 
-{{-- ── Sidebar ── --}}
+{{-- Sidebar --}}
 <aside class="sidebar">
     <div class="sidebar-brand">
         <div class="brand-logo"><i class="bi bi-shield-plus"></i></div>
@@ -252,7 +239,7 @@
     </div>
 </aside>
 
-{{-- ── Main ── --}}
+{{-- Main Content --}}
 <div class="main-wrap">
     <header class="topbar">
         <div class="topbar-left">
@@ -268,17 +255,25 @@
     <main class="content">
 
         @php
+            // SORTING RECORDS BY DESCENDING ID
+            $records = $records->sortByDesc('id');
+
             $totalRecords = $records->count();
             $todayRecords = $records->filter(fn($r) => \Carbon\Carbon::parse($r->consultation_date)->isToday())->count();
+            
             $avgMinutes   = null;
-            $withTimes    = \App\Models\PatientQueue::whereNotNull('called_at')->whereNotNull('completed_at')->where('status', 'done')->get();
+            $withTimes    = \App\Models\PatientQueue::whereNotNull('called_at')
+                            ->whereNotNull('completed_at')
+                            ->where('status', 'done')
+                            ->get();
+
             if ($withTimes->count() > 0) {
                 $total      = $withTimes->sum(fn($q) => \Carbon\Carbon::parse($q->called_at)->diffInMinutes(\Carbon\Carbon::parse($q->completed_at)));
                 $avgMinutes = round($total / $withTimes->count());
             }
         @endphp
 
-        {{-- Stat Chips --}}
+        {{-- Statistics --}}
         <div class="row g-3 mb-4">
             <div class="col-md-4">
                 <div class="stat-chip">
@@ -309,7 +304,7 @@
             </div>
         </div>
 
-        {{-- Records Table --}}
+        {{-- Table Panel --}}
         <div class="card-panel">
             <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
                 <div>
@@ -338,12 +333,16 @@
                 </thead>
                 <tbody id="medicalRecordBody">
                     @forelse($records as $r)
-                    @php $isToday = \Carbon\Carbon::parse($r->consultation_date)->isToday(); @endphp
+                    @php 
+                        $isToday = \Carbon\Carbon::parse($r->consultation_date)->isToday(); 
+                        // FIX: Priority is given to the stored patient_name column
+                        $display_name = $r->patient_name ?? ($r->queue?->patient?->name ?? 'Unknown Patient');
+                    @endphp
                     <tr data-date="{{ $isToday ? 'today' : 'older' }}">
                         <td><span class="q-id">#{{ $r->id }}</span></td>
                         <td>
                             <button class="patient-name-btn" onclick="openRecord({{ $r->id }})">
-                                {{ $r->queue?->patient?->name ?? 'Unknown Patient' }}
+                                {{ $display_name }}
                             </button>
                             <div style="font-size:.72rem; color:var(--text-muted);">
                                 {{ $r->queue?->patient?->gender ?? '' }}{{ ($r->queue?->patient?->age ?? null) ? ' · ' . $r->queue?->patient?->age . ' yrs' : '' }}
@@ -359,6 +358,9 @@
                         <td style="text-align:right;">
                             <button class="act-btn" title="View Record" onclick="openRecord({{ $r->id }})">
                                 <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="act-btn" title="Print Prescription" onclick="printRecord('{{ route('doctor.medical-records.print', $r) }}')">
+                                <i class="bi bi-printer"></i>
                             </button>
                         </td>
                     </tr>
@@ -385,12 +387,11 @@
     </footer>
 </div>
 
-{{-- ── View Modal ── --}}
+{{-- View Modal --}}
 <div class="modal fade" id="recordModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
 
-            {{-- Header --}}
             <div class="modal-header">
                 <div class="d-flex align-items-center gap-3">
                     <div class="patient-avatar-lg" id="viewAvatar">—</div>
@@ -407,7 +408,6 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
-            {{-- Tab Buttons --}}
             <div class="modal-tabs">
                 <button class="modal-tab-btn active" id="tab-info" onclick="switchTab('info')">
                     <i class="bi bi-person-vcard"></i> Patient Info
@@ -421,8 +421,6 @@
             </div>
 
             <div class="modal-body">
-
-                {{-- Tab 1: Patient Info --}}
                 <div id="panel-info">
                     <div class="modal-section-title">Personal Details</div>
                     <div class="row g-3 mb-3">
@@ -447,101 +445,41 @@
                             <div class="info-value" id="mAddress">—</div>
                         </div>
                     </div>
-
-                    <div class="modal-section-title">Vitals</div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-4">
-                            <div class="info-label">Blood Type</div>
-                            <div class="info-value" id="mBlood">—</div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="info-label">Height</div>
-                            <div class="info-value" id="mHeight">—</div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="info-label">Weight</div>
-                            <div class="info-value" id="mWeight">—</div>
-                        </div>
                     </div>
 
-                    <div class="modal-section-title">Administrative</div>
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div class="info-label">PhilHealth No.</div>
-                            <div class="info-value" id="mPhilhealth">—</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-label">HMO / Insurance</div>
-                            <div class="info-value" id="mHmo">—</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-label">Emergency Contact Name</div>
-                            <div class="info-value" id="mEmgName">—</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-label">Emergency Contact Number</div>
-                            <div class="info-value" id="mEmgContact">—</div>
-                        </div>
-                    </div>
-                </div>
-
-                {{-- Tab 2: Medical History --}}
                 <div id="panel-medical" style="display:none;">
                     <div class="modal-section-title">Medical Background</div>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="info-label">Known Allergies</div>
-                            <div class="info-value" id="mAllergies" style="white-space:pre-wrap; line-height:1.6;">—</div>
+                            <div class="info-value" id="mAllergies" style="white-space:pre-wrap;">—</div>
                         </div>
                         <div class="col-md-12">
                             <div class="info-label">Existing Conditions</div>
-                            <div class="info-value" id="mConditions" style="white-space:pre-wrap; line-height:1.6;">—</div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="info-label">Current Medications</div>
-                            <div class="info-value" id="mMedications" style="white-space:pre-wrap; line-height:1.6;">—</div>
+                            <div class="info-value" id="mConditions" style="white-space:pre-wrap;">—</div>
                         </div>
                     </div>
                 </div>
 
-                {{-- Tab 3: Consultation --}}
                 <div id="panel-consult" style="display:none;">
-                    <div class="modal-section-title">Visit Details</div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-md-6">
-                            <div class="info-label">Attending Physician</div>
-                            <div class="info-value" id="mDoctor">—</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="info-label">Assigned Room</div>
-                            <div class="info-value" id="mRoom">—</div>
-                        </div>
-                    </div>
-
                     <div class="modal-section-title">Clinical Notes</div>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="info-label">Primary Symptoms</div>
-                            <div class="info-value" id="mSymptoms" style="white-space:pre-wrap; line-height:1.6;">—</div>
+                            <div class="info-value" id="mSymptoms" style="white-space:pre-wrap;">—</div>
                         </div>
                         <div class="col-md-12">
                             <div class="info-label">Final Diagnosis</div>
                             <div class="info-value" id="mDiagnosis" style="font-weight:700; color:var(--primary);">—</div>
                         </div>
-                        <div class="col-md-12">
-                            <div class="info-label">Prescription / Treatment Plan</div>
-                            <div class="info-value" id="mPrescription" style="white-space:pre-wrap; line-height:1.6;">—</div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="info-label">Additional Notes</div>
-                            <div class="info-value" id="mNotes" style="white-space:pre-wrap; line-height:1.6;">—</div>
-                        </div>
                     </div>
                 </div>
-
             </div>
 
             <div class="modal-footer">
+                <button type="button" class="btn-ghost" id="modalPrintBtn" onclick="printCurrentRecord()">
+                    <i class="bi bi-printer"></i> Print
+                </button>
                 <button type="button" class="btn-ghost" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
@@ -550,59 +488,56 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const allRecords = @json($mappedRecords);
+    // FIX: Map records in JS to use the new patient_name column
+    const allRecords = @json($records->values()->map(function($r) {
+        return array_merge($r->toArray(), [
+            'display_name' => $r->patient_name ?? ($r->queue?->patient?->name ?? 'Unknown Patient')
+        ]);
+    })); 
+    
+    let activeRecordPrintUrl = null;
 
     function openRecord(id) {
         const r = allRecords.find(rec => rec.id == id);
         if (!r) return;
 
-        // Header
-        document.getElementById('viewAvatar').textContent  = r.patient_name ? r.patient_name.charAt(0).toUpperCase() : '?';
-        document.getElementById('mName').textContent       = r.patient_name || '—';
+        // FIX: Use display_name instead of path through relationships
+        document.getElementById('viewAvatar').textContent  = r.display_name ? r.display_name.charAt(0).toUpperCase() : '?';
+        document.getElementById('mName').textContent       = r.display_name || '—';
         document.getElementById('mRecordId').textContent   = '#' + r.id;
-        document.getElementById('mDate').textContent       = r.date || '—';
-
-        // Tab 1 — Patient Info
-        document.getElementById('mAge').textContent        = r.age ? r.age + ' yrs' : '—';
-        document.getElementById('mGender').textContent     = r.gender || '—';
-        document.getElementById('mCivil').textContent      = r.civil_status || '—';
-        document.getElementById('mContact').textContent    = r.contact || '—';
-        document.getElementById('mAddress').textContent    = r.address || '—';
-        document.getElementById('mBlood').textContent      = r.blood_type || '—';
-        document.getElementById('mHeight').textContent     = r.height ? r.height + ' cm' : '—';
-        document.getElementById('mWeight').textContent     = r.weight ? r.weight + ' kg' : '—';
-        document.getElementById('mPhilhealth').textContent = r.philhealth || '—';
-        document.getElementById('mHmo').textContent        = r.hmo || '—';
-        document.getElementById('mEmgName').textContent    = r.emg_name || '—';
-        document.getElementById('mEmgContact').textContent = r.emg_contact || '—';
-
-        // Tab 2 — Medical History
-        document.getElementById('mAllergies').textContent  = r.allergies || 'None reported';
-        document.getElementById('mConditions').textContent = r.conditions || 'None reported';
-        document.getElementById('mMedications').textContent = r.medications || 'None reported';
-
-        // Tab 3 — Consultation
-        document.getElementById('mDoctor').textContent     = r.doctor ? 'Dr. ' + r.doctor : '—';
-        document.getElementById('mRoom').textContent       = r.room ? 'Room ' + r.room : '—';
-        document.getElementById('mSymptoms').textContent   = r.symptoms || 'None reported';
+        document.getElementById('mDate').textContent       = r.consultation_date || '—';
+        document.getElementById('mAge').textContent        = r.queue?.patient?.age ? r.queue.patient.age + ' yrs' : '—';
+        document.getElementById('mGender').textContent     = r.queue?.patient?.gender || '—';
+        document.getElementById('mAllergies').textContent  = r.queue?.patient?.known_allergies || 'None';
         document.getElementById('mDiagnosis').textContent  = r.diagnosis || 'No diagnosis recorded';
-        document.getElementById('mPrescription').textContent = r.prescription || 'None';
-        document.getElementById('mNotes').textContent      = r.notes || 'None';
+        
+        activeRecordPrintUrl = "{{ route('doctor.medical-records.print', ':id') }}".replace(':id', r.id);
 
         switchTab('info');
         new bootstrap.Modal(document.getElementById('recordModal')).show();
     }
 
+    function printRecord(url) {
+        if (!url) return;
+        window.open(url, '_blank');
+    }
+
+    function printCurrentRecord() {
+        printRecord(activeRecordPrintUrl);
+    }
+
     function switchTab(tab) {
         ['info', 'medical', 'consult'].forEach(t => {
-            document.getElementById('panel-' + t).style.display = (t === tab) ? '' : 'none';
-            document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+            const panel = document.getElementById('panel-' + t);
+            const btn = document.getElementById('tab-' + t);
+            if(panel) panel.style.display = (t === tab) ? '' : 'none';
+            if(btn) btn.classList.toggle('active', t === tab);
         });
     }
 
     function filterTable() {
         const q = document.getElementById('searchInput').value.toLowerCase();
-        document.querySelectorAll('#medicalRecordBody tr[data-date]').forEach(row => {
+        document.querySelectorAll('#medicalRecordBody tr').forEach(row => {
             const name = row.querySelector('.patient-name-btn')?.textContent.toLowerCase() || '';
             row.style.display = name.includes(q) ? '' : 'none';
         });
@@ -611,9 +546,12 @@
     function setFilter(filter, btn) {
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('searchInput').value = '';
-        document.querySelectorAll('#medicalRecordBody tr[data-date]').forEach(row => {
-            row.style.display = (filter === 'all' || row.dataset.date === filter) ? '' : 'none';
+        document.querySelectorAll('#medicalRecordBody tr').forEach(row => {
+            if (filter === 'all') {
+                row.style.display = '';
+            } else {
+                row.style.display = row.dataset.date === filter ? '' : 'none';
+            }
         });
     }
 </script>

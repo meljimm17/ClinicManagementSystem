@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\MedicalRecord;
 use App\Models\PatientQueue;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -67,6 +68,7 @@ class MedicalRecordController extends Controller
                 'prescription' => $r->prescription,
                 'notes'        => $r->notes,
                 'status'       => $r->record_status,
+                'print_url'    => route('doctor.medical-records.print', $r),
                 'date'         => date('M d, Y', strtotime($r->consultation_date)),
                 'time'         => $r->consultation_time
                     ? date('h:i A', strtotime($r->consultation_time))
@@ -76,6 +78,27 @@ class MedicalRecordController extends Controller
 
         $viewPath = ($user->role === 'doctor') ? 'doctor.medical-records' : 'admin.medical-records';
         return view($viewPath, compact('records', 'mappedRecords'));
+    }
+
+    public function printDoctorRecord(MedicalRecord $medicalRecord)
+    {
+        $user = Auth::user();
+        $doctorId = $user?->doctor?->id;
+
+        if (!$doctorId || ($medicalRecord->doctor_id !== null && (int) $medicalRecord->doctor_id !== (int) $doctorId)) {
+            abort(403, 'You are not authorized to print this prescription record.');
+        }
+
+        $medicalRecord->load(['doctor.user', 'queue.patient']);
+
+        $data = [
+            'record' => $medicalRecord,
+            'generatedAt' => now(),
+        ];
+
+        $pdf = Pdf::loadView('doctor.prescription-print', $data)->setPaper('a4', 'portrait');
+
+        return $pdf->stream('Prescription-' . $medicalRecord->id . '.pdf');
     }
 
     /**

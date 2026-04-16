@@ -204,6 +204,14 @@ body {
     cursor: pointer; transition: background .15s;
 }
 .btn-save:hover { background: var(--accent); }
+.btn-print {
+    display: flex; align-items: center; gap: 7px;
+    background: #fff; color: var(--primary); border: 1px solid #c0dfd0;
+    border-radius: 9px; padding: 10px 20px;
+    font-size: .82rem; font-weight: 700; font-family: 'DM Sans', sans-serif;
+    cursor: pointer; transition: background .15s, border-color .15s;
+}
+.btn-print:hover { background: var(--accent-soft); border-color: #8fc7ad; }
 
 .empty-state {
     flex: 1; display: flex; flex-direction: column;
@@ -385,9 +393,21 @@ body {
             <button type="button" class="btn-discard" onclick="clearPanel()">
                 <i class="bi bi-trash3"></i> Discard Draft
             </button>
-            <button type="button" class="btn-save" onclick="submitRecord('completed')">
-                <i class="bi bi-check-circle-fill"></i> Save & Generate Medical Record
-            </button>
+            <div class="d-flex align-items-center gap-2">
+                <button
+                    type="submit"
+                    class="btn-print"
+                    form="diag-form"
+                    formaction="{{ route('doctor.record.print') }}"
+                    formmethod="POST"
+                    formtarget="_blank"
+                >
+                    <i class="bi bi-printer-fill"></i> Print Prescription PDF
+                </button>
+                <button type="button" class="btn-save" onclick="submitRecord('completed')">
+                    <i class="bi bi-check-circle-fill"></i> Save & Generate Medical Record
+                </button>
+            </div>
         </div>
     </div>
 </div>

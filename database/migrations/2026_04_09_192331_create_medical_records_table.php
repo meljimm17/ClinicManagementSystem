@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('medical_records', function (Blueprint $table) {
             $table->id();
+            $table->string('patient_name'); // Permanent snapshot of the name
             $table->foreignId('queue_id')
                   ->nullable()
                   ->constrained('patient_queue')
