@@ -358,6 +358,12 @@ body {
                 <div class="vital-item"><label>Height / Weight</label><div class="val" id="v-hw">—</div></div>
             </div>
 
+            <div class="vitals-grid" style="margin-top: 20px;">
+                <div class="vital-item"><label>Allergies</label><div class="val" id="v-allergies">—</div></div>
+                <div class="vital-item"><label>Existing Conditions</label><div class="val" id="v-conditions">—</div></div>
+                <div class="vital-item" style="grid-column: 1 / -1;"><label>Current Medications</label><div class="val" id="v-medications">—</div></div>
+            </div>
+
             <div class="symptoms-box">
                 <div class="symptoms-box-label"><i class="bi bi-exclamation-triangle-fill"></i> Reported Symptoms</div>
                 <p id="v-symptoms">—</p>
@@ -470,9 +476,18 @@ body {
             queue_number: "{{ $entry->display_queue_number }}",
             name: "{{ addslashes($entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient') }}",
             age: "{{ $entry->patient->age ?? '—' }}",
+            gender: "{{ $entry->patient->gender ?? '—' }}",
+            civil_status: "{{ $entry->patient->civil_status ?? '—' }}",
+            contact_number: "{{ $entry->patient->contact_number ?? '—' }}",
+            address: "{{ addslashes($entry->patient->address ?? '—') }}",
             blood_type: "{{ $entry->patient->blood_type ?? '—' }}",
             height: "{{ $entry->patient->height ?? '—' }}",
             weight: "{{ $entry->patient->weight ?? '—' }}",
+            emergency_contact_name: "{{ addslashes($entry->patient->emergency_contact_name ?? '—') }}",
+            emergency_contact_number: "{{ $entry->patient->emergency_contact_number ?? '—' }}",
+            known_allergies: "{{ addslashes($entry->patient->known_allergies ?? '—') }}",
+            existing_conditions: "{{ addslashes($entry->patient->existing_conditions ?? '—') }}",
+            current_medications: "{{ addslashes($entry->patient->current_medications ?? '—') }}",
             symptoms: "{{ addslashes($entry->symptoms ?? '—') }}",
             priority_type: "{{ $entry->priority?->priority_type ?? '' }}",
             priority_notes: "{{ addslashes($entry->priority?->notes ?? '') }}",
@@ -535,6 +550,10 @@ body {
         if (p.priority_type) {
             document.getElementById('v-submitted-by').textContent += ' · PRIORITY (' + p.priority_type.toUpperCase() + ')' + (p.priority_notes ? ' - ' + p.priority_notes : '');
         }
+
+        document.getElementById('v-allergies').textContent = p.known_allergies;
+        document.getElementById('v-conditions').textContent = p.existing_conditions;
+        document.getElementById('v-medications').textContent = p.current_medications;
 
         document.getElementById('f-queue-id').value = p.id;
         document.getElementById('f-patient-id').value = p.patient_id;

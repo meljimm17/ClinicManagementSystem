@@ -21,17 +21,64 @@
             align-items: center;
             justify-content: center;
             padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .left-panel::before{
+            content: '';
+            position: absolute;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 60% 45% at 80% 15%, rgba(58,173,110,.22) 0%, transparent 70%),
+                radial-gradient(ellipse 55% 55% at 10% 90%, rgba(15,36,25,.45) 0%, transparent 65%);
+            pointer-events: none;
+        }
+
+        .left-content{
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            text-align: left;
+        }
+
+        .brand-box {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: rgba(255,255,255,.12);
+            border: 1.5px solid rgba(255,255,255,.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1.15rem;
+        }
+
+        .left-panel h1{
+            font-size: clamp(1.65rem, 2.7vw, 2.6rem);
+            line-height: 1.12;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            margin: 0;
         }
 
         .right-panel {
             min-height: 100vh;
-            background: #ffffff;
+            background: linear-gradient(180deg, #ffffff 0%, #f6f8f6 100%);
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .form-card { max-width: 400px; width: 100%; }
+        .form-card {
+            max-width: 400px;
+            width: 100%;
+            background: rgba(255,255,255,.92);
+            border-radius: 16px;
+            border: 1px solid rgba(216,228,221,.9);
+            box-shadow: 0 18px 50px rgba(15,36,25,.12);
+        }
         .form-title { font-size: 1.8rem; font-weight: 600; color: #0f2419; }
 
         /* Fix: Removes Bootstrap's default validation icon that cuts the line */
@@ -43,7 +90,7 @@
         .input-group-custom {
             display: flex;
             border: 1px solid #d8e4dd;
-            border-radius: 0.375rem;
+            border-radius: 12px;
             background: #f8faf9;
             overflow: hidden;
         }
@@ -69,6 +116,9 @@
         .btn-login {
             background: linear-gradient(135deg, #1e5c3a, #2d7a50);
             color: #fff; border: none;
+            border-radius: 12px;
+            padding-left: 1rem;
+            padding-right: 1rem;
         }
     </style>
 </head>
@@ -77,7 +127,13 @@
 <div class="container-fluid p-0 m-0">
     <div class="row g-0 m-0 p-0">
         <div class="col-md-6 d-none d-md-flex left-panel">
-            <div>
+            <div class="left-content">
+                <div class="brand-box" aria-hidden="true">
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 2C10 2 4 5 4 11C4 14.3 6.7 17 10 17C13.3 17 16 14.3 16 11C16 5 10 2 10 2Z" fill="white" fill-opacity=".85"/>
+                        <path d="M10 7V13M7 10H13" stroke="#1e5c3a" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </div>
                 <h1>Where clinical<br>precision meets<br>curated wellness.</h1>
             </div>
         </div>

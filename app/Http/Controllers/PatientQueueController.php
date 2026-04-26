@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\PatientQueue;
 use App\Models\MedicalRecord;
 use App\Models\Patient;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -12,9 +13,10 @@ class PatientQueueController extends Controller
 {
     public function waitingArea()
     {
-        $queue = PatientQueue::query()
+        $queue = PatientQueue::with(['patient', 'priority'])
             ->whereDate('created_at', today())
             ->whereIn('status', ['waiting', 'diagnosing'])
+            ->orderByRaw("CASE WHEN EXISTS (SELECT 1 FROM patient_queue_priorities WHERE patient_queue_priorities.patient_queue_id = patient_queue.id) THEN 0 ELSE 1 END")
             ->orderByRaw("CASE WHEN status = 'diagnosing' THEN 0 ELSE 1 END")
             ->orderBy('queued_at', 'asc')
             ->orderBy('id', 'asc')
@@ -25,9 +27,10 @@ class PatientQueueController extends Controller
 
     public function index()
     {
-        $queue = PatientQueue::with('patient')
+        $queue = PatientQueue::with(['patient', 'priority'])
                     ->whereDate('created_at', today())
-                    ->whereIn('status', ['waiting', 'diagnosing']) 
+                    ->whereIn('status', ['waiting', 'diagnosing'])
+                    ->orderByRaw("CASE WHEN EXISTS (SELECT 1 FROM patient_queue_priorities WHERE patient_queue_priorities.patient_queue_id = patient_queue.id) THEN 0 ELSE 1 END")
                     ->orderBy('queued_at', 'asc')
                     ->orderBy('id', 'asc')
                     ->get();
@@ -37,8 +40,9 @@ class PatientQueueController extends Controller
 
     public function adminIndex()
     {
-        $queueEntries = PatientQueue::with('patient')
-                        ->whereDate('created_at', today())
+        $queueEntries = PatientQueue::with(['patient', 'priority'])
+                        ->orderByRaw("CASE WHEN EXISTS (SELECT 1 FROM patient_queue_priorities WHERE patient_queue_priorities.patient_queue_id = patient_queue.id) THEN 0 ELSE 1 END")
+                        ->orderByDesc('queue_date')
                         ->orderBy('queued_at', 'asc')
                         ->orderBy('id', 'asc')
                         ->get();
@@ -58,7 +62,11 @@ class PatientQueueController extends Controller
 
         // Generate a unique queue number for today e.g. Q-001, Q-002
         $todayCount = PatientQueue::whereDate('created_at', today())->count();
-        $queueNumber = 'Q-' . str_pad($todayCount + 1, 3, '0', STR_PAD_LEFT);
+        $queueFormat = strtoupper(Setting::getValue('queue_format', 'Q-001'));
+        preg_match('/^([A-Z0-9#-]*?)(\d+)$/', $queueFormat, $matches);
+        $queuePrefix = $matches[1] ?? 'Q-';
+        $queueDigits = isset($matches[2]) ? strlen($matches[2]) : 3;
+        $queueNumber = $queuePrefix . str_pad($todayCount + 1, $queueDigits, '0', STR_PAD_LEFT);
 
         PatientQueue::create([
             'queue_number'  => $queueNumber,

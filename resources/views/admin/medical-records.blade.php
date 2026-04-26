@@ -50,12 +50,47 @@
         .search-input:focus { border-color: var(--accent); width: 260px; background: #fff; }
         .filter-btn { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: .8rem; font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text-muted); cursor: pointer; transition: all .15s; }
         .filter-btn.active, .filter-btn:hover { background: var(--accent-soft); border-color: #c0dfd0; color: var(--primary); }
+        .medical-record-table-wrap {
+            max-height: 560px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+        }
         .medical-record-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        .medical-record-table thead th { font-size: .65rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+        .medical-record-table thead th { font-size: .65rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); padding: 10px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #fff; z-index: 2; }
         .medical-record-table tbody tr { transition: background .12s; }
         .medical-record-table tbody tr:hover { background: #fafcfb; }
         .medical-record-table tbody td { padding: 14px 14px; border-bottom: 1px solid var(--border); font-size: .845rem; vertical-align: middle; }
         .medical-record-table tbody tr:last-child td { border-bottom: none; }
+        .day-separator-row:hover { background: transparent !important; }
+        .day-separator-cell {
+            padding: 0 !important;
+            background: #fbfcfb;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 40px;
+            z-index: 1;
+        }
+        .day-separator-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            color: var(--text-muted);
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .day-separator-label::before,
+        .day-separator-label::after {
+            content: '';
+            height: 1px;
+            background: var(--border);
+            flex: 1;
+        }
         .q-id { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: var(--sidebar-bg); }
         .patient-name-btn { background: none; border: none; padding: 0; font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 600; color: var(--text-primary); cursor: pointer; text-align: left; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: color .15s, text-decoration-color .15s; }
         .patient-name-btn:hover { color: var(--primary); text-decoration-color: var(--primary); }
@@ -119,6 +154,12 @@
         <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
             <i class="bi bi-journal-medical"></i><span>Medical Records</span>
         </a>
+        <a href="{{ route('admin.billing') }}" class="sidebar-link {{ request()->routeIs('admin.billing') ? 'active' : '' }}">
+            <i class="bi bi-cash-stack"></i><span>Billing</span>
+        </a>
+        <a href="{{ route('admin.checkup-types') }}" class="sidebar-link {{ request()->routeIs('admin.checkup-types') ? 'active' : '' }}">
+            <i class="bi bi-tags"></i><span>Check-up Types</span>
+        </a>
         <a href="{{ route('admin.reports') }}" class="sidebar-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
             <i class="bi bi-graph-up-arrow"></i><span>Reports</span>
         </a>
@@ -129,7 +170,7 @@
     <div class="sidebar-bottom">
         <button class="btn-new-appt" data-bs-toggle="modal" data-bs-target="#addPatientModal"><i class="bi bi-plus-lg me-1"></i> Add Patient</button>
         <div class="sidebar-footer mt-3">
-            <a href="#" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
+            <a href="{{ route('support') }}" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="sidebar-link" style="background:none; border:none; width:100%; text-align:left;">
@@ -214,6 +255,7 @@
                 </div>
             </div>
 
+            <div class="medical-record-table-wrap">
             <table class="medical-record-table">
                 <thead>
                     <tr>
@@ -229,12 +271,21 @@
                 <tbody id="medicalRecordBody">
                     @forelse($mappedRecords as $r)
                     @php
-                        // Correctly align original record after sorting
                         $originalRecord = $records->where('id', $r['id'])->first();
                         $recDate  = \Carbon\Carbon::parse($originalRecord->consultation_date);
                         $dateKey  = $recDate->isToday() ? 'today' : ($recDate->isYesterday() ? 'yesterday' : 'older');
+                        $groupDateKey = $recDate->toDateString();
+                        $previousGroupDateKey = isset($previousGroupDateKey) ? $previousGroupDateKey : null;
                     @endphp
-                    <tr data-date="{{ $dateKey }}">
+                    @if($groupDateKey !== $previousGroupDateKey)
+                    <tr class="day-separator-row" data-date-separator="{{ $groupDateKey }}">
+                        <td colspan="7" class="day-separator-cell">
+                            <div class="day-separator-label">{{ $recDate->format('F d, Y') }}</div>
+                        </td>
+                    </tr>
+                    @php $previousGroupDateKey = $groupDateKey; @endphp
+                    @endif
+                    <tr data-date="{{ $dateKey }}" data-date-group="{{ $groupDateKey }}">
                         <td><span class="q-id">{{ $originalRecord->queue_id ?? '—' }}</span></td>
                         <td>
                             <button class="patient-name-btn" onclick="openRecord({{ $r['id'] }})">{{ $r['patient_name'] }}</button>
@@ -282,13 +333,14 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
     </main>
 
     <footer class="dash-footer">
         <span>© 2024 CuraSure · Staff Portal</span>
-        <div class="footer-links"><a href="#">Privacy Protocol</a><a href="#">Support</a></div>
+        <div class="footer-links"><a href="#">Privacy Protocol</a><a href="{{ route('support') }}">Support</a></div>
     </footer>
 </div>
 
@@ -431,6 +483,7 @@
             const name = row.querySelector('.patient-name-btn')?.textContent.toLowerCase() ?? '';
             row.style.display = name.includes(q) ? '' : 'none';
         });
+        updateDateSeparators();
     }
 
     let activeFilter = 'all';
@@ -442,7 +495,20 @@
         document.querySelectorAll('#medicalRecordBody tr[data-date]').forEach(row => {
             row.style.display = (filter === 'all' || row.dataset.date === filter) ? '' : 'none';
         });
+        updateDateSeparators();
     }
+
+    function updateDateSeparators() {
+        document.querySelectorAll('#medicalRecordBody tr[data-date-separator]').forEach(separator => {
+            const dateKey = separator.dataset.dateSeparator;
+            const hasVisibleRows = Array.from(document.querySelectorAll('#medicalRecordBody tr[data-date-group="' + dateKey + '"]'))
+                .some(row => row.style.display !== 'none');
+
+            separator.style.display = hasVisibleRows ? '' : 'none';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', updateDateSeparators);
 </script>
 </body>
 </html>

@@ -14,6 +14,9 @@
             --muted: #b6d1c4;
             --accent: #58c497;
             --accent-soft: #88d8b8;
+            --room-bg: rgba(88, 196, 151, 0.13);
+            --room-border: rgba(88, 196, 151, 0.50);
+            --room-text: #a8f0d0;
         }
 
         * { box-sizing: border-box; }
@@ -32,6 +35,7 @@
             margin: 0 auto;
         }
 
+        /* ── Header ── */
         .header {
             display: flex;
             justify-content: space-between;
@@ -66,11 +70,7 @@
             box-shadow: 0 10px 22px rgba(0, 0, 0, 0.2);
         }
 
-        .brand-copy {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+        .brand-copy { display: flex; flex-direction: column; gap: 4px; }
 
         .title {
             font-size: clamp(1.5rem, 2.4vw, 2.2rem);
@@ -79,17 +79,8 @@
             margin: 0;
         }
 
-        .sub {
-            color: var(--muted);
-            font-size: 0.95rem;
-        }
-
-        .tagline {
-            color: #d5efe2;
-            font-size: 0.82rem;
-            letter-spacing: 0.01em;
-            opacity: 0.92;
-        }
+        .sub   { color: var(--muted); font-size: 0.95rem; }
+        .tagline { color: #d5efe2; font-size: 0.82rem; letter-spacing: 0.01em; opacity: 0.92; }
 
         .time-chip {
             background: rgba(255, 255, 255, 0.12);
@@ -99,15 +90,35 @@
             color: var(--accent-soft);
             font-weight: 600;
             font-size: 0.9rem;
+            white-space: nowrap;
         }
 
+        /* ── Now Serving card ── */
         .current {
+            display: grid;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .current-card {
             background: linear-gradient(145deg, #1d4a38, #1b402f);
             border: 1px solid rgba(136, 216, 184, 0.35);
             border-radius: 16px;
             padding: 22px;
-            margin-bottom: 18px;
             box-shadow: 0 14px 30px rgba(0, 0, 0, 0.22);
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 22px;
+            align-items: center;
+            position: relative;
+        }
+
+        .current-inner {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
         }
 
         .label {
@@ -132,6 +143,53 @@
             font-weight: 600;
         }
 
+        /* ── Room indicator (Now Serving) ── */
+        .room-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--room-bg);
+            border: 2px solid var(--room-border);
+            border-radius: 14px;
+            padding: 14px 22px;
+            min-width: 150px;
+            text-align: center;
+            box-shadow: 0 0 18px rgba(88, 196, 151, 0.12);
+            gap: 4px;
+            justify-self: end;
+            align-self: start;
+        }
+
+        .current-card .label {
+            margin-bottom: 10px;
+        }
+
+        .current-card .serving-number {
+            margin-bottom: 12px;
+        }
+
+        .room-indicator .room-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .room-indicator .room-name {
+            font-size: clamp(1.1rem, 2vw, 1.6rem);
+            font-weight: 800;
+            color: var(--room-text);
+            line-height: 1.15;
+        }
+
+        .room-indicator .room-icon {
+            font-size: 1.5rem;
+            margin-bottom: 2px;
+        }
+
+        /* ── Queue panel ── */
         .panel {
             background: var(--panel);
             border: 1px solid rgba(255, 255, 255, 0.12);
@@ -148,9 +206,7 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .queue-list {
-            padding: 6px 0;
-        }
+        .queue-list { padding: 6px 0; }
 
         .queue-item {
             display: flex;
@@ -159,15 +215,11 @@
             padding: 12px 18px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             transition: background 0.2s ease;
+            gap: 12px;
         }
 
-        .queue-item:hover {
-            background: rgba(255, 255, 255, 0.04);
-        }
-
-        .queue-item:last-child {
-            border-bottom: none;
-        }
+        .queue-item:hover { background: rgba(255, 255, 255, 0.04); }
+        .queue-item:last-child { border-bottom: none; }
 
         .q-number {
             font-size: 1.35rem;
@@ -175,11 +227,32 @@
             letter-spacing: 0.02em;
         }
 
-        .q-meta {
-            color: var(--muted);
-            font-size: 0.86rem;
+        .q-meta { color: var(--muted); font-size: 0.86rem; }
+
+        /* ── Room pill (queue list) ── */
+        .q-room-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--room-bg);
+            border: 1px solid var(--room-border);
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--room-text);
+            letter-spacing: 0.03em;
+            white-space: nowrap;
         }
 
+        .q-room-pill svg {
+            width: 12px;
+            height: 12px;
+            flex-shrink: 0;
+            opacity: 0.85;
+        }
+
+        /* ── Status badges ── */
         .badge-status {
             font-size: 0.75rem;
             font-weight: 700;
@@ -188,6 +261,7 @@
             border-radius: 20px;
             padding: 5px 10px;
             border: 1px solid transparent;
+            white-space: nowrap;
         }
 
         .badge-waiting {
@@ -200,6 +274,14 @@
             color: #fff8df;
             background: rgba(240, 180, 60, 0.2);
             border-color: rgba(240, 180, 60, 0.45);
+        }
+
+        .q-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
         }
 
         .empty {
@@ -218,36 +300,57 @@
         @media (max-width: 760px) {
             body { padding: 16px; }
             .header { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .current-inner { flex-direction: column; }
+            .room-indicator { align-items: flex-start; min-width: unset; width: 100%; flex-direction: row; gap: 10px; }
             .queue-item { align-items: flex-start; gap: 10px; flex-direction: column; }
+            .q-right { justify-content: flex-start; }
         }
     </style>
 </head>
 <body>
     @php
-        $serving = $queue->firstWhere('status', 'diagnosing');
+        $servingEntries = $queue->where('status', 'diagnosing');
     @endphp
 
     <div class="board">
+        {{-- Header --}}
         <div class="header">
             <div class="brand-wrap">
                 <div class="logo-holder">CS</div>
                 <div class="brand-copy">
                     <h1 class="title">CuraSure Clinic Queue</h1>
                     <div class="sub">Please wait for your queue number to be called.</div>
-                    <div class="tagline">Where clinical precision meets acurate wellness</div>
+                    <div class="tagline">Where clinical precision meets accurate wellness</div>
                 </div>
             </div>
             <div class="time-chip" id="clock">{{ now()->format('M d, Y h:i A') }}</div>
         </div>
 
+        {{-- Now Serving --}}
         <section class="current">
-            <div class="label">Now Serving</div>
-            <div class="serving-number">{{ $serving?->display_queue_number ?? '---' }}</div>
-            <div class="serving-status">
-                {{ $serving ? 'Proceed to your assigned clinic room.' : 'No active consultation right now.' }}
-            </div>
+            @if ($servingEntries->isEmpty())
+                <div class="current-card">
+                    <div class="label">Now Serving</div>
+                    <div class="serving-number">---</div>
+                    <div class="serving-status">No active consultation right now.</div>
+                </div>
+            @else
+                @foreach ($servingEntries as $serving)
+                    <div class="current-card">
+                        <div class="label">Now Serving</div>
+                        <div class="serving-number">{{ $serving->display_queue_number }}</div>
+                        <div class="serving-status">Proceed to your assigned clinic room.</div>
+                        <div class="room-indicator">
+                            <div class="room-icon"></div>
+                            <div class="room-label">Assigned Room</div>
+                            <div class="room-name">{{ $serving->assigned_room ?? 'Unassigned' }}</div>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
         </section>
 
+        {{-- Queue List --}}
         <section class="panel">
             <div class="panel-head">Waiting Queue ({{ $queue->count() }})</div>
             <div class="queue-list">
@@ -259,9 +362,23 @@
                                 Queued {{ $entry->created_at?->format('h:i A') ?? 'N/A' }}
                             </div>
                         </div>
-                        <span class="badge-status {{ $entry->status === 'diagnosing' ? 'badge-diagnosing' : 'badge-waiting' }}">
-                            {{ $entry->status === 'diagnosing' ? 'Now Serving' : 'Waiting' }}
-                        </span>
+
+                        <div class="q-right">
+                            {{-- Room pill: only show when assigned --}}
+                            @if ($entry->assigned_room)
+                                <span class="q-room-pill">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                        <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                    {{ $entry->assigned_room }}
+                                </span>
+                            @endif
+
+                            <span class="badge-status {{ $entry->status === 'diagnosing' ? 'badge-diagnosing' : 'badge-waiting' }}">
+                                {{ $entry->status === 'diagnosing' ? 'Now Serving' : 'Waiting' }}
+                            </span>
+                        </div>
                     </div>
                 @empty
                     <div class="empty">No patients in queue right now.</div>

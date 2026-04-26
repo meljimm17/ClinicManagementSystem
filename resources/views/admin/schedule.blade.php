@@ -96,6 +96,12 @@
         <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
             <i class="bi bi-journal-medical"></i><span>Medical Records</span>
         </a>
+        <a href="{{ route('admin.billing') }}" class="sidebar-link {{ request()->routeIs('admin.billing') ? 'active' : '' }}">
+            <i class="bi bi-cash-stack"></i><span>Billing</span>
+        </a>
+        <a href="{{ route('admin.checkup-types') }}" class="sidebar-link {{ request()->routeIs('admin.checkup-types') ? 'active' : '' }}">
+            <i class="bi bi-tags"></i><span>Check-up Types</span>
+        </a>
         <a href="{{ route('admin.reports') }}" class="sidebar-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
             <i class="bi bi-graph-up-arrow"></i><span>Reports</span>
         </a>
@@ -106,7 +112,7 @@
     <div class="sidebar-bottom">
         <button class="btn-new-appt" data-bs-toggle="modal" data-bs-target="#addPatientModal"><i class="bi bi-plus-lg me-1"></i> Add Patient</button>
         <div class="sidebar-footer mt-3">
-            <a href="#" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
+            <a href="{{ route('support') }}" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="sidebar-link" style="background:none; border:none; width:100%; text-align:left;">

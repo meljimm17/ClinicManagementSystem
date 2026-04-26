@@ -50,12 +50,47 @@
         .search-input:focus { border-color: var(--accent); width: 260px; background: #fff; }
         .filter-btn { border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; font-size: .8rem; font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text-muted); cursor: pointer; transition: all .15s; }
         .filter-btn.active, .filter-btn:hover { background: var(--accent-soft); border-color: #c0dfd0; color: var(--primary); }
+        .queue-table-wrap {
+            max-height: 560px;
+            overflow-y: auto;
+            overflow-x: auto;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+        }
         .queue-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        .queue-table thead th { font-size: .65rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); padding: 10px 14px; border-bottom: 1px solid var(--border); }
+        .queue-table thead th { font-size: .65rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--text-muted); padding: 10px 14px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: #fff; z-index: 2; }
         .queue-table tbody tr { transition: background .12s; }
         .queue-table tbody tr:hover { background: #fafcfb; }
         .queue-table tbody td { padding: 14px 14px; border-bottom: 1px solid var(--border); font-size: .845rem; vertical-align: middle; }
         .queue-table tbody tr:last-child td { border-bottom: none; }
+        .day-separator-row:hover { background: transparent !important; }
+        .day-separator-cell {
+            padding: 0 !important;
+            background: #fbfcfb;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 40px;
+            z-index: 1;
+        }
+        .day-separator-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            color: var(--text-muted);
+            font-size: .72rem;
+            font-weight: 700;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .day-separator-label::before,
+        .day-separator-label::after {
+            content: '';
+            height: 1px;
+            background: var(--border);
+            flex: 1;
+        }
         .q-id { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: var(--sidebar-bg); }
         .patient-name-btn { background: none; border: none; padding: 0; font-family: 'DM Sans', sans-serif; font-size: .875rem; font-weight: 600; color: var(--text-primary); cursor: pointer; text-align: left; text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 3px; transition: color .15s, text-decoration-color .15s; }
         .patient-name-btn:hover { color: var(--primary); text-decoration-color: var(--primary); }
@@ -123,6 +158,12 @@
         <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
             <i class="bi bi-journal-medical"></i><span>Medical Records</span>
         </a>
+        <a href="{{ route('admin.billing') }}" class="sidebar-link {{ request()->routeIs('admin.billing') ? 'active' : '' }}">
+            <i class="bi bi-cash-stack"></i><span>Billing</span>
+        </a>
+        <a href="{{ route('admin.checkup-types') }}" class="sidebar-link {{ request()->routeIs('admin.checkup-types') ? 'active' : '' }}">
+            <i class="bi bi-tags"></i><span>Check-up Types</span>
+        </a>
         <a href="{{ route('admin.reports') }}" class="sidebar-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
             <i class="bi bi-graph-up-arrow"></i><span>Reports</span>
         </a>
@@ -133,7 +174,7 @@
     <div class="sidebar-bottom">
         <button class="btn-new-appt" data-bs-toggle="modal" data-bs-target="#addPatientModal"><i class="bi bi-plus-lg me-1"></i> Add Patient</button>
         <div class="sidebar-footer mt-3">
-            <a href="#" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
+            <a href="{{ route('support') }}" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="sidebar-link" style="background:none; border:none; width:100%; text-align:left;">
@@ -231,6 +272,7 @@
                 </div>
             </div>
 
+            <div class="queue-table-wrap">
             <table class="queue-table">
                 <thead>
                     <tr>
@@ -245,7 +287,24 @@
                 </thead>
                 <tbody id="queueBody">
                     @forelse($queueEntries as $entry)
-                    <tr data-status="{{ $entry->status }}">
+                    @php
+                        $entryDate = $entry->queue_date
+                            ? \Carbon\Carbon::parse($entry->queue_date)
+                            : ($entry->queued_at ? \Carbon\Carbon::parse($entry->queued_at) : null);
+                        $currentDateKey = $entryDate?->toDateString();
+                        $previousDateKey = isset($previousDateKey) ? $previousDateKey : null;
+                    @endphp
+                    @if($currentDateKey !== $previousDateKey)
+                    <tr class="day-separator-row" data-date-separator="{{ $currentDateKey }}">
+                        <td colspan="7" class="day-separator-cell">
+                            <div class="day-separator-label">
+                                {{ $entryDate ? $entryDate->format('F d, Y') : 'No Date' }}
+                            </div>
+                        </td>
+                    </tr>
+                    @php $previousDateKey = $currentDateKey; @endphp
+                    @endif
+                    <tr data-status="{{ $entry->status }}" data-date-group="{{ $currentDateKey }}">
                         <td><span class="q-id">{{ $entry->display_queue_number }}</span></td>
                         <td>
                             <button class="patient-name-btn" onclick="openViewModal({
@@ -263,6 +322,9 @@
                                 status: '{{ ucfirst($entry->status) }}',
                                 room: '{{ $entry->assigned_room ?? 'Waiting Area' }}'
                             })">{{ $entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient' }}</button>
+                            @if($entry->priority)
+                                <div style="margin-top:4px;"><span class="btn-ghost" style="padding:4px 10px;font-size:.7rem;text-transform:uppercase;">{{ strtoupper($entry->priority->priority_type) }}</span></div>
+                            @endif
                             <div style="font-size:.72rem; color:var(--text-muted);">
                                 {{ $entry->patient->gender ?? '' }}{{ $entry->patient->age ? ' · '.$entry->patient->age.' yrs' : '' }}
                             </div>
@@ -309,13 +371,14 @@
                     @endforelse
                 </tbody>
             </table>
+            </div>
         </div>
 
     </main>
 
     <footer class="dash-footer">
         <span>© 2024 CuraSure · Staff Portal</span>
-        <div class="footer-links"><a href="#">Privacy Protocol</a><a href="#">Support</a></div>
+        <div class="footer-links"><a href="#">Privacy Protocol</a><a href="{{ route('support') }}">Support</a></div>
     </footer>
 </div>
 
@@ -350,6 +413,8 @@
                     <div class="col-md-12"><div class="info-label">Symptoms</div><div class="info-value" id="viewSymptoms" style="white-space:pre-wrap;line-height:1.6;">—</div></div>
                     <div class="col-md-6"><div class="info-label">Status</div><div class="info-value" id="viewStatus">—</div></div>
                     <div class="col-md-6"><div class="info-label">Assigned Room</div><div class="info-value" id="viewRoom">—</div></div>
+                    <div class="col-md-6"><div class="info-label">Priority</div><div class="info-value" id="viewPriority">—</div></div>
+                    <div class="col-md-6"><div class="info-label">Priority Notes</div><div class="info-value" id="viewPriorityNotes">—</div></div>
                 </div>
             </div>
             <div class="modal-footer">
@@ -423,6 +488,8 @@
         document.getElementById('viewSymptoms').textContent = p.symptoms;
         document.getElementById('viewStatus').textContent  = p.status;
         document.getElementById('viewRoom').textContent    = p.room;
+        document.getElementById('viewPriority').textContent = p.priority;
+        document.getElementById('viewPriorityNotes').textContent = p.priority_notes;
         new bootstrap.Modal(document.getElementById('viewModal')).show();
     }
 
@@ -432,6 +499,7 @@
             const name = row.querySelector('.patient-name-btn')?.textContent.toLowerCase() ?? '';
             row.style.display = name.includes(q) ? '' : 'none';
         });
+        updateDateSeparators();
     }
 
     let activeFilter = 'all';
@@ -443,7 +511,20 @@
         document.querySelectorAll('#queueBody tr[data-status]').forEach(row => {
             row.style.display = (filter === 'all' || row.dataset.status === filter) ? '' : 'none';
         });
+        updateDateSeparators();
     }
+
+    function updateDateSeparators() {
+        document.querySelectorAll('#queueBody tr[data-date-separator]').forEach(separator => {
+            const dateKey = separator.dataset.dateSeparator;
+            const hasVisibleRows = Array.from(document.querySelectorAll('#queueBody tr[data-date-group="' + dateKey + '"]'))
+                .some(row => row.style.display !== 'none');
+
+            separator.style.display = hasVisibleRows ? '' : 'none';
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', updateDateSeparators);
 </script>
 </body>
 </html>

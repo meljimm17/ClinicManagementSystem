@@ -23,6 +23,8 @@ class PatientQueue extends Model
         'queued_at',
         'called_at',
         'completed_at',
+        'checkup_type_id',
+        'custom_fee',
     ];
 
     // Belongs to a patient
@@ -46,6 +48,32 @@ class PatientQueue extends Model
     public function priority()
     {
         return $this->hasOne(PatientQueuePriority::class, 'patient_queue_id');
+    }
+
+    // Belongs to a checkup type
+    public function checkupType()
+    {
+        return $this->belongsTo(CheckupType::class, 'checkup_type_id');
+    }
+
+    // Has one payment record
+    public function payment()
+    {
+        return $this->hasOne(Payment::class, 'visit_id');
+    }
+
+    // Get the effective fee (custom fee takes precedence)
+    public function getEffectiveFeeAttribute(): float
+    {
+        if ($this->custom_fee !== null) {
+            return (float) $this->custom_fee;
+        }
+        
+        if ($this->checkupType) {
+            return (float) $this->checkupType->fee;
+        }
+        
+        return 0;
     }
 
     public function getDisplayQueueNumberAttribute(): string

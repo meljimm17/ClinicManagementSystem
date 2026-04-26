@@ -200,6 +200,12 @@
         <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
             <i class="bi bi-journal-medical"></i><span>Medical Records</span>
         </a>
+        <a href="{{ route('admin.billing') }}" class="sidebar-link {{ request()->routeIs('admin.billing') ? 'active' : '' }}">
+            <i class="bi bi-cash-stack"></i><span>Billing</span>
+        </a>
+        <a href="{{ route('admin.checkup-types') }}" class="sidebar-link {{ request()->routeIs('admin.checkup-types') ? 'active' : '' }}">
+            <i class="bi bi-tags"></i><span>Check-up Types</span>
+        </a>
         <a href="{{ route('admin.reports') }}" class="sidebar-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
             <i class="bi bi-graph-up-arrow"></i><span>Reports</span>
         </a>
@@ -210,7 +216,7 @@
     <div class="sidebar-bottom">
         <button class="btn-new-appt" data-bs-toggle="modal" data-bs-target="#addPatientModal"><i class="bi bi-plus-lg me-1"></i> Add Patient</button>
         <div class="sidebar-footer mt-3">
-            <a href="#" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
+            <a href="{{ route('support') }}" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
             <form action="{{ route('logout') }}" method="POST">
                 @csrf
                 <button type="submit" class="sidebar-link" style="background:none; border:none; width:100%; text-align:left;">
@@ -248,7 +254,7 @@
 
         <!-- ── Real Stat Cards ── -->
         <div class="row g-3 mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <a href="{{ route('admin.queue') }}" class="stat-link" title="Open Patient Queue">
                     <div class="stat-card stat-teal">
                         <div class="stat-label">Total Patients</div>
@@ -257,7 +263,7 @@
                     </div>
                 </a>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <a href="{{ route('admin.medical-records') }}" class="stat-link" title="Open Medical Records">
                     <div class="stat-card stat-mint">
                         <div class="stat-label">Completed Consultations</div>
@@ -266,7 +272,7 @@
                     </div>
                 </a>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <a href="{{ route('admin.queue') }}" class="stat-link" title="Open Active Queue">
                     <div class="stat-card stat-sage">
                         <div class="stat-label">Active Queue Today</div>
@@ -275,7 +281,43 @@
                     </div>
                 </a>
             </div>
+            <div class="col-md-3">
+                <a href="{{ route('admin.billing') }}" class="stat-link" title="View Billing">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #fff3e0, #ffe0b2); border-color: #ffcc80;">
+                        <div class="stat-label" style="color: #e65100;">Today's Revenue</div>
+                        <div class="stat-value" style="color: #e65100;">₱{{ number_format($todayRevenue, 2) }}</div>
+                        <div class="stat-meta">{{ $todayPaidCount }} paid / {{ $todayUnpaidCount }} pending</div>
+                    </div>
+                </a>
+            </div>
         </div>
+
+        <!-- ── Billing Summary ── -->
+        @if($todayPatients > 0)
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card-panel">
+                    <div class="panel-title">Patients Today</div>
+                    <div class="stat-value" style="font-size: 1.5rem;">{{ $todayPatients }}</div>
+                    <div class="panel-sub">Total registered today</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-panel">
+                    <div class="panel-title">Paid Today</div>
+                    <div class="stat-value" style="font-size: 1.5rem; color: var(--success);">{{ $todayPaidCount }}</div>
+                    <div class="panel-sub">Completed payments</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card-panel">
+                    <div class="panel-title">Most Common Check-up</div>
+                    <div class="stat-value" style="font-size: 1.5rem;">{{ $mostCommonCheckupType->name ?? 'N/A' }}</div>
+                    <div class="panel-sub">{{ $mostCommonCheckupType ? '₱' . number_format($mostCommonCheckupType->fee, 2) : '' }}</div>
+                </div>
+            </div>
+        </div>
+        @endif
 
         <!-- ── Clinic Statistics Row ── -->
         <div class="row g-3 mb-4">

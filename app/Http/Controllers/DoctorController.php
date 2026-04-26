@@ -18,10 +18,20 @@ class DoctorController extends Controller
     $user       = Auth::user();
     $doctor     = $user->doctor;
     $doctorId   = $doctor?->id;
+    $doctorRoom = $doctor?->assigned_room ?? null;
 
     $queue = PatientQueue::with(['patient', 'priority'])
         ->whereDate('created_at', today())
-        ->whereIn('status', ['waiting', 'diagnosing'])
+        ->where(function ($query) use ($doctorRoom) {
+            $query->where('status', 'waiting');
+
+            if ($doctorRoom) {
+                $query->orWhere(function ($subQuery) use ($doctorRoom) {
+                    $subQuery->where('status', 'diagnosing')
+                        ->where('assigned_room', $doctorRoom);
+                });
+            }
+        })
         ->orderByDesc(
             DB::table('patient_queue_priorities')
                 ->selectRaw('1')
@@ -76,7 +86,16 @@ class DoctorController extends Controller
         // Only show waiting/diagnosing — done patients go to medical records
         $queue = PatientQueue::with(['patient', 'priority'])
             ->whereDate('created_at', today())
-            ->whereIn('status', ['waiting', 'diagnosing'])
+            ->where(function ($query) use ($doctorRoom) {
+                $query->where('status', 'waiting');
+
+                if ($doctorRoom) {
+                    $query->orWhere(function ($subQuery) use ($doctorRoom) {
+                        $subQuery->where('status', 'diagnosing')
+                            ->where('assigned_room', $doctorRoom);
+                    });
+                }
+            })
             ->orderByDesc(
                 DB::table('patient_queue_priorities')
                     ->selectRaw('1')

@@ -5,6 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Patient;
 use App\Models\PatientQueue;
 use App\Models\PatientQueuePriority;
+use App\Models\CheckupType;
+use App\Models\Payment;
+use App\Models\Setting;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
@@ -15,12 +18,14 @@ class PatientController extends Controller
     // Show dashboard with registration form
     public function index()
     {
-        $recentQueue = PatientQueue::with('patient')
+        $recentQueue = PatientQueue::with(['patient', 'checkupType', 'payment'])
                         ->latest('queued_at')
                         ->take(5)
                         ->get();
+        
+        $checkupTypes = CheckupType::active()->orderBy('name')->get();
 
-        return view('staff.dashboard', compact('recentQueue'));
+        return view('staff.dashboard', compact('recentQueue', 'checkupTypes'));
     }
 
     // Register a new patient and add to queue
@@ -50,6 +55,8 @@ class PatientController extends Controller
             'current_medications'      => 'nullable|string',
             // Visit
             'primary_symptoms'         => 'required|string|max:1000',
+            'checkup_type_id'          => 'nullable|exists:checkup_types,id',
+            'custom_fee'               => 'nullable|numeric|min:0|max:999999.99',
             'is_priority'              => 'nullable|boolean',
             'priority_type'            => 'required_if:is_priority,1|nullable|in:senior,pwd,pregnant,urgent,other',
             'priority_notes'           => 'nullable|string|max:255',
@@ -70,6 +77,44 @@ class PatientController extends Controller
             'weight.numeric' => 'Weight must be a valid number.',
             'primary_symptoms.required' => 'Primary symptoms are required.',
         ]);
+
+        // Check if patient is already in today's queue to prevent duplication
+        $name = trim($request->name);
+        $dob = $request->date_of_birth;
+        $address = trim($request->address);
+        $age = $request->age;
+        $contact = trim($request->contact_number);
+        $bloodType = trim($request->blood_type ?? '');
+        $emgName = trim($request->emergency_contact_name ?? '');
+        $emgContact = trim($request->emergency_contact_number ?? '');
+
+        if (!empty($name)) {
+            $candidates = Patient::where('name', 'LIKE', "%{$name}%")->get();
+            $matched = $candidates->first(function ($patient) use ($dob, $address, $age, $contact, $bloodType, $emgName, $emgContact) {
+                $score = 0;
+                if ($dob && $patient->date_of_birth === $dob) $score++;
+                if ($address && stripos($patient->address ?? '', $address) !== false) $score++;
+                if ($age && (string)$patient->age === $age) $score++;
+                if ($contact && $patient->contact_number === $contact) $score++;
+                if ($bloodType && $patient->blood_type === $bloodType) $score++;
+                if ($emgName && stripos($patient->emergency_contact_name ?? '', $emgName) !== false) $score++;
+                if ($emgContact && $patient->emergency_contact_number === $emgContact) $score++;
+                return $score >= 2; // Require at least 2 matches besides name
+            });
+
+            if ($matched) {
+                $queueEntry = PatientQueue::whereDate('queue_date', today())
+                    ->where('patient_id', $matched->id)
+                    ->whereIn('status', ['waiting', 'diagnosing'])
+                    ->first();
+                if ($queueEntry) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'This patient is already registered in today\'s queue. Please check the queue before registering again.',
+                    ], 422);
+                }
+            }
+        }
 
         // Convert "N/A" from the UI toggle to null before saving
         $adminFields = [
@@ -112,16 +157,21 @@ class PatientController extends Controller
             try {
                 $queueNumber = DB::transaction(function () use ($patient, $request) {
                     $today = today()->toDateString();
+                    $queueFormat = strtoupper(Setting::getValue('queue_format', 'Q-001'));
+                    preg_match('/^([A-Z0-9#-]*?)(\d+)$/', $queueFormat, $matches);
+                    $queuePrefix = $matches[1] ?? 'Q-';
+                    $queueDigits = isset($matches[2]) ? strlen($matches[2]) : 3;
 
                     $latestQueueNumber = PatientQueue::withTrashed()
                         ->whereDate('queue_date', $today)
                         ->pluck('queue_number')
-                        ->map(function ($value) {
+                        ->map(function ($value) use ($queuePrefix) {
                             if (!is_string($value)) {
                                 return 0;
                             }
 
-                            if (preg_match('/^Q-(\d+)$/', $value, $matches)) {
+                            $escapedPrefix = preg_quote($queuePrefix, '/');
+                            if (preg_match('/^' . $escapedPrefix . '(\d+)$/', $value, $matches)) {
                                 return (int) $matches[1];
                             }
 
@@ -129,7 +179,7 @@ class PatientController extends Controller
                         })
                         ->max() ?? 0;
 
-                    $queueNumber = 'Q-' . str_pad($latestQueueNumber + 1, 3, '0', STR_PAD_LEFT);
+                    $queueNumber = $queuePrefix . str_pad($latestQueueNumber + 1, $queueDigits, '0', STR_PAD_LEFT);
 
                     $queueEntry = PatientQueue::create([
                         'queue_number'  => $queueNumber,
@@ -140,7 +190,28 @@ class PatientController extends Controller
                         'symptoms'      => $request->primary_symptoms,
                         'status'        => 'waiting',
                         'queued_at'     => now(),
+                        'checkup_type_id' => $request->checkup_type_id,
+                        'custom_fee'    => $request->custom_fee ? $request->custom_fee : null,
                     ]);
+
+                    // Create payment record automatically
+                    $fee = 0;
+                    if ($request->custom_fee) {
+                        $fee = $request->custom_fee;
+                    } elseif ($request->checkup_type_id) {
+                        $checkupType = CheckupType::find($request->checkup_type_id);
+                        if ($checkupType) {
+                            $fee = $checkupType->fee;
+                        }
+                    }
+                    
+                    if ($fee > 0) {
+                        Payment::create([
+                            'visit_id' => $queueEntry->id,
+                            'amount' => $fee,
+                            'status' => 'unpaid',
+                        ]);
+                    }
 
                     if ($request->boolean('is_priority')) {
                         PatientQueuePriority::create([
@@ -173,6 +244,87 @@ class PatientController extends Controller
         }
 
         return redirect()->back()->with('success', 'Patient registered and added to queue as ' . $queueNumber . '!');
+    }
+
+    // Check if a patient matching the given details is already in today's queue
+    public function checkQueue(Request $request)
+    {
+        $name       = trim($request->get('name', ''));
+        $dob        = trim($request->get('date_of_birth', ''));
+        $age        = trim($request->get('age', ''));
+        $contact    = trim($request->get('contact_number', ''));
+        $bloodType  = trim($request->get('blood_type', ''));
+        $emgName    = trim($request->get('emergency_contact_name', ''));
+        $emgContact = trim($request->get('emergency_contact_number', ''));
+
+        // Require the full patient identity fields for duplicate queue detection.
+        if (empty($name) || empty($dob) || empty($age) || empty($contact) || empty($bloodType)) {
+            return response()->json(['in_queue' => false]);
+        }
+
+        $matched = Patient::where('name', $name)
+            ->where('date_of_birth', $dob)
+            ->where('age', $age)
+            ->where('contact_number', $contact)
+            ->where('blood_type', $bloodType)
+            ->where('address', $request->get('address', ''))
+            ->first();
+
+        if (!$matched) {
+            return response()->json(['in_queue' => false]);
+        }
+
+        // Check if this patient is currently in today's active queue
+        $queueEntry = PatientQueue::whereDate('queue_date', today())
+            ->where('patient_id', $matched->id)
+            ->whereIn('status', ['waiting', 'diagnosing'])
+            ->first();
+
+        if (!$queueEntry) {
+            return response()->json(['in_queue' => false]);
+        }
+
+        return response()->json([
+            'in_queue'     => true,
+            'patient_name' => $matched->name,
+            'queue_number' => $queueEntry->display_queue_number ?? $queueEntry->queue_number,
+            'status'       => $queueEntry->status,
+        ]);
+    }
+
+    public function checkExistence(Request $request)
+    {
+        $name    = trim($request->get('name', ''));
+        $dob     = trim($request->get('date_of_birth', ''));
+        $address = trim($request->get('address', ''));
+
+        // Need at least name, dob, and address to check
+        if (empty($name) || empty($dob) || empty($address)) {
+            return response()->json(['exists' => false]);
+        }
+
+        // Check if patient exists with exact matches and has medical records (returning patient)
+        $patient = Patient::where('name', $name)
+            ->where('date_of_birth', $dob)
+            ->where('address', $address)
+            ->whereHas('medicalRecords') // Only if they have medical records
+            ->first();
+
+        if ($patient) {
+            return response()->json([
+                'exists'      => true,
+                'patient_name' => $patient->name,
+            ]);
+        }
+
+        return response()->json(['exists' => false]);
+    }
+
+    public function show($id)
+    {
+        $patient = Patient::findOrFail($id);
+
+        return response()->json($patient);
     }
 
     // Search patients for returning patient lookup

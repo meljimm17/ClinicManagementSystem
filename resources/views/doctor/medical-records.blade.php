@@ -382,7 +382,7 @@
         <span>© {{ date('Y') }} CuraSure · Doctor Portal</span>
         <div class="footer-links">
             <a href="#">Privacy Protocol</a>
-            <a href="#">Support</a>
+            <a href="{{ route('support') }}">Support</a>
         </div>
     </footer>
 </div>

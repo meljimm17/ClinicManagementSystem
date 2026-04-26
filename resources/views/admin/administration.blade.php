@@ -130,6 +130,12 @@
         <a href="{{ route('admin.medical-records') }}" class="sidebar-link {{ request()->routeIs('admin.medical-records') ? 'active' : '' }}">
             <i class="bi bi-journal-medical"></i><span>Medical Records</span>
         </a>
+        <a href="{{ route('admin.billing') }}" class="sidebar-link {{ request()->routeIs('admin.billing') ? 'active' : '' }}">
+            <i class="bi bi-cash-stack"></i><span>Billing</span>
+        </a>
+        <a href="{{ route('admin.checkup-types') }}" class="sidebar-link {{ request()->routeIs('admin.checkup-types') ? 'active' : '' }}">
+            <i class="bi bi-tags"></i><span>Check-up Types</span>
+        </a>
         <a href="{{ route('admin.reports') }}" class="sidebar-link {{ request()->routeIs('admin.reports') ? 'active' : '' }}">
             <i class="bi bi-graph-up-arrow"></i><span>Reports</span>
         </a>
@@ -140,7 +146,7 @@
     <div class="sidebar-bottom">
         <button class="btn-new-appt" data-bs-toggle="modal" data-bs-target="#addPatientModal"><i class="bi bi-plus-lg me-1"></i> Add Patient</button>
         <div class="sidebar-footer mt-3">
-            <a href="#" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
+            <a href="{{ route('support') }}" class="sidebar-link" style="padding:8px 6px;"><i class="bi bi-question-circle"></i> Support</a>
             <form action="{{ route('logout') }}" method="POST">
     @csrf
     <button type="submit" class="sidebar-link" style="background:none; border:none; width:100%; text-align:left;">
@@ -177,6 +183,18 @@
         @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;font-size:.845rem;">
             {{ session('success') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        @endif
+
+        @if($errors->any())
+        <div class="alert alert-danger alert-dismissible fade show mb-3" role="alert" style="border-radius:10px;font-size:.845rem;">
+            <strong>Unable to save user.</strong>
+            <ul class="mb-0 mt-2 ps-3">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
         @endif
@@ -263,22 +281,22 @@
                     <div class="col-md-4">
                         <div class="settings-field">
                             <label>Clinic Display Name</label>
-                            <input type="text" name="clinic_name" value="CuraSure">
+                            <input type="text" name="clinic_name" value="{{ old('clinic_name', $clinicName) }}">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="settings-field">
                             <label>Queue Format ID</label>
-                            <input type="text" name="queue_format" value="Q-001">
+                            <input type="text" name="queue_format" value="{{ old('queue_format', $queueFormat) }}">
                         </div>
                     </div>
                     <div class="col-md-3">
                         <div class="settings-field">
                             <label>Default Role for New Users</label>
                             <select name="default_role">
-                                <option value="staff">Staff</option>
-                                <option value="doctor">Doctor</option>
-                                <option value="admin">Admin</option>
+                                <option value="staff" {{ old('default_role', $defaultRole) === 'staff' ? 'selected' : '' }}>Staff</option>
+                                <option value="doctor" {{ old('default_role', $defaultRole) === 'doctor' ? 'selected' : '' }}>Doctor</option>
+                                <option value="admin" {{ old('default_role', $defaultRole) === 'admin' ? 'selected' : '' }}>Admin</option>
                             </select>
                         </div>
                     </div>
@@ -334,9 +352,9 @@
                             <label class="form-label-sm">Role</label>
                             <select name="role" id="addRole" class="form-ctrl" required onchange="toggleDoctorFields('add')">
                                 <option value="">— Select Role —</option>
-                                <option value="admin">Admin</option>
-                                <option value="doctor">Doctor</option>
-                                <option value="staff">Staff</option>
+                                <option value="admin" {{ old('role', $defaultRole) === 'admin' ? 'selected' : '' }}>Admin</option>
+                                <option value="doctor" {{ old('role', $defaultRole) === 'doctor' ? 'selected' : '' }}>Doctor</option>
+                                <option value="staff" {{ old('role', $defaultRole) === 'staff' ? 'selected' : '' }}>Staff</option>
                             </select>
                         </div>
                         <div class="col-md-6 add-doctor-fields" style="display:none;">
@@ -468,6 +486,13 @@ function openEditModal(id, name, username, email, contactNumber, address, specia
 
 document.addEventListener('DOMContentLoaded', function () {
     toggleDoctorFields('add');
+
+    @if($errors->any())
+        const addModalEl = document.getElementById('addUserModal');
+        if (addModalEl) {
+            new bootstrap.Modal(addModalEl).show();
+        }
+    @endif
 });
 </script>
 </body>

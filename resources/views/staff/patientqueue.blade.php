@@ -309,6 +309,31 @@ body {
 .badge-diagnosing::before { background: var(--primary); animation: pulse 1.4s infinite; }
 .badge-waiting::before    { background: #f0a500; }
 
+.priority-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: #ffe8e8;
+    color: #b42318;
+    border: 1px solid #f5c5c7;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+}
+
+.checkup-type {
+    display: inline-block;
+    background: #e8f5f0;
+    color: #1b7a4e;
+    border: 1px solid #c0dfd0;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: .7rem;
+    font-weight: 600;
+}
+
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
 .room-text { font-size: .8rem; color: var(--text-muted); font-style: italic; }
@@ -406,21 +431,8 @@ body {
     cursor: pointer;
 }
 
-/* Auto-refresh indicator */
-.refresh-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: .68rem;
-    color: var(--text-muted);
-}
 
-.refresh-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: pulse 2s infinite;
-}
+
 @media (prefers-reduced-motion: no-preference) {
     @keyframes pageFadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes softRise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
@@ -445,8 +457,9 @@ body {
         <div class="brand-name">CuraSure</div>
     </div>
     <nav class="sidebar-nav">
-        <a href="{{ route('staff.dashboard') }}" class="sidebar-link"><i class="bi bi-grid-1x2"></i> Staff Dashboard</a>
-        <a href="{{ route('staff.queue') }}" class="sidebar-link active"><i class="bi bi-people"></i> Patient Queue</a>
+        <a href="{{ route('staff.dashboard') }}" class="sidebar-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Staff Dashboard</a>
+        <a href="{{ route('staff.queue') }}" class="sidebar-link {{ request()->routeIs('staff.queue') ? 'active' : '' }}"><i class="bi bi-people"></i> Patient Queue</a>
+        <a href="{{ route('staff.payments') }}" class="sidebar-link {{ request()->routeIs('staff.payments') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i> Billing & Payments</a>
     </nav>
     <div class="sidebar-bottom">
         <div class="sidebar-footer">
@@ -466,10 +479,6 @@ body {
             <p>Monitoring live diagnostic flow</p>
         </div>
         <div class="topbar-actions">
-            <div class="refresh-indicator">
-                <div class="refresh-dot"></div>
-                Live · refreshes every 5s
-            </div>
             <div class="topbar-icon"><i class="bi bi-bell"></i></div>
             <div class="avatar">{{ strtoupper(substr(Auth::user()->name, 0, 1)) }}</div>
         </div>
@@ -546,6 +555,7 @@ body {
                     <tr>
                         <th>Queue ID</th>
                         <th>Patient</th>
+                        <th>Check-up Type</th>
                         <th>Status</th>
                         <th>Room</th>
                         <th class="text-end">Actions</th>
@@ -556,8 +566,20 @@ body {
                     <tr data-status="{{ $entry->status }}">
                         <td><div class="queue-id">{{ $entry->display_queue_number }}</div></td>
                         <td>
-                            <div class="patient-name">{{ $entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient' }}</div>
+                            <div class="patient-name">
+                                @if($entry->priority)
+                                    <span class="priority-pill">Priority</span>
+                                @endif
+                                {{ $entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient' }}
+                            </div>
                             <div class="patient-time">{{ $entry->created_at->format('g:i A') }}</div>
+                        </td>
+                        <td>
+                            @if($entry->checkupType)
+                                <span class="checkup-type">{{ $entry->checkupType->name }}</span>
+                            @else
+                                <span class="checkup-type text-muted">-</span>
+                            @endif
                         </td>
                         <td>
                             @if($entry->status === 'diagnosing')
@@ -679,8 +701,7 @@ body {
         });
     }
 
-    // Auto-refresh every 5 seconds to pick up status changes from doctor
-    setTimeout(() => location.reload(), 5000);
+  
 </script>
 </body>
 </html>

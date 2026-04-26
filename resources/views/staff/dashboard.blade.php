@@ -196,8 +196,8 @@ body {
 .na-btn.active { background: #fff4e5; border-color: #f0d9a0; color: #b07000; }
 .na-btn.active::before { content: '✓ '; }
 
-/* Returning Patient Toggle */
-.returning-toggle {
+/* Priority Toggle */
+.form-toggle-row {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -208,12 +208,9 @@ body {
     margin-bottom: 18px;
     cursor: pointer;
 }
-.returning-toggle input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
-.returning-toggle label { font-size: .8rem; font-weight: 600; color: var(--primary); cursor: pointer; margin: 0; }
-.returning-toggle small { font-size: .7rem; color: var(--text-muted); }
-
-#returningSearch { display: none; }
-#returningSearch.visible { display: block; }
+.form-toggle-row input[type="checkbox"] { accent-color: var(--primary); width: 15px; height: 15px; cursor: pointer; }
+.form-toggle-row label { font-size: .8rem; font-weight: 600; color: var(--primary); cursor: pointer; margin: 0; }
+.form-toggle-row small { font-size: .7rem; color: var(--text-muted); }
 
 .btn-register { width: 100%; background: var(--sidebar-bg); color: #fff; border: none; border-radius: 8px; padding: 11px 0; font-size: .85rem; font-weight: 600; cursor: pointer; transition: background .18s; }
 .btn-register:hover { background: var(--accent); }
@@ -281,8 +278,9 @@ body {
         <div class="brand-name">CuraSure</div>
     </div>
     <nav class="sidebar-nav">
-        <a href="#" class="sidebar-link active"><i class="bi bi-grid-1x2"></i> Dashboard</a>
-        <a href="{{ route('staff.queue') }}" class="sidebar-link"><i class="bi bi-people"></i> Patient Queue</a>
+        <a href="{{ route('staff.dashboard') }}" class="sidebar-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
+        <a href="{{ route('staff.queue') }}" class="sidebar-link {{ request()->routeIs('staff.queue') ? 'active' : '' }}"><i class="bi bi-people"></i> Patient Queue</a>
+        <a href="{{ route('staff.payments') }}" class="sidebar-link {{ request()->routeIs('staff.payments') ? 'active' : '' }}"><i class="bi bi-cash-stack"></i> Billing & Payments</a>
     </nav>
     <div class="sidebar-bottom">
         <form action="{{ route('logout') }}" method="POST">
@@ -299,45 +297,44 @@ body {
             <p>Welcome back, {{ Auth::user()->name }}</p>
         </div>
         <div class="topbar-actions">
-    {{-- Bell with red dot + dropdown --}}
-    <div style="position:relative;" id="staffBellBtn" onclick="toggleStaffNotif()">
-        <div class="topbar-icon" style="cursor:pointer; position:relative;">
-            <i class="bi bi-bell"></i>
-            @php $diagnosingCount = \App\Models\PatientQueue::whereDate('created_at', today())->where('status','diagnosing')->count(); @endphp
-            @if($diagnosingCount > 0)
-                <span id="staffBellBadge" style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#e53935;border-radius:50%;border:2px solid #fff;display:block;animation:bellPulse 1.5s infinite;"></span>
-            @else
-                <span id="staffBellBadge" style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#e53935;border-radius:50%;border:2px solid #fff;display:none;"></span>
-            @endif
-        </div>
-
-        <div id="staffNotifDropdown" style="display:none;position:absolute;top:44px;right:0;width:290px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:200;overflow:hidden;">
-            <div style="padding:12px 16px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);border-bottom:1px solid var(--border);">
-                <i class="bi bi-activity me-1"></i> Doctor Activity
-            </div>
-            @php $diagnosing = \App\Models\PatientQueue::with('patient')->whereDate('created_at', today())->where('status','diagnosing')->get(); @endphp
-            @forelse($diagnosing as $d)
-                <a href="{{ route('staff.queue') }}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text-primary);">
-                    <span style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;"></span>
-                    <div style="flex:1;">
-                        <div style="font-weight:700;font-size:.8rem;">{{ $d->patient_name ?? $d->patient?->name ?? 'Unknown Patient' }}</div>
-                        <div style="font-size:.7rem;color:var(--text-muted);">{{ $d->display_queue_number }} · Being diagnosed {{ $d->called_at ? '· '.\Carbon\Carbon::parse($d->called_at)->format('g:i A') : '' }}</div>
+            {{-- Bell with red dot + dropdown --}}
+            <div style="position:relative;" id="staffBellBtn" onclick="toggleStaffNotif()">
+                <div class="topbar-icon" style="cursor:pointer; position:relative;">
+                    <i class="bi bi-bell"></i>
+                    @php $diagnosingCount = \App\Models\PatientQueue::whereDate('created_at', today())->where('status','diagnosing')->count(); @endphp
+                    @if($diagnosingCount > 0)
+                        <span id="staffBellBadge" style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#e53935;border-radius:50%;border:2px solid #fff;display:block;animation:bellPulse 1.5s infinite;"></span>
+                    @else
+                        <span id="staffBellBadge" style="position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#e53935;border-radius:50%;border:2px solid #fff;display:none;"></span>
+                    @endif
+                </div>
+                <div id="staffNotifDropdown" style="display:none;position:absolute;top:44px;right:0;width:290px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:200;overflow:hidden;">
+                    <div style="padding:12px 16px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);border-bottom:1px solid var(--border);">
+                        <i class="bi bi-activity me-1"></i> Doctor Activity
                     </div>
-                    <span style="font-size:.7rem;font-weight:700;color:var(--primary);white-space:nowrap;">View →</span>
-                </a>
-            @empty
-                <div style="padding:20px 16px;text-align:center;color:var(--text-muted);font-size:.78rem;">No active diagnoses</div>
-            @endforelse
-            <a href="{{ route('staff.queue') }}" style="display:block;text-align:center;padding:10px;font-size:.78rem;font-weight:700;color:var(--primary);text-decoration:none;border-top:1px solid var(--border);">
-                Go to Patient Queue →
-            </a>
-        </div>
-    </div>
+                    @php $diagnosing = \App\Models\PatientQueue::with('patient')->whereDate('created_at', today())->where('status','diagnosing')->get(); @endphp
+                    @forelse($diagnosing as $d)
+                        <a href="{{ route('staff.queue') }}" style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border);text-decoration:none;color:var(--text-primary);">
+                            <span style="width:8px;height:8px;border-radius:50%;background:var(--primary);flex-shrink:0;"></span>
+                            <div style="flex:1;">
+                                <div style="font-weight:700;font-size:.8rem;">{{ $d->patient_name ?? $d->patient?->name ?? 'Unknown Patient' }}</div>
+                                <div style="font-size:.7rem;color:var(--text-muted);">{{ $d->display_queue_number }} · Being diagnosed {{ $d->called_at ? '· '.\Carbon\Carbon::parse($d->called_at)->format('g:i A') : '' }}</div>
+                            </div>
+                            <span style="font-size:.7rem;font-weight:700;color:var(--primary);white-space:nowrap;">View →</span>
+                        </a>
+                    @empty
+                        <div style="padding:20px 16px;text-align:center;color:var(--text-muted);font-size:.78rem;">No active diagnoses</div>
+                    @endforelse
+                    <a href="{{ route('staff.queue') }}" style="display:block;text-align:center;padding:10px;font-size:.78rem;font-weight:700;color:var(--primary);text-decoration:none;border-top:1px solid var(--border);">
+                        Go to Patient Queue →
+                    </a>
+                </div>
+            </div>
 
-    <div class="avatar" data-bs-toggle="modal" data-bs-target="#staffProfileModal">
-        {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
-    </div>
-</div>
+            <div class="avatar" data-bs-toggle="modal" data-bs-target="#staffProfileModal">
+                {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
+            </div>
+        </div>
     </header>
 
     <main class="content">
@@ -349,66 +346,83 @@ body {
                     <p style="font-size:.72rem; color:var(--text-muted); margin-bottom:16px;">Fields marked <span style="color:#b07000; font-weight:700;">N/A</span> can be toggled if information is unavailable.</p>
 
                     {{-- Success Message --}}
-@if(session('success'))
-    <div class="alert" style="background:#e8f5f0; border:1px solid #c0dfd0; color:#1b7a4e; border-radius:8px; padding:10px 14px; font-size:.82rem; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
-        <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
-    </div>
-@endif
-@if($errors->any())
-    <div class="alert" style="background:#fff5f5; border:1px solid #f1b0b7; color:#b02a37; border-radius:8px; padding:10px 14px; font-size:.8rem; margin-bottom:16px;">
-        <strong>Please fix the following:</strong>
-        <ul style="margin:6px 0 0 16px; padding:0;">
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
+                    @if(session('success'))
+                        <div class="alert" style="background:#e8f5f0; border:1px solid #c0dfd0; color:#1b7a4e; border-radius:8px; padding:10px 14px; font-size:.82rem; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                            <i class="bi bi-check-circle-fill"></i> {{ session('success') }}
+                        </div>
+                    @endif
 
-                    {{-- FIXED: added method, action, and @csrf --}}
-                    <form method="POST" action="{{ route('staff.store') }}">
-                        @csrf
-                        <input type="hidden" name="returning_patient_id" id="returning_patient_id" value="{{ old('returning_patient_id') }}">
+                    @if($errors->any())
+                        <div class="alert" style="background:#fff5f5; border:1px solid #f1b0b7; color:#b02a37; border-radius:8px; padding:10px 14px; font-size:.8rem; margin-bottom:16px;">
+                            <strong>Please fix the following:</strong>
+                            <ul style="margin:6px 0 0 16px; padding:0;">
+                                @foreach($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
 
-                        {{-- ── Returning Patient ── --}}
-                        <div class="returning-toggle" onclick="toggleReturning(this)">
-                            <input type="checkbox" id="returningCheck">
+                    {{-- ── Duplicate Patient Warning Banner ── --}}
+                    <div id="duplicateWarningBanner" style="display:none; background:#fff8e1; border:1.5px solid #f6c90e; color:#7a5c00; border-radius:10px; padding:13px 16px; margin-bottom:16px; font-size:.82rem;">
+                        <div style="display:flex; align-items:flex-start; gap:10px;">
+                            <i class="bi bi-exclamation-triangle-fill" style="font-size:1.2rem; color:#e6a817; flex-shrink:0; margin-top:1px;"></i>
                             <div>
-                                <label for="returningCheck">Returning Patient?</label><br>
-                                <small>Toggle to search existing records instead of re-entering details</small>
+                                <div style="font-weight:700; font-size:.87rem; margin-bottom:3px;">⚠ Patient Already in Queue Today</div>
+                                <div id="duplicateWarningText">This patient is already in queue. Are you sure you want to add this? This might lead to duplication.</div>
+                                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button type="button" onclick="acknowledgeDuplicateWarning()" style="display:inline-flex; align-items:center; gap:5px; background:#1b3d2f; color:#fff; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-check-circle"></i> Okay
+                                    </button>
+                                    <button type="button" onclick="dismissDuplicateWarning()" style="display:inline-flex; align-items:center; gap:5px; background:none; border:1.5px solid #c9a800; color:#7a5c00; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-x-circle"></i> Dismiss & Proceed Anyway
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div id="returningSearch" class="mb-3">
-    <label class="form-label-custom">Search Existing Patient</label>
-    <input type="text" id="patientSearchInput" class="form-control-custom" placeholder="Search by name or contact number…">
-    
-    {{-- Dropdown results --}}
-    <div id="searchResults" style="background:#fff; border:1px solid var(--border); border-radius:8px; margin-top:4px; display:none;"></div>
-</div>
+                    </div>
+
+                    {{-- ── Returning Patient Warning Banner ── --}}
+                    <div id="returningWarningBanner" style="display:none; background:#e8f0ff; border:1.5px solid #4a90e2; color:#1e40af; border-radius:10px; padding:13px 16px; margin-bottom:16px; font-size:.82rem;">
+                        <div style="display:flex; align-items:flex-start; gap:10px;">
+                            <i class="bi bi-info-circle-fill" style="font-size:1.2rem; color:#4a90e2; flex-shrink:0; margin-top:1px;"></i>
+                            <div>
+                                <div style="font-weight:700; font-size:.87rem; margin-bottom:3px;">ℹ Returning Patient Detected</div>
+                                <div id="returningWarningText">This patient has a diagnosis history in the system. Are you sure you want to add them again?</div>
+                                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button type="button" onclick="dismissReturningWarning()" style="display:inline-flex; align-items:center; gap:5px; background:#1b3d2f; color:#fff; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-check-circle"></i> Yes, Proceed
+                                    </button>
+                                    <button type="button" onclick="cancelReturningWarning()" style="display:inline-flex; align-items:center; gap:5px; background:none; border:1.5px solid #4a90e2; color:#1e40af; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-x-circle"></i> Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form method="POST" action="{{ route('staff.store') }}">
+                        @csrf
 
                         {{-- ── Personal Info ── --}}
                         <span class="form-section-label"><i class="bi bi-person me-1"></i> Personal Information</span>
 
                         <div class="mb-3">
                             <label class="form-label-custom">Full Patient Name</label>
-                            {{-- FIXED: added name="name" --}}
-                            <input type="text" name="name" value="{{ old('name') }}" class="form-control-custom {{ $errors->has('name') ? 'input-invalid' : '' }}" placeholder="e.g. Elena Rodriguez" required>
+                            <input type="text" name="name" value="{{ old('name') }}" class="form-control-custom {{ $errors->has('name') ? 'input-invalid' : '' }}" placeholder="e.g. Elena Rodriguez" required onblur="checkDuplicatePatient()">
                         </div>
 
                         <div class="row mb-3 g-2">
                             <div class="col-md-4">
                                 <label class="form-label-custom">Date of Birth</label>
-                                {{-- FIXED: added name="date_of_birth" --}}
-                                <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" class="form-control-custom {{ $errors->has('date_of_birth') ? 'input-invalid' : '' }}" id="dob" onchange="calcAge()">
+                                <input type="date" name="date_of_birth" value="{{ old('date_of_birth') }}" class="form-control-custom {{ $errors->has('date_of_birth') ? 'input-invalid' : '' }}" id="dob" onchange="calcAge()" onblur="checkDuplicatePatient()">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label-custom">Age</label>
-                                {{-- FIXED: added name="age" --}}
                                 <input type="number" name="age" value="{{ old('age') }}" class="form-control-custom {{ $errors->has('age') ? 'input-invalid' : '' }}" id="age" placeholder="—" readonly>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label-custom">Gender</label>
-                                {{-- FIXED: added name="gender" --}}
                                 <select name="gender" class="form-control-custom {{ $errors->has('gender') ? 'input-invalid' : '' }}" style="appearance: auto;" required>
                                     <option value="" disabled {{ old('gender') ? '' : 'selected' }}>Select</option>
                                     <option value="Male" {{ old('gender') === 'Male' ? 'selected' : '' }}>Male</option>
@@ -417,7 +431,6 @@ body {
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label-custom">Civil Status</label>
-                                {{-- FIXED: added name="civil_status" --}}
                                 <select name="civil_status" class="form-control-custom {{ $errors->has('civil_status') ? 'input-invalid' : '' }}" style="appearance: auto;">
                                     <option value="" {{ old('civil_status') ? '' : 'selected' }}>Select</option>
                                     <option value="Single" {{ old('civil_status') === 'Single' ? 'selected' : '' }}>Single</option>
@@ -431,34 +444,35 @@ body {
                         <div class="row mb-3 g-2">
                             <div class="col-md-6">
                                 <label class="form-label-custom">Contact Number</label>
-                                {{-- FIXED: added name="contact_number" --}}
-                                <input type="text" name="contact_number" value="{{ old('contact_number') }}" class="form-control-custom {{ $errors->has('contact_number') ? 'input-invalid' : '' }}" placeholder="+63 (555) 000-0000" required>
+                                <input type="text" name="contact_number" value="{{ old('contact_number') }}" class="form-control-custom {{ $errors->has('contact_number') ? 'input-invalid' : '' }}" placeholder="+63 (555) 000-0000" required onblur="checkDuplicatePatient()">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom">Address</label>
-                                {{-- FIXED: added name="address" --}}
-                                <input type="text" name="address" value="{{ old('address') }}" class="form-control-custom {{ $errors->has('address') ? 'input-invalid' : '' }}" placeholder="123 Health St, Davao City" required>
+                                <input type="text" name="address" value="{{ old('address') }}" class="form-control-custom {{ $errors->has('address') ? 'input-invalid' : '' }}" placeholder="123 Health St, Davao City" required onblur="checkDuplicatePatient()">
                             </div>
                         </div>
 
                         <div class="row mb-4 g-2">
                             <div class="col-md-4">
                                 <label class="form-label-custom">Blood Type</label>
-                                {{-- FIXED: added name="blood_type" --}}
-                                <select name="blood_type" class="form-control-custom {{ $errors->has('blood_type') ? 'input-invalid' : '' }}" style="appearance: auto;">
+                                <select name="blood_type" onchange="checkDuplicatePatient()" class="form-control-custom {{ $errors->has('blood_type') ? 'input-invalid' : '' }}" style="appearance: auto;">
                                     <option value="">Select Type</option>
-                                    <option value="A+" {{ old('blood_type') === 'A+' ? 'selected' : '' }}>A+</option><option value="A-" {{ old('blood_type') === 'A-' ? 'selected' : '' }}>A-</option><option value="B+" {{ old('blood_type') === 'B+' ? 'selected' : '' }}>B+</option><option value="B-" {{ old('blood_type') === 'B-' ? 'selected' : '' }}>B-</option>
-                                    <option value="O+" {{ old('blood_type') === 'O+' ? 'selected' : '' }}>O+</option><option value="O-" {{ old('blood_type') === 'O-' ? 'selected' : '' }}>O-</option><option value="AB+" {{ old('blood_type') === 'AB+' ? 'selected' : '' }}>AB+</option><option value="AB-" {{ old('blood_type') === 'AB-' ? 'selected' : '' }}>AB-</option>
+                                    <option value="A+"  {{ old('blood_type') === 'A+'  ? 'selected' : '' }}>A+</option>
+                                    <option value="A-"  {{ old('blood_type') === 'A-'  ? 'selected' : '' }}>A-</option>
+                                    <option value="B+"  {{ old('blood_type') === 'B+'  ? 'selected' : '' }}>B+</option>
+                                    <option value="B-"  {{ old('blood_type') === 'B-'  ? 'selected' : '' }}>B-</option>
+                                    <option value="O+"  {{ old('blood_type') === 'O+'  ? 'selected' : '' }}>O+</option>
+                                    <option value="O-"  {{ old('blood_type') === 'O-'  ? 'selected' : '' }}>O-</option>
+                                    <option value="AB+" {{ old('blood_type') === 'AB+' ? 'selected' : '' }}>AB+</option>
+                                    <option value="AB-" {{ old('blood_type') === 'AB-' ? 'selected' : '' }}>AB-</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label-custom">Height (cm)</label>
-                                {{-- FIXED: added name="height" --}}
                                 <input type="number" name="height" value="{{ old('height') }}" class="form-control-custom {{ $errors->has('height') ? 'input-invalid' : '' }}" placeholder="170">
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label-custom">Weight (kg)</label>
-                                {{-- FIXED: added name="weight" --}}
                                 <input type="number" name="weight" value="{{ old('weight') }}" class="form-control-custom {{ $errors->has('weight') ? 'input-invalid' : '' }}" placeholder="70">
                             </div>
                         </div>
@@ -472,7 +486,6 @@ body {
                                     <label class="form-label-custom">PhilHealth No.</label>
                                     <button type="button" class="na-btn" onclick="toggleNA(this, 'philhealth')">N/A</button>
                                 </div>
-                                {{-- FIXED: added name="philhealth_no" --}}
                                 <input type="text" name="philhealth_no" value="{{ old('philhealth_no') }}" class="form-control-custom {{ $errors->has('philhealth_no') ? 'input-invalid' : '' }}" id="philhealth" placeholder="XX-XXXXXXXXX-X">
                             </div>
                             <div class="col-md-6">
@@ -480,7 +493,6 @@ body {
                                     <label class="form-label-custom">HMO / Insurance</label>
                                     <button type="button" class="na-btn" onclick="toggleNA(this, 'hmo')">N/A</button>
                                 </div>
-                                {{-- FIXED: added name="hmo_insurance" --}}
                                 <input type="text" name="hmo_insurance" value="{{ old('hmo_insurance') }}" class="form-control-custom {{ $errors->has('hmo_insurance') ? 'input-invalid' : '' }}" id="hmo" placeholder="Provider & Member No.">
                             </div>
                         </div>
@@ -492,12 +504,10 @@ body {
                             </div>
                             <div class="row g-2">
                                 <div class="col-md-6">
-                                    {{-- FIXED: added name="emergency_contact_name" --}}
-                                    <input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" class="form-control-custom {{ $errors->has('emergency_contact_name') ? 'input-invalid' : '' }}" id="emgName" placeholder="Contact Person Name">
+                                    <input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" class="form-control-custom {{ $errors->has('emergency_contact_name') ? 'input-invalid' : '' }}" id="emgName" placeholder="Contact Person Name" onblur="checkDuplicatePatient()">
                                 </div>
                                 <div class="col-md-6">
-                                    {{-- FIXED: added name="emergency_contact_number" --}}
-                                    <input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" class="form-control-custom {{ $errors->has('emergency_contact_number') ? 'input-invalid' : '' }}" id="emgContact" placeholder="+63 (555) 000-0000">
+                                    <input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" class="form-control-custom {{ $errors->has('emergency_contact_number') ? 'input-invalid' : '' }}" id="emgContact" placeholder="+63 (555) 000-0000" onblur="checkDuplicatePatient()">
                                 </div>
                             </div>
                         </div>
@@ -510,7 +520,6 @@ body {
                                 <label class="form-label-custom">Known Allergies</label>
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'allergies')">N/A</button>
                             </div>
-                            {{-- FIXED: added name="allergies" --}}
                             <input type="text" name="known_allergies" value="{{ old('known_allergies') }}" class="form-control-custom {{ $errors->has('known_allergies') ? 'input-invalid' : '' }}" id="allergies" placeholder="e.g. Penicillin, Shellfish, Dust">
                         </div>
 
@@ -519,7 +528,6 @@ body {
                                 <label class="form-label-custom">Existing Conditions</label>
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'conditions')">N/A</button>
                             </div>
-                            {{-- FIXED: added name="existing_conditions" --}}
                             <input type="text" name="existing_conditions" value="{{ old('existing_conditions') }}" class="form-control-custom {{ $errors->has('existing_conditions') ? 'input-invalid' : '' }}" id="conditions" placeholder="e.g. Hypertension, Diabetes Type 2">
                         </div>
 
@@ -528,7 +536,6 @@ body {
                                 <label class="form-label-custom">Current Medications</label>
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'medications')">N/A</button>
                             </div>
-                            {{-- FIXED: added name="current_medications" --}}
                             <input type="text" name="current_medications" value="{{ old('current_medications') }}" class="form-control-custom {{ $errors->has('current_medications') ? 'input-invalid' : '' }}" id="medications" placeholder="e.g. Metformin 500mg, Losartan 50mg">
                         </div>
 
@@ -537,29 +544,54 @@ body {
 
                         <div class="mb-4">
                             <label class="form-label-custom">Primary Symptoms</label>
-                            {{-- FIXED: added name="primary_symptoms" --}}
                             <textarea name="primary_symptoms" class="form-control-custom {{ $errors->has('primary_symptoms') ? 'input-invalid' : '' }}" rows="3" placeholder="Describe symptoms…" required>{{ old('primary_symptoms') }}</textarea>
                         </div>
 
+                        {{-- ── Check-up Type & Billing ── --}}
+                        <span class="form-section-label"><i class="bi bi-cash-stack me-1"></i> Check-up Type & Billing</span>
+
+                        <div class="row mb-3 g-2">
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Select Check-up Type</label>
+                                <select name="checkup_type_id" id="checkupTypeSelect" class="form-control-custom {{ $errors->has('checkup_type_id') ? 'input-invalid' : '' }}" style="appearance:auto;" onchange="updateFeeDisplay()">
+                                    <option value="">-- Select Type --</option>
+                                    @forelse($checkupTypes as $type)
+                                        <option value="{{ $type->id }}" data-fee="{{ $type->fee }}" {{ old('checkup_type_id') == $type->id ? 'selected' : '' }}>
+                                            {{ $type->name }} - ₱{{ number_format($type->fee, 2) }}
+                                        </option>
+                                    @empty
+                                        <option value="">No check-up types available</option>
+                                    @endforelse
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label-custom">Or Custom Fee (Override)</label>
+                                <input type="number" name="custom_fee" id="customFee" value="{{ old('custom_fee') }}" class="form-control-custom {{ $errors->has('custom_fee') ? 'input-invalid' : '' }}" placeholder="0.00" step="0.01" min="0" onchange="toggleCustomFee()">
+                            </div>
+                        </div>
+                        <div id="feeDisplay" class="mb-3" style="font-size: .8rem; color: var(--text-muted);">
+                            <i class="bi bi-info-circle me-1"></i> Fee will be automatically assigned based on check-up type
+                        </div>
+
                         <span class="form-section-label"><i class="bi bi-exclamation-octagon me-1"></i> Priority Handling</span>
-                        <div class="returning-toggle mb-3" onclick="togglePriority(this)">
+                        <div class="form-toggle-row mb-3" onclick="togglePriority(this)">
                             <input type="checkbox" id="priorityCheck" name="is_priority" value="1" {{ old('is_priority') ? 'checked' : '' }}>
                             <div>
                                 <label for="priorityCheck">Mark as Priority Patient?</label><br>
                                 <small>Use for seniors, PWD, pregnant, or urgent cases.</small>
                             </div>
                         </div>
-                        <div id="priorityFields" class="{{ old('is_priority') ? 'visible' : '' }}" style="display: {{ old('is_priority') ? 'block' : 'none' }};">
+                        <div id="priorityFields" style="display: {{ old('is_priority') ? 'block' : 'none' }};">
                             <div class="row g-2 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label-custom">Priority Type</label>
                                     <select name="priority_type" class="form-control-custom {{ $errors->has('priority_type') ? 'input-invalid' : '' }}" style="appearance:auto;">
                                         <option value="">Select priority type</option>
-                                        <option value="senior" {{ old('priority_type') === 'senior' ? 'selected' : '' }}>Senior Citizen</option>
-                                        <option value="pwd" {{ old('priority_type') === 'pwd' ? 'selected' : '' }}>PWD</option>
+                                        <option value="senior"   {{ old('priority_type') === 'senior'   ? 'selected' : '' }}>Senior Citizen</option>
+                                        <option value="pwd"      {{ old('priority_type') === 'pwd'      ? 'selected' : '' }}>PWD</option>
                                         <option value="pregnant" {{ old('priority_type') === 'pregnant' ? 'selected' : '' }}>Pregnant</option>
-                                        <option value="urgent" {{ old('priority_type') === 'urgent' ? 'selected' : '' }}>Urgent Case</option>
-                                        <option value="other" {{ old('priority_type') === 'other' ? 'selected' : '' }}>Other</option>
+                                        <option value="urgent"   {{ old('priority_type') === 'urgent'   ? 'selected' : '' }}>Urgent Case</option>
+                                        <option value="other"    {{ old('priority_type') === 'other'    ? 'selected' : '' }}>Other</option>
                                     </select>
                                 </div>
                                 <div class="col-md-6">
@@ -569,7 +601,7 @@ body {
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-register">
+                        <button type="submit" class="btn-register" id="submitRegistrationBtn" onclick="return handleRegistrationSubmit(event)">
                             <i class="bi bi-person-check me-2"></i> Complete Registration
                         </button>
                     </form>
@@ -615,7 +647,7 @@ body {
         <span>© 2024 CuraSure · Staff Portal</span>
         <div class="footer-links">
             <a href="#" style="color:var(--text-muted); text-decoration:none; font-size:.7rem; margin-left:15px;">Privacy Protocol</a>
-            <a href="#" style="color:var(--text-muted); text-decoration:none; font-size:.7rem; margin-left:15px;">Support</a>
+            <a href="{{ route('support') }}" style="color:var(--text-muted); text-decoration:none; font-size:.7rem; margin-left:15px;">Support</a>
         </div>
     </footer>
 </div>
@@ -668,8 +700,6 @@ body {
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-
 <script>
     /* Auto-calculate age from DOB */
     function calcAge() {
@@ -681,6 +711,39 @@ body {
         const m = today.getMonth() - birth.getMonth();
         if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
         document.getElementById('age').value = age;
+    }
+
+    /* Update fee display when checkup type changes */
+    function updateFeeDisplay() {
+        const select = document.getElementById('checkupTypeSelect');
+        const customFee = document.getElementById('customFee');
+        const display = document.getElementById('feeDisplay');
+        
+        if (select.selectedOptions.length > 0) {
+            const option = select.selectedOptions[0];
+            const fee = option.getAttribute('data-fee');
+            if (fee && !customFee.value) {
+                display.innerHTML = '<i class="bi bi-info-circle me-1"></i> Selected: <strong>₱' + parseFloat(fee).toFixed(2) + '</strong>';
+            } else if (customFee.value) {
+                display.innerHTML = '<i class="bi bi-info-circle me-1"></i> Custom fee override: <strong>₱' + parseFloat(customFee.value).toFixed(2) + '</strong>';
+            } else {
+                display.innerHTML = '<i class="bi bi-info-circle me-1"></i> Fee will be automatically assigned based on check-up type';
+            }
+        }
+    }
+
+    /* Toggle custom fee when manually entered */
+    function toggleCustomFee() {
+        const customFee = document.getElementById('customFee');
+        const select = document.getElementById('checkupTypeSelect');
+        const display = document.getElementById('feeDisplay');
+        
+        if (customFee.value && parseFloat(customFee.value) > 0) {
+            select.value = ''; // Clear checkup type when using custom fee
+            display.innerHTML = '<i class="bi bi-info-circle me-1"></i> Custom fee override: <strong>₱' + parseFloat(customFee.value).toFixed(2) + '</strong>';
+        } else {
+            updateFeeDisplay();
+        }
     }
 
     /* N/A toggle for a field */
@@ -697,14 +760,6 @@ body {
         }
     }
 
-    /* Returning patient toggle */
-    function toggleReturning(wrapper) {
-        const cb = wrapper.querySelector('input[type="checkbox"]');
-        cb.checked = !cb.checked;
-        const search = document.getElementById('returningSearch');
-        search.classList.toggle('visible', cb.checked);
-    }
-
     function togglePriority(wrapper) {
         const cb = wrapper.querySelector('input[type="checkbox"]');
         cb.checked = !cb.checked;
@@ -712,111 +767,129 @@ body {
         fields.style.display = cb.checked ? 'block' : 'none';
     }
 
-    /* Live search — attached after DOM is ready */
-    document.addEventListener('DOMContentLoaded', function () {
-        const searchInput = document.getElementById('patientSearchInput');
-        const results     = document.getElementById('searchResults');
-        const returningId = document.getElementById('returning_patient_id');
+    /* ── Duplicate Patient Detection ── */
+    let _duplicateWarningDismissed = false;
+    let _returningWarningDismissed = false;
+    let _duplicateCheckTimeout = null;
 
-        if (searchInput && returningId) {
-            searchInput.addEventListener('input', function () {
-                if (!this.value.trim()) {
-                    returningId.value = '';
+    function checkDuplicatePatient() {
+        const name      = (document.querySelector('[name="name"]')?.value ?? '').trim();
+        const dob       = (document.querySelector('[name="date_of_birth"]')?.value ?? '').trim();
+        const address   = (document.querySelector('[name="address"]')?.value ?? '').trim();
+        const age       = (document.querySelector('[name="age"]')?.value ?? '').trim();
+        const contact   = (document.querySelector('[name="contact_number"]')?.value ?? '').trim();
+        const bloodType = (document.querySelector('[name="blood_type"]')?.value ?? '').trim();
+        const emgName   = (document.getElementById('emgName')?.value ?? '').trim();
+        const emgContact= (document.getElementById('emgContact')?.value ?? '').trim();
+
+        const filledCount = [dob, age, contact, bloodType, emgName, emgContact].filter(v => v && v !== 'N/A').length;
+        if (!name || !dob || !address || !age || !contact || !bloodType) return;
+
+        clearTimeout(_duplicateCheckTimeout);
+        _duplicateCheckTimeout = setTimeout(() => {
+            // Check for duplicate in today's queue
+            fetch(`{{ route('patients.check-queue') }}?` + new URLSearchParams({
+                name, date_of_birth: dob, address, age, contact_number: contact,
+                blood_type: bloodType, emergency_contact_name: emgName,
+                emergency_contact_number: emgContact
+            }))
+            .then(res => res.json())
+            .then(data => {
+                if (data.in_queue && !_duplicateWarningDismissed) {
+                    const banner = document.getElementById('duplicateWarningBanner');
+                    const text   = document.getElementById('duplicateWarningText');
+                    text.innerHTML = `<strong>${data.patient_name ?? name}</strong> is already in queue. Are you sure you want to add this? This might lead to duplication.`;
+                    banner.style.display = 'block';
+                    banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else if (!data.in_queue) {
+                    hideDuplicateBanner();
                 }
-            });
-        }
+            })
+            .catch(() => {});
 
-        searchInput.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault(); // stop form submission
-
-        const first = document.querySelector('#searchResults div');
-        if (first) {
-            first.click(); // auto-fill first result
-        }
+            // Check for returning patient (assuming a route 'patients.check-existence' exists)
+            fetch(`{{ route('patients.check-existence') }}?` + new URLSearchParams({
+                name, date_of_birth: dob, address
+            }))
+            .then(res => res.json())
+            .then(data => {
+                if (data.exists && !_returningWarningDismissed) {
+                    const banner = document.getElementById('returningWarningBanner');
+                    const text   = document.getElementById('returningWarningText');
+                    text.innerHTML = `<strong>${data.patient_name ?? name}</strong> is a returning patient with diagnosis history in the system. Are you sure you want to add them again?`;
+                    banner.style.display = 'block';
+                    banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                } else if (!data.exists) {
+                    hideReturningBanner();
+                }
+            })
+            .catch(() => {});
+        }, 500);
     }
-});
 
-        searchInput.addEventListener('input', function () {
-            const query = this.value.trim();
+    function ucfirstStatus(s) {
+        return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+    }
 
-            if (query.length < 2) {
-                results.style.display = 'none';
-                return;
+    function hideDuplicateBanner() {
+        document.getElementById('duplicateWarningBanner').style.display = 'none';
+    }
+
+    function acknowledgeDuplicateWarning() {
+        hideDuplicateBanner();
+    }
+
+    function dismissDuplicateWarning() {
+        _duplicateWarningDismissed = true;
+        hideDuplicateBanner();
+    }
+
+    function dismissReturningWarning() {
+        _returningWarningDismissed = true;
+        hideReturningBanner();
+    }
+
+    function cancelReturningWarning() {
+        // Optionally clear the form or focus on name field
+        document.querySelector('[name="name"]').focus();
+        hideReturningBanner();
+    }
+
+    function hideReturningBanner() {
+        document.getElementById('returningWarningBanner').style.display = 'none';
+    }
+
+    function handleRegistrationSubmit(e) {
+        const duplicateBanner = document.getElementById('duplicateWarningBanner');
+        const returningBanner = document.getElementById('returningWarningBanner');
+        if ((duplicateBanner.style.display !== 'none' && !_duplicateWarningDismissed) ||
+            (returningBanner.style.display !== 'none' && !_returningWarningDismissed)) {
+            e.preventDefault();
+            if (duplicateBanner.style.display !== 'none') {
+                duplicateBanner.style.outline = '2.5px solid #e6a817';
+                duplicateBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                setTimeout(() => { duplicateBanner.style.outline = 'none'; }, 1800);
             }
-
-            fetch(`{{ route('patients.search') }}?q=${encodeURIComponent(query)}`)
-                .then(res => res.json())
-                .then(patients => {
-                    if (patients.length === 0) {
-                        results.innerHTML = `<div style="padding:10px 14px; font-size:.8rem; color:var(--text-muted);">No patients found.</div>`;
-                    } else {
-                        results.innerHTML = patients.map(p => `
-                            <div onclick="fillPatient(${JSON.stringify(p).replace(/"/g, '&quot;')})"
-                                 style="padding:10px 14px; font-size:.83rem; cursor:pointer; border-bottom:1px solid var(--border);"
-                                 onmouseover="this.style.background='var(--accent-soft)'"
-                                 onmouseout="this.style.background='#fff'">
-                                <strong>${p.name}</strong>
-                                <span style="color:var(--text-muted); font-size:.75rem;"> · ${p.contact_number ?? 'No contact'}</span>
-                            </div>
-                        `).join('');
-                    }
-                    results.style.display = 'block';
-                })
-                .catch(err => console.error('Search error:', err));
-        });
-
-        /* Hide results when clicking outside */
-        document.addEventListener('click', function (e) {
-            if (!searchInput.contains(e.target) && !results.contains(e.target)) {
-                results.style.display = 'none';
+            if (returningBanner.style.display !== 'none') {
+                returningBanner.style.outline = '2.5px solid #4a90e2';
+                returningBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                setTimeout(() => { returningBanner.style.outline = 'none'; }, 1800);
             }
-        });
-    });
-
-    
-
-    /* Fill all form fields with returning patient data */
-    function fillPatient(p) {
-        document.getElementById('searchResults').style.display = 'none';
-        document.getElementById('patientSearchInput').value = p.name;
-        document.getElementById('returning_patient_id').value = p.id ?? '';
-
-        // Personal
-        document.querySelector('[name="name"]').value            = p.name ?? '';
-        document.querySelector('[name="date_of_birth"]').value   = p.date_of_birth ?? '';
-        document.querySelector('[name="age"]').value             = p.age ?? '';
-        document.querySelector('[name="gender"]').value          = p.gender ?? '';
-        document.querySelector('[name="civil_status"]').value    = p.civil_status ?? '';
-        document.querySelector('[name="contact_number"]').value  = p.contact_number ?? '';
-        document.querySelector('[name="address"]').value         = p.address ?? '';
-
-        // Vitals
-        document.querySelector('[name="blood_type"]').value      = p.blood_type ?? '';
-        document.querySelector('[name="height"]').value          = p.height ?? '';
-        document.querySelector('[name="weight"]').value          = p.weight ?? '';
-
-        // Administrative
-        document.querySelector('[name="philhealth_no"]').value   = p.philhealth_no ?? '';
-        document.querySelector('[name="hmo_insurance"]').value   = p.hmo_insurance ?? '';
-        document.getElementById('emgName').value                 = p.emergency_contact_name ?? '';
-        document.getElementById('emgContact').value              = p.emergency_contact_number ?? '';
-
-        // Medical History
-        document.getElementById('allergies').value               = p.known_allergies ?? '';
-        document.getElementById('conditions').value              = p.existing_conditions ?? '';
-        document.getElementById('medications').value             = p.current_medications ?? '';
+            return false;
+        }
+        return true;
     }
 
     function toggleStaffNotif() {
-    const d = document.getElementById('staffNotifDropdown');
-    d.style.display = d.style.display === 'block' ? 'none' : 'block';
-}
-document.addEventListener('click', function(e) {
-    const btn = document.getElementById('staffBellBtn');
-    const dropdown = document.getElementById('staffNotifDropdown');
-    if (btn && !btn.contains(e.target)) dropdown.style.display = 'none';
-});
+        const d = document.getElementById('staffNotifDropdown');
+        d.style.display = d.style.display === 'block' ? 'none' : 'block';
+    }
+
+    document.addEventListener('click', function(e) {
+        const btn = document.getElementById('staffBellBtn');
+        const dropdown = document.getElementById('staffNotifDropdown');
+        if (btn && !btn.contains(e.target)) dropdown.style.display = 'none';
+    });
 </script>
 
 </body>

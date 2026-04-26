@@ -9,6 +9,9 @@ use App\Models\Doctor;
 use App\Models\PatientQueue;
 use App\Models\MedicalRecord;
 use App\Models\ReportSnapshot;
+use App\Models\Setting;
+use App\Models\CheckupType;
+use App\Models\Payment;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -77,6 +80,34 @@ class AdminController extends Controller
             ['label' => 'Seniors (60+)', 'count' => Patient::where('age', '>=', 60)->count()],
         ];
 
+        // Billing stats
+        $todayRevenue = Payment::whereDate('created_at', today())
+            ->where('status', 'paid')
+            ->sum('amount');
+        
+        $todayPatients = PatientQueue::whereDate('created_at', today())->count();
+        
+        $todayPaidCount = Payment::whereDate('created_at', today())
+            ->where('status', 'paid')
+            ->count();
+        
+        $todayUnpaidCount = Payment::whereDate('created_at', today())
+            ->where('status', 'unpaid')
+            ->count();
+
+        // Most common checkup type today
+        $mostCommonCheckup = PatientQueue::whereDate('created_at', today())
+            ->whereNotNull('checkup_type_id')
+            ->selectRaw('checkup_type_id, COUNT(*) as total')
+            ->groupBy('checkup_type_id')
+            ->orderByDesc('total')
+            ->first();
+        
+        $mostCommonCheckupType = null;
+        if ($mostCommonCheckup) {
+            $mostCommonCheckupType = CheckupType::find($mostCommonCheckup->checkup_type_id);
+        }
+
         return view('admin.dashboard', compact(
             'recentQueue',
             'totalPatients',
@@ -87,7 +118,12 @@ class AdminController extends Controller
             'monthData',
             'topDiagnoses',
             'diagTotal',
-            'demographicsData'
+            'demographicsData',
+            'todayRevenue',
+            'todayPatients',
+            'todayPaidCount',
+            'todayUnpaidCount',
+            'mostCommonCheckupType'
         ));
     }
 
@@ -98,6 +134,81 @@ class AdminController extends Controller
     {
         $users = User::with('doctor')->orderByDesc('created_at')->orderByDesc('id')->get();
         return view('admin.administration', compact('users'));
+    }
+
+    public function support()
+    {
+        return view('support');
+    }
+
+    /**
+     * Checkup Types Management
+     */
+    public function checkupTypes()
+    {
+        $checkupTypes = CheckupType::orderBy('name')->get();
+        return view('admin.checkup-types', compact('checkupTypes'));
+    }
+
+    public function storeCheckupType(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:checkup_types,name',
+            'fee' => 'required|numeric|min:0|max:999999.99',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        CheckupType::create([
+            'name' => $request->name,
+            'fee' => $request->fee,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        return redirect()->back()->with('success', 'Check-up type created successfully!');
+    }
+
+    public function updateCheckupType(Request $request, CheckupType $checkupType)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255|unique:checkup_types,name,' . $checkupType->id,
+            'fee' => 'required|numeric|min:0|max:999999.99',
+            'is_active' => 'nullable|boolean',
+        ]);
+
+        $checkupType->update([
+            'name' => $request->name,
+            'fee' => $request->fee,
+            'is_active' => $request->boolean('is_active', true),
+        ]);
+
+        return redirect()->back()->with('success', 'Check-up type updated successfully!');
+    }
+
+    public function destroyCheckupType(CheckupType $checkupType)
+    {
+        $checkupType->delete();
+        return redirect()->back()->with('success', 'Check-up type deleted successfully!');
+    }
+
+    /**
+     * Billing Reports
+     */
+    public function billing(Request $request)
+    {
+        $date = $request->get('date', today()->toDateString());
+        
+        $payments = Payment::with(['visit.patient', 'visit.checkupType'])
+            ->whereHas('visit', function ($query) use ($date) {
+                $query->whereDate('queue_date', $date);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $totalRevenue = $payments->where('status', 'paid')->sum('amount');
+        $totalPending = $payments->where('status', 'unpaid')->sum('amount');
+        $totalPatients = $payments->count();
+
+        return view('admin.billing', compact('payments', 'date', 'totalRevenue', 'totalPending', 'totalPatients'));
     }
 
     public function schedule()
@@ -403,6 +514,23 @@ class AdminController extends Controller
 
     public function saveSettings(Request $request)
     {
+        $validated = $request->validate([
+            'clinic_name' => 'required|string|max:255',
+            'queue_format' => [
+                'required',
+                'string',
+                'max:20',
+                'regex:/^[A-Za-z0-9#-]*0*[1-9][0-9]*$/',
+            ],
+            'default_role' => 'required|in:admin,doctor,staff',
+        ]);
+
+        Setting::setMany([
+            'clinic_name' => $validated['clinic_name'],
+            'queue_format' => strtoupper($validated['queue_format']),
+            'default_role' => $validated['default_role'],
+        ]);
+
         return back()->with('success', 'Clinic settings updated.');
     }
 

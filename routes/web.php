@@ -8,6 +8,8 @@ use App\Http\Controllers\PatientQueueController;
 use App\Http\Controllers\DoctorController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\CheckupTypeController;
 
 // ── Public Routes ──
 Route::middleware('guest')->group(function () {
@@ -36,6 +38,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/queue', [PatientQueueController::class, 'adminIndex'])->name('queue');
         Route::patch('/queue/{patientQueue}', [PatientQueueController::class, 'update'])->name('queue.update');
         Route::delete('/queue/{patientQueue}', [PatientQueueController::class, 'destroy'])->name('queue.destroy');
+        
+        // Checkup Types Management
+        Route::get('/checkup-types', [AdminController::class, 'checkupTypes'])->name('checkup-types');
+        Route::post('/checkup-types', [AdminController::class, 'storeCheckupType'])->name('checkup-types.store');
+        Route::put('/checkup-types/{checkupType}', [AdminController::class, 'updateCheckupType'])->name('checkup-types.update');
+        Route::delete('/checkup-types/{checkupType}', [AdminController::class, 'destroyCheckupType'])->name('checkup-types.destroy');
+        
+        // Billing Reports
+        Route::get('/billing', [AdminController::class, 'billing'])->name('billing');
         Route::get('/schedule', [AdminController::class, 'schedule'])->name('schedule');
         Route::post('/schedule', [AdminController::class, 'storeSchedule'])->name('schedule.store');
         Route::get('/reports', [AdminController::class, 'reports'])->name('reports');
@@ -66,14 +77,21 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/patientqueue', [PatientQueueController::class, 'index'])->name('queue');
         Route::patch('/patientqueue/{patientQueue}', [PatientQueueController::class, 'update'])->name('queue.update');
         Route::delete('/patientqueue/{patientQueue}', [PatientQueueController::class, 'destroy'])->name('queue.destroy');
+        
+        // Billing & Payments
+        Route::get('/payments', [PaymentController::class, 'index'])->name('payments');
+        Route::patch('/payments/{payment}/paid', [PaymentController::class, 'markAsPaid'])->name('payments.paid');
+        Route::get('/payments/{payment}/receipt', [PaymentController::class, 'showReceipt'])->name('payments.receipt');
     });
 
     // ── Patients (Search fix) ──
     Route::prefix('patients')->name('patients.')->group(function () {
         Route::get('/search', [PatientController::class, 'search'])->name('search');
-        Route::get('/{id}', [PatientController::class, 'show'])->name('show');
+        Route::get('/check-queue', [PatientController::class, 'checkQueue'])->name('check-queue');        Route::get('/check-existence', [PatientController::class, 'checkExistence'])->name('check-existence');        Route::get('/{id}', [PatientController::class, 'show'])->name('show');
         Route::post('/patient-queue', [PatientQueueController::class, 'store']);
     });
+
+    Route::get('/support', [AdminController::class, 'support'])->name('support');
 
     // ── Universal Dashboard Redirect ──
     Route::get('/dashboard', function () {
