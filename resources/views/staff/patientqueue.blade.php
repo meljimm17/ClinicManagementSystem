@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CuraSure – Patient Queue</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CuraSure - Patient Queue</title>
+    <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -45,13 +46,13 @@ body {
     z-index: 100;
 }
 
-.sidebar-brand {
-    padding: 28px 22px 20px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+        .sidebar-brand {
+            padding: 28px 22px 20px;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
 .brand-logo {
     width: 40px; height: 40px;
@@ -453,7 +454,7 @@ body {
 {{-- ── Sidebar ── --}}
 <aside class="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-logo"><i class="bi bi-shield-plus"></i></div>
+         <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
         <div class="brand-name">CuraSure</div>
     </div>
     <nav class="sidebar-nav">
@@ -595,24 +596,42 @@ body {
                         </td>
                         <td class="text-end">
                             {{-- Edit button --}}
-                            <button class="btn-edit"
-                                onclick="openEdit(
-                                    {{ $entry->id }},
-                                    '{{ $entry->status }}',
-                                    '{{ $entry->assigned_room ?? '' }}',
-                                    '{{ addslashes($entry->symptoms ?? '') }}'
-                                )">
-                                Edit
-                            </button>
+                            @if($entry->status === 'done')
+                                <button class="btn-edit" disabled style="opacity:0.5; cursor:not-allowed; background:#ccc; color:#666;">
+                                    <i class="bi bi-lock"></i> Done
+                                </button>
+                            @else
+                                <button class="btn-edit"
+                                    onclick="openEdit({
+                                        id: {{ $entry->id }},
+                                        status: '{{ $entry->status }}',
+                                        room: '{{ $entry->assigned_room ?? '' }}',
+                                        symptoms: '{{ addslashes($entry->symptoms ?? '') }}',
+                                        name: '{{ addslashes($entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient') }}',
+                                        age: '{{ $entry->patient?->age ?? '' }}',
+                                        gender: '{{ $entry->patient?->gender ?? '' }}',
+                                        contact: '{{ $entry->patient?->contact_number ?? '' }}',
+                                        address: '{{ addslashes($entry->patient?->address ?? '') }}',
+                                        blood: '{{ $entry->patient?->blood_type ?? '' }}',
+                                        height: '{{ $entry->patient?->height ?? '' }}',
+                                        weight: '{{ $entry->patient?->weight ?? '' }}'
+                                    })">
+                                    Edit
+                                </button>
+                            @endif
 
                             {{-- Remove button --}}
                             <form method="POST"
                                   action="{{ route('staff.queue.destroy', $entry->id) }}"
                                   style="display:inline;"
-                                  onsubmit="return confirm('Remove {{ $entry->patient_name ?? $entry->patient?->name ?? 'this patient' }} from queue?')">
+                                  onsubmit="return confirmDelete({{ $entry->id }}, '{{ $entry->status }}')">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn-remove">Remove</button>
+                                @if($entry->status !== 'done')
+                                    <button type="submit" class="btn-remove">Remove</button>
+                                @else
+                                    <button type="button" class="btn-remove" disabled style="opacity:0.5; cursor:not-allowed;">Remove</button>
+                                @endif
                             </form>
                         </td>
                     </tr>
@@ -633,7 +652,7 @@ body {
 
 {{-- ── Edit Modal ── --}}
 <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Edit Queue Entry</h5>
@@ -643,20 +662,57 @@ body {
                 @csrf
                 @method('PATCH')
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label-custom">Status</label>
-                        <select name="status" id="edit-status" class="form-control-custom">
-                            <option value="waiting">Waiting</option>
-                            <option value="diagnosing">Diagnosing</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label-custom">Assigned Room</label>
-                        <input type="text" name="assigned_room" id="edit-room" class="form-control-custom" placeholder="e.g. Room 1">
-                    </div>
-                    <div class="mb-1">
-                        <label class="form-label-custom">Symptoms</label>
-                        <textarea name="symptoms" id="edit-symptoms" class="form-control-custom" rows="3"></textarea>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Name</label>
+                            <input type="text" name="name" id="edit-name" class="form-control-custom" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label-custom">Age</label>
+                            <input type="number" name="age" id="edit-age" class="form-control-custom" min="0" max="130" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label-custom">Gender</label>
+                            <select name="gender" id="edit-gender" class="form-control-custom" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Contact</label>
+                            <input type="text" name="contact_number" id="edit-contact" class="form-control-custom" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Address</label>
+                            <input type="text" name="address" id="edit-address" class="form-control-custom" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Blood Type</label>
+                            <input type="text" name="blood_type" id="edit-blood" class="form-control-custom">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Height (cm)</label>
+                            <input type="number" name="height" id="edit-height" class="form-control-custom" min="20" max="300">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label-custom">Weight (kg)</label>
+                            <input type="number" name="weight" id="edit-weight" class="form-control-custom" min="1" max="700">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label-custom">Symptoms</label>
+                            <textarea name="symptoms" id="edit-symptoms" class="form-control-custom" rows="3"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Status</label>
+                            <select name="status" id="edit-status" class="form-control-custom">
+                                <option value="waiting">Waiting</option>
+                                <option value="diagnosing">Diagnosing</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label-custom">Assigned Room</label>
+                            <input type="text" name="assigned_room" id="edit-room" class="form-control-custom" placeholder="e.g. Room 1">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -671,12 +727,47 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // Open edit modal and populate fields
-    function openEdit(id, status, room, symptoms) {
-        document.getElementById('editForm').action = `/staff/patientqueue/${id}`;
-        document.getElementById('edit-status').value   = status;
-        document.getElementById('edit-room').value     = room;
-        document.getElementById('edit-symptoms').value = symptoms;
+    function openEdit(data) {
+        // Check if patient is being diagnosed or already completed
+        if (data.status === 'diagnosing') {
+            alert('This patient is currently being diagnosed by a doctor. Edit and delete actions are disabled until the consultation is complete.');
+            return;
+        }
+        if (data.status === 'done') {
+            alert('This patient\'s consultation is already marked as complete. Editing is disabled for completed records.');
+            return;
+        }
+
+        document.getElementById('editForm').action = `/staff/patientqueue/${data.id}`;
+        document.getElementById('edit-status').value   = data.status || '';
+        document.getElementById('edit-room').value     = data.room || '';
+        document.getElementById('edit-symptoms').value = data.symptoms || '';
+
+        // Patient fields
+        document.getElementById('edit-name').value      = data.name || '';
+        document.getElementById('edit-age').value       = data.age || '';
+        document.getElementById('edit-gender').value    = data.gender || '';
+        document.getElementById('edit-contact').value   = data.contact || '';
+        document.getElementById('edit-address').value   = data.address || '';
+        document.getElementById('edit-blood').value     = data.blood || '';
+        document.getElementById('edit-height').value    = data.height || '';
+        document.getElementById('edit-weight').value    = data.weight || '';
+
         new bootstrap.Modal(document.getElementById('editModal')).show();
+    }
+    
+    // Add delete confirmation with diagnosing and done checks
+    function confirmDelete(id, status) {
+        if (status === 'diagnosing') {
+            alert('This patient is currently being diagnosed by a doctor. Delete action is disabled until the consultation is complete.');
+            return false;
+        }
+        if (status === 'done') {
+            alert('This patient\'s consultation is already marked as complete. Deletion is disabled for completed records.');
+            return false;
+        }
+
+        return confirm('Are you sure you want to remove this patient from the queue?');
     }
 
     // Filter by status buttons

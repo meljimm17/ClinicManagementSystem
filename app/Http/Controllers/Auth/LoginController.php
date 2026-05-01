@@ -13,33 +13,43 @@ class LoginController extends Controller
         return view('auth.login');
     }
 
-    public function login(Request $request)
-    {
-        $credentials = $request->validate([
-            'username' => ['required', 'string'],
-            'password' => ['required'],
-        ]);
+     public function login(Request $request)
+     {
+         $credentials = $request->validate([
+             'username' => ['required', 'string'],
+             'password' => ['required'],
+         ]);
 
-        if (Auth::attempt($credentials)) {
-            $request->session()->regenerate();
-            $user = Auth::user();
-            $role = strtolower(trim($user->role));
+         $username = $credentials['username'];
+         
+         // Determine if the input is an email or username
+         $field = filter_var($username, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+         
+         $authCredentials = [
+             $field => $username,
+             'password' => $credentials['password'],
+         ];
 
-            if ($role === 'admin') {
-                return redirect()->route('admin.dashboard');
-            } elseif ($role === 'doctor' || $role === 'dr') {
-                return redirect()->route('doctor.dashboard');
-            } elseif ($role === 'staff') {
-                return redirect()->route('staff.dashboard');
-            }
+         if (Auth::attempt($authCredentials)) {
+             $request->session()->regenerate();
+             $user = Auth::user();
+             $role = strtolower(trim($user->role));
 
-            return redirect()->route('dashboard');
-        }
+             if ($role === 'admin') {
+                 return redirect()->route('admin.dashboard');
+             } elseif ($role === 'doctor' || $role === 'dr') {
+                 return redirect()->route('doctor.dashboard');
+             } elseif ($role === 'staff') {
+                 return redirect()->route('staff.dashboard');
+             }
 
-        return back()->withErrors([
-            'username' => 'The provided credentials do not match our records.',
-        ]);
-    }
+             return redirect()->route('dashboard');
+         }
+
+         return back()->withErrors([
+             'username' => 'The provided credentials do not match our records.',
+         ]);
+     }
 
     public function logout(Request $request)
     {

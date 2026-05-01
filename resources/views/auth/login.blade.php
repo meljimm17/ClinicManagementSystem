@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login — The Clinical Sanctuary</title>
+    <title>Login — CuraSure Clinic Management</title>
+    <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -127,8 +128,11 @@
 <div class="container-fluid p-0 m-0">
     <div class="row g-0 m-0 p-0">
         <div class="col-md-6 d-none d-md-flex left-panel">
-            <div class="left-content">
-                <div class="brand-box" aria-hidden="true">
+            <div class="left-content text-center">
+                <div class="mb-4">
+                    <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:160px; height:160px; object-fit:contain;">
+                </div>
+                <div class="brand-box mx-auto mb-4" aria-hidden="true" style="display:none;">
                     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
                         <path d="M10 2C10 2 4 5 4 11C4 14.3 6.7 17 10 17C13.3 17 16 14.3 16 11C16 5 10 2 10 2Z" fill="white" fill-opacity=".85"/>
                         <path d="M10 7V13M7 10H13" stroke="#1e5c3a" stroke-width="1.5" stroke-linecap="round"/>
@@ -146,12 +150,12 @@
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
 
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" 
-                               class="form-control @error('username') is-invalid @enderror" 
-                               value="{{ old('username') }}" required autofocus>
-                    </div>
+                     <div class="mb-3">
+                         <label class="form-label">Username / Email</label>
+                         <input type="text" name="username" 
+                                class="form-control @error('username') is-invalid @enderror" 
+                                value="{{ old('username') }}" required autofocus>
+                     </div>
 
                     <div class="mb-4">
                         <label class="form-label">Password</label>

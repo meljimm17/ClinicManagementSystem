@@ -41,10 +41,10 @@ class PatientQueueController extends Controller
     public function adminIndex()
     {
         $queueEntries = PatientQueue::with(['patient', 'priority'])
-                        ->orderByRaw("CASE WHEN EXISTS (SELECT 1 FROM patient_queue_priorities WHERE patient_queue_priorities.patient_queue_id = patient_queue.id) THEN 0 ELSE 1 END")
                         ->orderByDesc('queue_date')
-                        ->orderBy('queued_at', 'asc')
-                        ->orderBy('id', 'asc')
+                        ->orderByRaw("CASE WHEN EXISTS (SELECT 1 FROM patient_queue_priorities WHERE patient_queue_priorities.patient_queue_id = patient_queue.id) THEN 0 ELSE 1 END")
+                        ->orderByDesc('queued_at')
+                        ->orderByDesc('id')
                         ->get();
 
         return view('admin.patientqueue', compact('queueEntries'));
@@ -81,38 +81,79 @@ class PatientQueueController extends Controller
 
     public function update(Request $request, PatientQueue $patientQueue)
     {
+        // Check if patient is currently being diagnosed or already completed
+        if ($patientQueue->status === 'diagnosing') {
+            return redirect()->back()->with('error', 'Cannot update this patient. They are currently being diagnosed by a doctor. Please wait until the consultation is complete.');
+        }
+        if ($patientQueue->status === 'done') {
+            return redirect()->back()->with('error', 'Cannot update this patient. Their consultation is already marked as complete.');
+        }
+
         $request->validate([
-            'status'        => 'required|in:waiting,diagnosing,done',
-            'assigned_room' => 'nullable|string|max:50|regex:/^[A-Za-z0-9\-\s#]+$/',
-            'symptoms'      => 'nullable|string|max:1000',
-            'diagnosis'     => 'nullable|string', 
+            // Patient fields
+            'name'           => 'required|string|max:255',
+            'age'            => 'required|integer|min:0|max:130',
+            'gender'         => 'required|in:Male,Female',
+            'contact_number' => 'required|string|max:20',
+            'address'        => 'required|string|max:500',
+            'blood_type'     => 'nullable|string|max:5',
+            'height'         => 'nullable|numeric|min:20|max:300',
+            'weight'         => 'nullable|numeric|min:1|max:700',
+            // Queue fields
+            'status'         => 'required|in:waiting,diagnosing,done',
+            'assigned_room'  => 'nullable|string|max:50|regex:/^[A-Za-z0-9\-\s#]+$/',
+            'symptoms'       => 'nullable|string|max:1000',
+            'diagnosis'      => 'nullable|string',
         ]);
 
-        $patientQueue->update($request->only(['status', 'assigned_room', 'symptoms']));
+        // Additional server-side check in case UI was bypassed
+        if ($request->status === 'done' && $patientQueue->status !== 'done') {
+            // Allow status change to done from waiting/diagnosing
+        } else if ($patientQueue->status === 'done') {
+            return redirect()->back()->with('error', 'Cannot update this patient. Their consultation is already marked as complete.');
+        }
+
+        // Update patient information
+        $patient = $patientQueue->patient;
+        if ($patient) {
+            $patient->update([
+                'name'           => $request->name,
+                'age'            => $request->age,
+                'gender'         => $request->gender,
+                'contact_number' => $request->contact_number,
+                'address'        => $request->address,
+                'blood_type'     => $request->blood_type,
+                'height'         => $request->height,
+                'weight'         => $request->weight,
+            ]);
+        }
+
+        // Update queue information (including patient_name snapshot)
+        $patientQueue->update([
+            'patient_name'  => $request->name,
+            'status'        => $request->status,
+            'assigned_room' => $request->assigned_room,
+            'symptoms'      => $request->symptoms,
+        ]);
 
         if ($request->status === 'done') {
             // Load patient relationship with the queue BEFORE creating the medical record.
-            // This ensures we capture patient_id and patient_name even if the queue is
-            // later deleted, so the medical record retains accurate info.
             $patientQueue->load('patient');
-            
+
             MedicalRecord::create([
-                // Capture the patient name SNAPSHOT - this survives queue deletion
                 'patient_name'      => $patientQueue->patient_name
                                         ?? $patientQueue->patient?->name
-                                        ?? 'Unknown Patient', // 👈 uses snapshot first
+                                        ?? 'Unknown Patient',
                 'queue_id'          => $patientQueue->id,
-                // Capture patient_id so we can still fetch patient data
-                // even if the queue is deleted later
                 'patient_id'        => $patientQueue->patient_id,
-                'doctor_id'         => auth()->user()->doctor?->id, 
+                'doctor_id'         => auth()->user()->doctor?->id,
                 'symptoms'          => $request->symptoms ?? $patientQueue->symptoms,
                 'diagnosis'         => $request->diagnosis,
                 'consultation_date' => now()->toDateString(),
                 'consultation_time' => now()->toTimeString(),
                 'record_status'     => 'completed'
             ]);
-            
+
             $patientQueue->update(['completed_at' => now()]);
         }
 
@@ -121,6 +162,14 @@ class PatientQueueController extends Controller
 
     public function destroy(PatientQueue $patientQueue)
     {
+        // Check if patient is currently being diagnosed or already completed
+        if ($patientQueue->status === 'diagnosing') {
+            return redirect()->back()->with('error', 'Cannot delete this patient. They are currently being diagnosed by a doctor. Please wait until the consultation is complete.');
+        }
+        if ($patientQueue->status === 'done') {
+            return redirect()->back()->with('error', 'Cannot delete this patient. Their consultation is already marked as complete.');
+        }
+
         $patientQueue->delete();
         return redirect()->back()->with('success', 'Queue entry removed.');
     }

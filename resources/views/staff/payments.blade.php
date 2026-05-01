@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Billing & Payments - CuraSure Staff</title>
+    <title>CuraSure - Payments</title>
+    <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
@@ -16,7 +17,7 @@
         * { box-sizing: border-box; }
         body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text-primary); margin: 0; min-height: 100vh; }
         .sidebar { width: 220px; min-height: 100vh; background: var(--sidebar-bg); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 100; }
-        .sidebar-brand { padding: 28px 22px 20px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 10px; }
+        .sidebar-brand { padding: 28px 22px 20px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 8px; }
         .brand-logo { width: 40px; height: 40px; background: rgba(255,255,255,.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .brand-name { font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: #fff; line-height: 1.2; }
         .sidebar-nav { flex: 1; padding: 14px 0; }
@@ -47,7 +48,7 @@
 
 <aside class="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-logo"><i class="bi bi-shield-plus" style="color:#4fce9e; font-size: 1.2rem;"></i></div>
+         <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
         <div class="brand-name">CuraSure</div>
     </div>
     <nav class="sidebar-nav">

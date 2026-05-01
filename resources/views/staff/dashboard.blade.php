@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CuraSure – Staff Dashboard</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CuraSure – Staff Dashboard</title>
+    <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
 <style>
@@ -45,13 +46,13 @@ body {
     z-index: 100;
 }
 
-.sidebar-brand {
-    padding: 28px 22px 20px;
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
+        .sidebar-brand {
+            padding: 28px 22px 20px;
+            border-bottom: 1px solid rgba(255,255,255,.08);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
 
 .brand-logo {
     width: 40px; height: 40px;
@@ -274,7 +275,7 @@ body {
 
 <aside class="sidebar">
     <div class="sidebar-brand">
-        <div class="brand-logo"><i class="bi bi-shield-plus" style="color:#4fce9e; font-size: 1.2rem;"></i></div>
+         <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
         <div class="brand-name">CuraSure</div>
     </div>
     <nav class="sidebar-nav">

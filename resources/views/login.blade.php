@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Login — The Clinical Sanctuary</title>
+    <title>Login — CuraSure Clinic Management</title>
+    <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -104,24 +105,26 @@
     <div class="row g-0 m-0 p-0">
 
         <div class="col-md-6 d-none d-md-flex left-panel">
-            <div>
+            <div class="text-center">
+                <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:180px; height:180px; object-fit:contain; margin-bottom:2rem;">
+                
                 <h1>
                     Where clinical<br>
                     precision meets<br>
                     curated wellness.
                 </h1>
-                <p class="mt-3" style="opacity:0.8; max-width:300px;">
+                <p class="mt-3" style="opacity:0.8; max-width:300px; margin-left: auto; margin-right: auto;">
                     Manage your clinic with a modern and secure system designed for efficiency.
                 </p>
             </div>
         </div>
 
-        <div class="col-md-6 right-panel">
+        <div class="col-md-6 right-panel d-flex flex-column justify-content-center">
 
-            <div class="form-card p-4">
+            <div class="form-card p-4 text-center">
 
-                <h2 class="form-title">Clinic Management System</h2>
-                <p class="text-muted mb-4">Login to your account</p>
+                <h2 class="form-title">CuraSure</h2>
+                <p class="text-muted mb-4">Clinic Management System</p>
 
                 @if(session('error'))
                     <div class="alert alert-danger">{{ session('error') }}</div>
@@ -130,11 +133,11 @@
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
 
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" value="{{ old('username') }}" required autofocus>
-                        @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    </div>
+                     <div class="mb-3">
+                         <label class="form-label">Username / Email</label>
+                         <input type="text" name="username" class="form-control @error('username') is-invalid @enderror" value="{{ old('username') }}" required autofocus>
+                         @error('username')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                     </div>
 
                     <div class="mb-4">
                         <label class="form-label">Password</label>

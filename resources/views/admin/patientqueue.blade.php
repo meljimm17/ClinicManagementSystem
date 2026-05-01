@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CuraSure – Patient Queue</title>
+    <title>CuraSure - Patient Queue</title>
+    <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Serif+Display&display=swap" rel="stylesheet">
@@ -17,7 +18,7 @@
         * { box-sizing: border-box; }
         body { font-family: 'DM Sans', sans-serif; background: var(--page-bg); color: var(--text-primary); margin: 0; min-height: 100vh; }
         .sidebar { width: 220px; min-height: 100vh; background: var(--sidebar-bg); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 100; }
-        .sidebar-brand { padding: 28px 22px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
+        .sidebar-brand { padding: 28px 22px 20px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 8px; }
         .brand-name { font-family: 'DM Serif Display', serif; font-size: 1.15rem; color: #fff; }
         .sidebar-nav { flex: 1; padding: 14px 0; }
         .sidebar-link { display: flex; align-items: center; gap: 11px; padding: 10px 22px; color: rgba(255,255,255,.65); text-decoration: none; font-size: .875rem; font-weight: 400; border-left: 3px solid transparent; transition: all .18s; }
@@ -144,7 +145,10 @@
 
 <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
 <aside class="sidebar">
-    <div class="sidebar-brand"><div class="brand-name">CuraSure</div></div>
+    <div class="sidebar-brand">
+        <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
+        <div class="brand-name">CuraSure</div>
+    </div>
     <nav class="sidebar-nav">
         <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
             <i class="bi bi-grid-1x2"></i><span>Admin Dashboard</span>
@@ -325,9 +329,9 @@
                             @if($entry->priority)
                                 <div style="margin-top:4px;"><span class="btn-ghost" style="padding:4px 10px;font-size:.7rem;text-transform:uppercase;">{{ strtoupper($entry->priority->priority_type) }}</span></div>
                             @endif
-                            <div style="font-size:.72rem; color:var(--text-muted);">
-                                {{ $entry->patient->gender ?? '' }}{{ $entry->patient->age ? ' · '.$entry->patient->age.' yrs' : '' }}
-                            </div>
+                             <div style="font-size:.72rem; color:var(--text-muted);">
+                                 {{ $entry->patient?->gender ?? '' }}{{ $entry->patient?->age ? ' · '.$entry->patient?->age.' yrs' : '' }}
+                             </div>
                         </td>
                         <td style="max-width:180px; font-size:.78rem; color:var(--text-muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
                             {{ $entry->symptoms ?? '—' }}
@@ -348,16 +352,39 @@
                             {{ $entry->queued_at ? \Carbon\Carbon::parse($entry->queued_at)->format('h:i A') : '—' }}
                         </td>
                         <td style="text-align:right;">
-                            <button type="button"
-                                    class="act-btn edit"
-                                    onclick="openEditQueueModal({{ $entry->id }}, '{{ $entry->status }}', '{{ $entry->assigned_room ?? '' }}', '{{ addslashes($entry->symptoms ?? '') }}')">
-                                Edit
-                            </button>
+                            @if($entry->status === 'done')
+                                <button type="button" class="act-btn" disabled style="opacity:0.5; cursor:not-allowed; background:#ccc; color:#666;">
+                                    <i class="bi bi-lock"></i> Done
+                                </button>
+                            @else
+                                <button type="button"
+                                        class="act-btn edit"
+                                        onclick="openEditQueueModal({
+                                            id: {{ $entry->id }},
+                                            status: '{{ $entry->status }}',
+                                            room: '{{ $entry->assigned_room ?? '' }}',
+                                            symptoms: '{{ addslashes($entry->symptoms ?? '') }}',
+                                            name: '{{ addslashes($entry->patient_name ?? $entry->patient?->name ?? 'Unknown Patient') }}',
+                                            age: '{{ $entry->patient?->age ?? '' }}',
+                                            gender: '{{ $entry->patient?->gender ?? '' }}',
+                                            contact: '{{ $entry->patient?->contact_number ?? '' }}',
+                                            address: '{{ addslashes($entry->patient?->address ?? '') }}',
+                                            blood: '{{ $entry->patient?->blood_type ?? '' }}',
+                                            height: '{{ $entry->patient?->height ?? '' }}',
+                                            weight: '{{ $entry->patient?->weight ?? '' }}'
+                                        })">
+                                    Edit
+                                </button>
+                            @endif
                             <form action="{{ route('admin.queue.destroy', $entry->id) }}" method="POST"
                                   style="display:inline;"
-                                  onsubmit="return confirm('Remove {{ $entry->patient_name ?? $entry->patient?->name ?? 'this patient' }} from queue?')">
+                                  onsubmit="return confirmDeleteQueue({{ $entry->id }}, '{{ $entry->status }}')">
                                 @csrf @method('DELETE')
-                                <button type="submit" class="act-btn remove ms-1">Remove</button>
+                                @if($entry->status !== 'done')
+                                    <button type="submit" class="act-btn remove ms-1">Remove</button>
+                                @else
+                                    <button type="button" class="act-btn remove ms-1" disabled style="opacity:0.5; cursor:not-allowed;">Remove</button>
+                                @endif
                             </form>
                         </td>
                     </tr>
@@ -436,21 +463,58 @@
                 @csrf
                 @method('PATCH')
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="info-label">Status</label>
-                        <select name="status" id="editQueueStatus" class="info-value" style="width:100%;">
-                            <option value="waiting">Waiting</option>
-                            <option value="diagnosing">Diagnosing</option>
-                            <option value="done">Done</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="info-label">Assigned Room</label>
-                        <input type="text" name="assigned_room" id="editQueueRoom" class="info-value" style="width:100%;" placeholder="e.g. Room 1">
-                    </div>
-                    <div>
-                        <label class="info-label">Symptoms</label>
-                        <textarea name="symptoms" id="editQueueSymptoms" class="info-value" style="width:100%; min-height:90px; white-space:pre-wrap;"></textarea>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="info-label">Name</label>
+                            <input type="text" name="name" id="editPatientName" class="info-value" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">Age</label>
+                            <input type="number" name="age" id="editPatientAge" class="info-value" min="0" max="130" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="info-label">Gender</label>
+                            <select name="gender" id="editPatientGender" class="info-value" required>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Contact</label>
+                            <input type="text" name="contact_number" id="editPatientContact" class="info-value" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Address</label>
+                            <input type="text" name="address" id="editPatientAddress" class="info-value" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="info-label">Blood Type</label>
+                            <input type="text" name="blood_type" id="editPatientBlood" class="info-value">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="info-label">Height</label>
+                            <input type="number" name="height" id="editPatientHeight" class="info-value" min="20" max="300">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="info-label">Weight</label>
+                            <input type="number" name="weight" id="editPatientWeight" class="info-value" min="1" max="700">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="info-label">Symptoms</label>
+                            <textarea name="symptoms" id="editQueueSymptoms" class="info-value" style="width:100%; min-height:90px; white-space:pre-wrap;"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Status</label>
+                            <select name="status" id="editQueueStatus" class="info-value" style="width:100%;">
+                                <option value="waiting">Waiting</option>
+                                <option value="diagnosing">Diagnosing</option>
+                                <option value="done">Done</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="info-label">Assigned Room</label>
+                            <input type="text" name="assigned_room" id="editQueueRoom" class="info-value" style="width:100%;" placeholder="e.g. Room 1">
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -466,11 +530,51 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     function openEditQueueModal(id, status, room, symptoms) {
-        document.getElementById('editQueueForm').action = '/admin/queue/' + id;
-        document.getElementById('editQueueStatus').value = status;
-        document.getElementById('editQueueRoom').value = room;
-        document.getElementById('editQueueSymptoms').value = symptoms;
+        // Accepts an object for all patient and queue fields
+        let data = {};
+        if (typeof id === 'object') {
+            data = id;
+        } else {
+            data = { id, status, room, symptoms };
+        }
+
+        // Check if patient is being diagnosed or already completed
+        if (data.status === 'diagnosing') {
+            alert('This patient is currently being diagnosed by a doctor. Edit and delete actions are disabled until the consultation is complete.');
+            return;
+        }
+        if (data.status === 'done') {
+            alert('This patient\'s consultation is already marked as complete. Editing is disabled for completed records.');
+            return;
+        }
+
+        document.getElementById('editQueueForm').action = '/admin/queue/' + data.id;
+        document.getElementById('editQueueStatus').value = data.status || '';
+        document.getElementById('editQueueRoom').value = data.room || '';
+        document.getElementById('editQueueSymptoms').value = data.symptoms || '';
+        document.getElementById('editPatientName').value = data.name || '';
+        document.getElementById('editPatientAge').value = data.age || '';
+        document.getElementById('editPatientGender').value = data.gender || '';
+        document.getElementById('editPatientContact').value = data.contact || '';
+        document.getElementById('editPatientAddress').value = data.address || '';
+        document.getElementById('editPatientBlood').value = data.blood || '';
+        document.getElementById('editPatientHeight').value = data.height || '';
+        document.getElementById('editPatientWeight').value = data.weight || '';
         new bootstrap.Modal(document.getElementById('editQueueModal')).show();
+    }
+    
+    // Add delete confirmation with diagnosing and done checks
+    function confirmDeleteQueue(id, status) {
+        if (status === 'diagnosing') {
+            alert('This patient is currently being diagnosed by a doctor. Delete action is disabled until the consultation is complete.');
+            return false;
+        }
+        if (status === 'done') {
+            alert('This patient\'s consultation is already marked as complete. Deletion is disabled for completed records.');
+            return false;
+        }
+
+        return confirm('Are you sure you want to remove this patient from the queue?');
     }
 
     function openViewModal(p) {

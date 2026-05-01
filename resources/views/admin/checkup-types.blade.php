@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Check-up Types - CuraSure Admin</title>
+    <title>CuraSure - Checkup Types</title>
+    <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <style>
@@ -16,7 +17,7 @@
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--page-bg); color: var(--text-primary); margin: 0; min-height: 100vh; }
         .sidebar { width: 220px; min-height: 100vh; background: var(--sidebar-bg); display: flex; flex-direction: column; position: fixed; top: 0; left: 0; z-index: 100; }
-        .sidebar-brand { padding: 28px 22px 20px; border-bottom: 1px solid rgba(255,255,255,.08); }
+        .sidebar-brand { padding: 28px 22px 20px; border-bottom: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 8px; }
         .brand-name { font-family: 'Segoe UI', serif; font-size: 1.15rem; color: #fff; font-weight: 600; }
         .sidebar-nav { flex: 1; padding: 14px 0; }
         .sidebar-link { display: flex; align-items: center; gap: 11px; padding: 10px 22px; color: rgba(255,255,255,.65); text-decoration: none; font-size: .875rem; font-weight: 400; border-left: 3px solid transparent; transition: all .18s; }
@@ -44,7 +45,10 @@
 <body>
 
 <aside class="sidebar">
-    <div class="sidebar-brand"><div class="brand-name">CuraSure</div></div>
+    <div class="sidebar-brand">
+        <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
+        <div class="brand-name">CuraSure</div>
+    </div>
     <nav class="sidebar-nav">
         <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
             <i class="bi bi-grid-1x2"></i><span>Admin Dashboard</span>

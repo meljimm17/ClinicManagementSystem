@@ -316,7 +316,7 @@
         {{-- Header --}}
         <div class="header">
             <div class="brand-wrap">
-                <div class="logo-holder">CS</div>
+                 <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:80px; height:80px; object-fit:contain; border-radius:12px;">
                 <div class="brand-copy">
                     <h1 class="title">CuraSure Clinic Queue</h1>
                     <div class="sub">Please wait for your queue number to be called.</div>

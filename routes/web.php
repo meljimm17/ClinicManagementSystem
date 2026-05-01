@@ -15,8 +15,13 @@ use App\Http\Controllers\CheckupTypeController;
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
-    Route::get('/', function () { return redirect()->route('login'); });
+    Route::get('/', function () { return redirect()->route('landing'); });
 });
+
+// Landing page (public)
+Route::get('/landing', function () {
+    return view('landing');
+})->name('landing');
 
 // Public waiting area queue display (for clinic screens)
 Route::get('/clinic/queue', [PatientQueueController::class, 'waitingArea'])->name('clinic.queue');
@@ -26,7 +31,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 // ── Protected Routes ──
 Route::middleware(['auth'])->group(function () {
     
-    Route::get('/', function () {
+    // Dashboard redirect (only for authenticated users)
+    Route::get('/dashboard', function () {
         return redirect()->route('dashboard');
     });
 
