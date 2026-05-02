@@ -180,6 +180,27 @@
             padding: 1.5rem;
         }
         
+        .mockup-box {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid #e2e8f0;
+            min-height: 115px;
+        }
+        
+        .mockup-box i {
+            font-size: 1.75rem;
+            color: #0f766e;
+        }
+        
+        .mockup-box span {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        
         /* Features Section */
         .features-section {
             padding: 5rem 0;
@@ -590,32 +611,32 @@
                             </div>
                             <div class="mockup-content">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 style="font-size: 1.1rem; margin: 0;">Dashboard</h5>
-                                    <span class="badge bg-success">Admin</span>
+                                    <h5 style="font-size: 1.1rem; margin: 0;">Clinic Workflow</h5>
+                                    <span class="badge bg-success">Secure</span>
                                 </div>
                                 <div class="row g-3">
                                     <div class="col-6">
-                                        <div style="background: #f0fdfa; padding: 1rem; border-radius: 8px;">
-                                            <div style="font-size: 0.75rem; color: #64748b;">Total Patients</div>
-                                            <div style="font-size: 1.5rem; font-weight: 700; color: #0f766e;">156</div>
+                                        <div class="mockup-box">
+                                            <i class="bi bi-person-lines-fill"></i>
+                                            <span>Patient Registration</span>
                                         </div>
                                     </div>
                                     <div class="col-6">
-                                        <div style="background: #fff7ed; padding: 1rem; border-radius: 8px;">
-                                            <div style="font-size: 0.75rem; color: #64748b;">In Queue</div>
-                                            <div style="font-size: 1.5rem; font-weight: 700; color: #ea580c;">23</div>
+                                        <div class="mockup-box">
+                                            <i class="bi bi-list-check"></i>
+                                            <span>Queue Management</span>
                                         </div>
                                     </div>
                                     <div class="col-6">
-                                        <div style="background: #fef2f2; padding: 1rem; border-radius: 8px;">
-                                            <div style="font-size: 0.75rem; color: #64748b;">Being Diagnosed</div>
-                                            <div style="font-size: 1.5rem; font-weight: 700; color: #dc2626;">5</div>
+                                        <div class="mockup-box">
+                                            <i class="bi bi-file-medical"></i>
+                                            <span>Medical Records</span>
                                         </div>
                                     </div>
                                     <div class="col-6">
-                                        <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px;">
-                                            <div style="font-size: 0.75rem; color: #64748b;">Completed</div>
-                                            <div style="font-size: 1.5rem; font-weight: 700; color: #0284c7;">128</div>
+                                        <div class="mockup-box">
+                                            <i class="bi bi-cash-stack"></i>
+                                            <span>Billing & Reports</span>
                                         </div>
                                     </div>
                                 </div>
@@ -804,7 +825,7 @@
                 </div>
                 <div class="tech-badge">
                     <i class="bi bi-box-seam"></i>
-                    Laravel 11
+                    Laravel 12
                 </div>
                 <div class="tech-badge">
                     <i class="bi bi-database"></i>
@@ -815,8 +836,12 @@
                     Bootstrap 5
                 </div>
                 <div class="tech-badge">
-                    <i class="bi bi-filetype-js"></i>
-                    JavaScript
+                    <i class="bi bi-braces"></i>
+                    Tailwind CSS
+                </div>
+                <div class="tech-badge">
+                    <i class="bi bi-hammer"></i>
+                    Vite
                 </div>
                 <div class="tech-badge">
                     <i class="bi bi-file-earmark-pdf"></i>
@@ -862,6 +887,15 @@
                         <div>
                             <h5>Accurate Billing</h5>
                             <p>Automated fee calculation based on checkup types eliminates human error and ensures consistent pricing.</p>
+                        </div>
+                    </div>
+                    <div class="benefit-item">
+                        <div class="benefit-icon">
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <div>
+                            <h5>Duplicate Patient Prevention</h5>
+                            <p>Smart registration checks and validation prevent duplicate patient records, keeping the database clean and reliable.</p>
                         </div>
                     </div>
                     <div class="benefit-item">
@@ -920,21 +954,21 @@
             <div class="section-header">
                 <h2 class="section-title">Get In Touch</h2>
                 <p class="section-subtitle">
-                    Interested in learning more or collaborating?
+                    Interested in learning more about the Laravel 12 clinic system or collaborating on the project?
                 </p>
             </div>
             <div class="social-links">
-                <a href="#" class="social-link" title="GitHub">
+                <a href="https://github.com/meljimm17" class="social-link" title="GitHub" target="_blank" rel="noopener noreferrer">
                     <i class="bi bi-github"></i>
                 </a>
-                <a href="#" class="social-link" title="LinkedIn">
+                <a href="https://www.linkedin.com/in/mel-jimm-joves-7948103ba/" class="social-link" title="LinkedIn" traget="_blank" rel="noopener noreferrer">
                     <i class="bi bi-linkedin"></i>
                 </a>
-                <a href="mailto:example@email.com" class="social-link" title="Email">
+                <a href="https://mail.google.com/mail/?view=cm&to=jovesmeljimm@gmail.com" class="social-link" title="Email" target="_blank" rel="noopener noreferrer">
                     <i class="bi bi-envelope"></i>
                 </a>
-                <a href="#" class="social-link" title="Portfolio">
-                    <i class="bi bi-globe"></i>
+                <a href="https://www.instagram.com/melj_jvs" class="social-link" title="Instagram" target="_blank" rel="noopener noreferrer">
+                    <i class="bi bi-instagram"></i>
                 </a>
             </div>
         </div>
@@ -945,7 +979,7 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <p>&copy; 2026 CuraSure. All rights reserved.</p>
-                <p>Built with <i class="bi bi-heart-fill text-danger"></i> using Laravel</p>
+                <p>Built with <i class="bi bi-heart-fill text-danger"></i> using Laravel 12</p>
             </div>
         </div>
     </footer>

@@ -57,12 +57,17 @@
         @media print {
             body { margin: 12mm; }
             .no-print { display: none; }
+            .signature-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 28px; }
+            .signature-block { text-align: left; margin-top: 10px; }
+            .signature-line { margin-top: 32px; border-top: 1px solid #d6e3dd; width: 100%; height: 2px; }
+            .signature-name { margin-top: 6px; font-size: 12px; color: #4d5f57; }
         }
     </style>
 </head>
 <body>
     @php
-        $patient = $record->queue?->patient;
+        $patientName = $record->patient_name ?? $record->queue?->patient?->name ?? 'N/A';
+        $doctorName = $record->doctor?->name ?? $record->doctor?->user?->name ?? 'N/A';
     @endphp
 
     <div class="header">
@@ -113,6 +118,17 @@
     <div class="section">
         <div class="label">Additional Notes</div>
         <div class="value">{{ $record->notes ?: 'None recorded.' }}</div>
+    </div>
+
+    <div class="section signature-grid">
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <div class="signature-name">Patient Signature: {{ $patientName }}</div>
+        </div>
+        <div class="signature-block">
+            <div class="signature-line"></div>
+            <div class="signature-name">Doctor Signature: Dr. {{ $doctorName }}</div>
+        </div>
     </div>
 
     <div class="footer">

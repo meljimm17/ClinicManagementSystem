@@ -86,6 +86,16 @@
         <div class="box">{{ $notes ?: 'None recorded.' }}</div>
     </div>
 
+    <div class="section" style="margin-top: 18px;">
+        <div style="display: flex; justify-content: flex-end; gap: 40px; align-items: flex-end;">
+            <div style="text-align: center; width: 45%;">
+                <div style="border-bottom: 1px solid #6b7f77; height: 1px; margin-bottom: 8px;"></div>
+                <div style="font-size: 11px; color: #6b7f77;">Doctor Signature</div>
+                <div style="font-size: 12px; font-weight: 700; margin-top: 6px;">Dr. {{ $doctorName ?? 'N/A' }}</div>
+            </div>
+        </div>
+    </div>
+
     <div class="footer">
         This PDF was generated from the diagnosis panel before final record submission.
     </div>

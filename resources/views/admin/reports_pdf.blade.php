@@ -23,7 +23,7 @@
 <body>
     <div class="header">
         <p class="title">CuraSure Clinical Report</p>
-        <p class="subtitle">Generated: {{ ($generatedAt ?? now())->format('F d, Y h:i A') }}</p>
+        <p class="subtitle">Report period: {{ $reportPeriodLabel ?? 'This Month' }} · Generated: {{ ($generatedAt ?? now())->format('F d, Y h:i A') }}</p>
     </div>
 
     <table class="stats">
@@ -41,8 +41,26 @@
                 <div class="value">{{ $avgWaitMinutes }}m</div>
             </td>
             <td>
-                <div class="label">Records Filed (This Month)</div>
+                <div class="label">Records Filed</div>
                 <div class="value">{{ number_format($recordsFiled) }}</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="label">Revenue Paid</div>
+                <div class="value">₱{{ number_format($monthlyRevenue, 2) }}</div>
+            </td>
+            <td>
+                <div class="label">Pending Payments</div>
+                <div class="value">₱{{ number_format($monthlyPending, 2) }}</div>
+            </td>
+            <td>
+                <div class="label">Total Collected</div>
+                <div class="value">₱{{ number_format($totalRevenue, 2) }}</div>
+            </td>
+            <td>
+                <div class="label">Collection Rate</div>
+                <div class="value">{{ $monthlyRevenue + $monthlyPending > 0 ? round(($monthlyRevenue / ($monthlyRevenue + $monthlyPending)) * 100, 1) : 0 }}%</div>
             </td>
         </tr>
     </table>
@@ -101,7 +119,7 @@
         </tbody>
     </table>
 
-    <div class="section-title">Doctor Monthly Summary</div>
+    <div class="section-title">Doctor Summary for {{ $reportPeriodLabel ?? 'Selected Period' }}</div>
     <table>
         <thead>
             <tr>

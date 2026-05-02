@@ -80,6 +80,31 @@ class AdminController extends Controller
             ['label' => 'Seniors (60+)', 'count' => Patient::where('age', '>=', 60)->count()],
         ];
 
+        // Revenue and billing statistics
+        $monthlyRevenue = Payment::where('status', 'paid')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('amount');
+
+        $monthlyPending = Payment::where('status', 'unpaid')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('amount');
+
+        $totalRevenue = Payment::where('status', 'paid')->sum('amount');
+        $totalPending = Payment::where('status', 'unpaid')->sum('amount');
+
+        // Revenue by checkup type this month
+        $revenueByType = Payment::where('payments.status', 'paid')
+            ->whereMonth('payments.created_at', now()->month)
+            ->whereYear('payments.created_at', now()->year)
+            ->join('patient_queue', 'payments.visit_id', '=', 'patient_queue.id')
+            ->join('checkup_types', 'patient_queue.checkup_type_id', '=', 'checkup_types.id')
+            ->selectRaw('checkup_types.name, SUM(payments.amount) as revenue')
+            ->groupBy('checkup_types.name')
+            ->orderByDesc('revenue')
+            ->get();
+
         // Billing stats
         $todayRevenue = Payment::whereDate('created_at', today())
             ->where('status', 'paid')
@@ -108,6 +133,8 @@ class AdminController extends Controller
             $mostCommonCheckupType = CheckupType::find($mostCommonCheckup->checkup_type_id);
         }
 
+        $checkupTypes = CheckupType::active()->orderBy('name')->get();
+
         return view('admin.dashboard', compact(
             'recentQueue',
             'totalPatients',
@@ -123,7 +150,8 @@ class AdminController extends Controller
             'todayPatients',
             'todayPaidCount',
             'todayUnpaidCount',
-            'mostCommonCheckupType'
+            'mostCommonCheckupType',
+            'checkupTypes'
         ));
     }
 
@@ -250,21 +278,49 @@ class AdminController extends Controller
         return view('admin.schedule', compact('staffList', 'todayAssignments', 'calendarEvents'));
     }
 
-    public function reports()
+    public function reports(Request $request)
     {
-        $data = $this->getReportData();
+        $period = $request->get('period', 'month');
+        $date = $request->get('date');
+        $data = $this->getReportData($period, $date);
 
         return view('admin.reports', $data);
     }
 
-    private function getReportData(): array
+    private function getReportData(string $period = 'month', ?string $filterValue = null): array
     {
-        $totalPatients          = Patient::count();
-        $totalConsultations     = MedicalRecord::where('record_status', 'completed')->count();
-        $recordsFiled           = MedicalRecord::whereMonth('created_at', now()->month)->count();
+        // Determine the period range and label for the report
+        switch ($period) {
+            case 'day':
+                $selectedDate = $filterValue ? Carbon::parse($filterValue) : now();
+                $rangeStart = $selectedDate->copy()->startOfDay();
+                $rangeEnd = $selectedDate->copy()->endOfDay();
+                $reportPeriodLabel = 'Day of ' . $selectedDate->format('F j, Y');
+                break;
+            case 'year':
+                $year = preg_match('/^\d{4}$/', $filterValue) ? (int) $filterValue : now()->year;
+                $rangeStart = Carbon::create($year, 1, 1)->startOfDay();
+                $rangeEnd = Carbon::create($year, 12, 31)->endOfDay();
+                $reportPeriodLabel = 'Year ' . $year;
+                break;
+            default:
+                $selectedMonth = $filterValue ? Carbon::parse($filterValue) : now();
+                $rangeStart = $selectedMonth->copy()->startOfMonth();
+                $rangeEnd = $selectedMonth->copy()->endOfMonth();
+                $reportPeriodLabel = $selectedMonth->format('F Y');
+                $period = 'month';
+                break;
+        }
+
+        $totalPatients = PatientQueue::whereBetween('created_at', [$rangeStart, $rangeEnd])->count();
+        $totalConsultations = MedicalRecord::where('record_status', 'completed')
+            ->whereBetween('consultation_date', [$rangeStart, $rangeEnd])
+            ->count();
+        $recordsFiled = MedicalRecord::whereBetween('created_at', [$rangeStart, $rangeEnd])->count();
 
         // Average wait time in minutes (queued_at → called_at)
         $avgWaitMinutes = PatientQueue::whereNotNull('called_at')
+            ->whereBetween('queued_at', [$rangeStart, $rangeEnd])
             ->selectRaw('AVG(TIMESTAMPDIFF(MINUTE, queued_at, called_at)) as avg_wait')
             ->value('avg_wait');
         $avgWaitMinutes = $avgWaitMinutes ? round($avgWaitMinutes) : 0;
@@ -307,6 +363,27 @@ class AdminController extends Controller
             ['label' => 'Adults (18-59)', 'count' => Patient::whereBetween('age', [18, 59])->count()],
             ['label' => 'Seniors (60+)', 'count' => Patient::where('age', '>=', 60)->count()],
         ];
+
+        // Revenue and billing metrics for selected period
+        $monthlyRevenue = Payment::where('status', 'paid')
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd])
+            ->sum('amount');
+
+        $monthlyPending = Payment::where('status', 'unpaid')
+            ->whereBetween('created_at', [$rangeStart, $rangeEnd])
+            ->sum('amount');
+
+        $totalRevenue = $monthlyRevenue;
+        $totalPending = $monthlyPending;
+
+        $revenueByType = Payment::where('payments.status', 'paid')
+            ->whereBetween('payments.created_at', [$rangeStart, $rangeEnd])
+            ->join('patient_queue', 'payments.visit_id', '=', 'patient_queue.id')
+            ->join('checkup_types', 'patient_queue.checkup_type_id', '=', 'checkup_types.id')
+            ->selectRaw('checkup_types.name, SUM(payments.amount) as revenue')
+            ->groupBy('checkup_types.name')
+            ->orderByDesc('revenue')
+            ->get();
 
         // Per-doctor summary for the monthly table
         $doctorStats = Doctor::with('user')
@@ -374,7 +451,13 @@ class AdminController extends Controller
             'topDiagnoses',
             'diagTotal',
             'doctorStats',
-            'demographicsData'
+            'demographicsData',
+            'monthlyRevenue',
+            'monthlyPending',
+            'totalRevenue',
+            'totalPending',
+            'revenueByType',
+            'reportPeriodLabel'
         );
     }
 
@@ -534,9 +617,11 @@ class AdminController extends Controller
         return back()->with('success', 'Clinic settings updated.');
     }
 
-    public function exportReports()
+    public function exportReports(Request $request)
     {
-        $data = $this->getReportData();
+        $period = $request->get('period', 'month');
+        $date = $request->get('date');
+        $data = $this->getReportData($period, $date);
         $data['generatedAt'] = now();
 
         $pdf = Pdf::loadView('admin.reports_pdf', $data)->setPaper('a4', 'portrait');

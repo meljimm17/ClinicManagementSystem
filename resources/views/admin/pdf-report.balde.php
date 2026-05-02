@@ -18,7 +18,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="clinic-name">CURASURE CLINIC</div>
+
         <div class="report-title">Monthly Staff Performance Report</div>
         <div>Date Generated: {{ date('F d, Y') }}</div>
     </div>

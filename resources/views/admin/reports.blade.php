@@ -77,6 +77,9 @@
         .stat-card.stat-mint { background: linear-gradient(135deg, #e8f5f0, #d8ece2); border-color: #abd4c2; }
         .stat-card.stat-sage { background: linear-gradient(135deg, #eef7f2, #e0eee7); border-color: #bfdacc; }
         .stat-card.stat-leaf { background: linear-gradient(135deg, #e6f4ed, #d4eadd); border-color: #9fc9b5; }
+        .stat-card.stat-gold { background: linear-gradient(135deg, #fef7e0, #fdf2c7); border-color: #f5e6a3; }
+        .stat-card.stat-orange { background: linear-gradient(135deg, #fef2e8, #fde4d1); border-color: #fac5a1; }
+        .stat-card.stat-emerald { background: linear-gradient(135deg, #e0f5ea, #c7f0d7); border-color: #9fdfb5; }
         .stat-label { font-size: .68rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #2e6048; margin-bottom: 7px; }
         .stat-value { font-size: 2rem; font-weight: 700; color: #153126; line-height: 1; }
         .stat-meta { font-size: .74rem; color: #4f6d61; margin-top: 7px; }
@@ -177,10 +180,9 @@
 
 <!-- ═══════════════════ SIDEBAR ═══════════════════ -->
 <aside class="sidebar">
-    <div class="sidebar-brand">
-        <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
-        <div class="brand-name">CuraSure</div>
-    </div>
+     <div class="sidebar-brand">
+         <img src="{{ asset('img/side_logo.png') }}" alt="CuraSure" style="width:100%; max-width:180px; height:auto; object-fit:contain; border-radius:8px;">
+     </div>
     <nav class="sidebar-nav">
         <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
             <i class="bi bi-grid-1x2"></i><span>Admin Dashboard</span>
@@ -237,12 +239,27 @@
 
     <main class="content">
 
-        <div class="section-header">
+        <div class="section-header" style="align-items:flex-end; gap:16px;">
             <div>
                 <div class="section-title">Analytics & Reports</div>
-                <div class="section-sub">Monthly summary and export tools.</div>
+                <div class="section-sub">Report period: {{ $reportPeriodLabel ?? 'This Month' }}.</div>
             </div>
-            <a href="{{ route('admin.reports.export') }}" class="btn-export">
+            <form method="GET" action="{{ route('admin.reports') }}" class="filter-row" style="margin:0;">
+                <label>
+                    <span class="visually-hidden">Period</span>
+                    <select name="period" class="filter-select" onchange="const dateInput = document.getElementById('report-date'); if (this.value === 'year') { dateInput.type = 'number'; dateInput.placeholder = 'YYYY'; } else { dateInput.type = 'date'; dateInput.placeholder = 'YYYY-MM-DD'; }">
+                        <option value="month" {{ request('period', 'month') === 'month' ? 'selected' : '' }}>Month</option>
+                        <option value="day" {{ request('period') === 'day' ? 'selected' : '' }}>Day</option>
+                        <option value="year" {{ request('period') === 'year' ? 'selected' : '' }}>Year</option>
+                    </select>
+                </label>
+                <label>
+                    <span class="visually-hidden">Date</span>
+                    <input id="report-date" name="date" class="filter-select" type="{{ request('period', 'month') === 'year' ? 'number' : 'date' }}" placeholder="{{ request('period', 'month') === 'year' ? 'YYYY' : 'YYYY-MM-DD' }}" value="{{ request('date', now()->format(request('period', 'month') === 'year' ? 'Y' : 'Y-m-d')) }}" />
+                </label>
+                <button type="submit" class="btn-export" style="padding:9px 14px;">Apply</button>
+            </form>
+            <a href="{{ route('admin.reports.export', request()->only('period', 'date')) }}" class="btn-export">
                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
             </a>
         </div>
@@ -274,7 +291,32 @@
                 <div class="stat-card stat-leaf">
                     <div class="stat-label">Records Filed</div>
                     <div class="stat-value">{{ number_format($recordsFiled) }}</div>
-                    <div class="stat-meta">This month</div>
+                    <div class="stat-meta">For selected period</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Revenue Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="stat-card stat-gold">
+                    <div class="stat-label">Revenue</div>
+                    <div class="stat-value">₱{{ number_format($monthlyRevenue, 2) }}</div>
+                    <div class="stat-meta">Paid in selected period</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card stat-orange">
+                    <div class="stat-label">Pending Payments</div>
+                    <div class="stat-value">₱{{ number_format($monthlyPending, 2) }}</div>
+                    <div class="stat-meta">Outstanding in selected period</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card stat-emerald">
+                    <div class="stat-label">Total Revenue</div>
+                    <div class="stat-value">₱{{ number_format($totalRevenue, 2) }}</div>
+                    <div class="stat-meta">Collected in selected period</div>
                 </div>
             </div>
         </div>
@@ -326,25 +368,57 @@
             </div>
         </div>
 
-        <!-- Monthly Report Table -->
+        <!-- Revenue Breakdown -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="card-panel">
+                    <div class="panel-title mb-3">Revenue by Check-up Type</div>
+                    <div class="panel-sub">Earnings breakdown for selected period.</div>
+                    @forelse($revenueByType as $item)
+                        @php $totalRev = $revenueByType->sum('revenue'); $pct = $totalRev > 0 ? round(($item->revenue / $totalRev) * 100, 1) : 0; @endphp
+                        <div class="diag-item" @if($loop->last) style="margin-bottom:0;" @endif>
+                            <div class="diag-header">
+                                <span>{{ $item->name }}</span>
+                                <span class="diag-pct">₱{{ number_format($item->revenue, 2) }}</span>
+                            </div>
+                            <div class="diag-bar"><div class="diag-fill" style="width:{{ $pct }}%"></div></div>
+                        </div>
+                    @empty
+                        <div class="panel-sub">No revenue data available yet.</div>
+                    @endforelse
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card-panel">
+                    <div class="panel-title mb-3">Payment Status Overview</div>
+                    <div class="panel-sub">Current payment collection status.</div>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="stat-card stat-gold" style="margin-bottom:0;">
+                                <div class="stat-label">Paid in Period</div>
+                                <div class="stat-value">₱{{ number_format($monthlyRevenue, 2) }}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="stat-card stat-orange" style="margin-bottom:0;">
+                                <div class="stat-label">Pending in Period</div>
+                                <div class="stat-value">₱{{ number_format($monthlyPending, 2) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <div class="panel-sub">Collection Rate: {{ $monthlyRevenue + $monthlyPending > 0 ? round(($monthlyRevenue / ($monthlyRevenue + $monthlyPending)) * 100, 1) : 0 }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Table -->
         <div class="card-panel">
             <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
                 <div>
-                    <div class="panel-title">Monthly Summary</div>
+                    <div class="panel-title">{{ $reportPeriodLabel ?? 'Selected Period Summary' }}</div>
                     <div class="panel-sub">Breakdown by doctor and department</div>
-                </div>
-                <div class="filter-row">
-                    <select class="filter-select">
-                        <option>April 2026</option>
-                        <option>March 2026</option>
-                        <option>February 2026</option>
-                    </select>
-                    <select class="filter-select">
-                        <option>All Doctors</option>
-                        @foreach($doctorStats as $doctor)
-                            <option>{{ $doctor->name ?: ($doctor->user->name ?? 'Unknown Doctor') }}</option>
-                        @endforeach
-                    </select>
                 </div>
             </div>
             <table class="report-table">
@@ -370,7 +444,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="text-muted">No monthly doctor data available.</td>
+                            <td colspan="4" class="text-muted">No doctor data available.</td>
                         </tr>
                     @endforelse
                     <tr>

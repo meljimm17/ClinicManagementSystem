@@ -454,8 +454,7 @@ body {
 {{-- ── Sidebar ── --}}
 <aside class="sidebar">
     <div class="sidebar-brand">
-         <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
-        <div class="brand-name">CuraSure</div>
+         <img src="{{ asset('img/side_logo.png') }}" alt="CuraSure" style="width:100%; max-width:180px; height:auto; object-fit:contain; border-radius:8px;">
     </div>
     <nav class="sidebar-nav">
         <a href="{{ route('staff.dashboard') }}" class="sidebar-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Staff Dashboard</a>

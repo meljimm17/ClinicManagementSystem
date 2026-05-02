@@ -31,17 +31,23 @@
                     @csrf
                     <input type="hidden" name="returning_patient_id" id="ap_returning_patient_id" value="{{ old('returning_patient_id') }}">
 
-                    <div class="ap-returning-toggle" onclick="apToggleReturning(this)">
-                        <input type="checkbox" id="apReturningCheck">
-                        <div>
-                            <label for="apReturningCheck">Returning Patient?</label><br>
-                            <small>Search existing records instead of re-entering details</small>
+                    {{-- ── Duplicate Patient Warning Banner ── --}}
+                    <div id="apDuplicateWarningBanner" style="display:none; background:#fff8e1; border:1.5px solid #f6c90e; color:#7a5c00; border-radius:10px; padding:13px 16px; margin-bottom:16px; font-size:.82rem;">
+                        <div style="display:flex; align-items:flex-start; gap:10px;">
+                            <i class="bi bi-exclamation-triangle-fill" style="font-size:1.2rem; color:#e6a817; flex-shrink:0; margin-top:1px;"></i>
+                            <div>
+                                <div style="font-weight:700; font-size:.87rem; margin-bottom:3px;">⚠ Returning Patient Detected</div>
+                                <div id="apDuplicateWarningText">This patient information matches an existing record. Would you like to load their details?</div>
+                                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button type="button" onclick="apLoadExistingPatient()" style="display:inline-flex; align-items:center; gap:5px; background:#1b3d2f; color:#fff; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-check-circle"></i> Load Details
+                                    </button>
+                                    <button type="button" onclick="apDismissDuplicateWarning()" style="display:inline-flex; align-items:center; gap:5px; background:none; border:1.5px solid #c9a800; color:#7a5c00; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-x-circle"></i> Continue Anyway
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                    <div id="apReturningSearch" class="mb-3">
-                        <label class="ap-form-label">Search Existing Patient</label>
-                        <input type="text" id="apPatientSearchInput" class="ap-form-control" placeholder="Search by name or contact number...">
-                        <div id="apSearchResults" style="background:#fff; border:1px solid #e4ece8; border-radius:8px; margin-top:4px; display:none;"></div>
                     </div>
 
                     <span class="ap-section-label">Personal Information</span>
@@ -143,6 +149,30 @@
                         </div>
                     </div>
 
+                    <span class="ap-section-label">Check-up Type & Billing</span>
+                    <div class="row mb-3 g-2">
+                        <div class="col-md-6">
+                            <label class="ap-form-label">Select Check-up Type</label>
+                            <select name="checkup_type_id" id="apCheckupTypeSelect" class="ap-form-control {{ $errors->has('checkup_type_id') ? 'ap-input-invalid' : '' }}" style="appearance:auto;" onchange="apUpdateFeeDisplay()">
+                                <option value="">-- Select Type --</option>
+                                @forelse($checkupTypes ?? [] as $type)
+                                    <option value="{{ $type->id }}" data-fee="{{ $type->fee }}" {{ old('checkup_type_id') == $type->id ? 'selected' : '' }}>
+                                        {{ $type->name }} - ₱{{ number_format($type->fee, 2) }}
+                                    </option>
+                                @empty
+                                    <option value="">No check-up types available</option>
+                                @endforelse
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="ap-form-label">Or Custom Fee (Override)</label>
+                            <input type="number" name="custom_fee" id="apCustomFee" value="{{ old('custom_fee') }}" class="ap-form-control {{ $errors->has('custom_fee') ? 'ap-input-invalid' : '' }}" placeholder="0.00" step="0.01" min="0" onchange="apToggleCustomFee()">
+                        </div>
+                    </div>
+                    <div id="apFeeDisplay" class="mb-3" style="font-size: .8rem; color: #6b7f77;">
+                        <i class="bi bi-info-circle me-1"></i> Fee will be automatically assigned based on check-up type
+                    </div>
+
                     <button type="submit" class="btn btn-success w-100"><i class="bi bi-person-check me-2"></i>Complete Registration</button>
                 </form>
             </div>
@@ -174,6 +204,106 @@
         document.getElementById('apPriorityFields').style.display = cb.checked ? 'block' : 'none';
     }
 
+    /* ── Automatic Returning Patient Detection ── */
+    let _apDuplicateWarningDismissed = false;
+    let _apDuplicateCheckTimeout = null;
+    let _apDetectedPatient = null;
+
+    function apCheckDuplicatePatient() {
+        if (_apDuplicateWarningDismissed) return;
+        
+        const name = (document.querySelector('#addPatientModal [name="name"]')?.value ?? '').trim();
+        const dob = (document.querySelector('#addPatientModal [name="date_of_birth"]')?.value ?? '').trim();
+        const address = (document.querySelector('#addPatientModal [name="address"]')?.value ?? '').trim();
+        const contact = (document.querySelector('#addPatientModal [name="contact_number"]')?.value ?? '').trim();
+        
+        clearTimeout(_apDuplicateCheckTimeout);
+        _apDuplicateCheckTimeout = setTimeout(() => {
+            if (name.length < 2 || !dob || (address.length < 5 && contact.length < 7)) return;
+            
+            fetch(`{{ route('patients.check-existence') }}?` + new URLSearchParams({
+                name, date_of_birth: dob, address, contact_number: contact
+            }))
+            .then(res => res.json())
+            .then(data => {
+                if (data.exists && data.patient) {
+                    _apDetectedPatient = data.patient;
+                    document.getElementById('apDuplicateWarningBanner').style.display = 'block';
+                    document.getElementById('apDuplicateWarningText').innerHTML = 
+                        `Patient <strong>${data.patient.name}</strong> with matching information found. Would you like to load their details?`;
+                } else {
+                    document.getElementById('apDuplicateWarningBanner').style.display = 'none';
+                    _apDetectedPatient = null;
+                }
+            })
+            .catch(err => console.error('Duplicate check failed:', err));
+        }, 800); // Debounce for 800ms
+    }
+
+    function apLoadExistingPatient() {
+        if (!_apDetectedPatient) return;
+        
+        const p = _apDetectedPatient;
+        document.querySelector('#addPatientModal [name="name"]').value = p.name ?? '';
+        document.querySelector('#addPatientModal [name="date_of_birth"]').value = p.date_of_birth ?? '';
+        document.querySelector('#addPatientModal [name="age"]').value = p.age ?? '';
+        document.querySelector('#addPatientModal [name="gender"]').value = p.gender ?? '';
+        document.querySelector('#addPatientModal [name="civil_status"]').value = p.civil_status ?? '';
+        document.querySelector('#addPatientModal [name="contact_number"]').value = p.contact_number ?? '';
+        document.querySelector('#addPatientModal [name="address"]').value = p.address ?? '';
+        document.querySelector('#addPatientModal [name="blood_type"]').value = p.blood_type ?? '';
+        document.querySelector('#addPatientModal [name="height"]').value = p.height ?? '';
+        document.querySelector('#addPatientModal [name="weight"]').value = p.weight ?? '';
+        document.querySelector('#addPatientModal [name="philhealth_no"]').value = p.philhealth_no ?? '';
+        document.querySelector('#addPatientModal [name="hmo_insurance"]').value = p.hmo_insurance ?? '';
+        document.getElementById('ap_emgName').value = p.emergency_contact_name ?? '';
+        document.getElementById('ap_emgContact').value = p.emergency_contact_number ?? '';
+        document.getElementById('ap_allergies').value = p.known_allergies ?? '';
+        document.getElementById('ap_conditions').value = p.existing_conditions ?? '';
+        document.getElementById('ap_medications').value = p.current_medications ?? '';
+        
+        document.getElementById('apDuplicateWarningBanner').style.display = 'none';
+        _apDuplicateWarningDismissed = true;
+    }
+
+    function apDismissDuplicateWarning() {
+        document.getElementById('apDuplicateWarningBanner').style.display = 'none';
+        _apDuplicateWarningDismissed = true;
+    }
+
+    /* Update fee display when checkup type changes */
+    function apUpdateFeeDisplay() {
+        const select = document.getElementById('apCheckupTypeSelect');
+        const customFee = document.getElementById('apCustomFee');
+        const display = document.getElementById('apFeeDisplay');
+        
+        if (select.selectedOptions.length > 0) {
+            const option = select.selectedOptions[0];
+            const fee = option.getAttribute('data-fee');
+            if (fee && !customFee.value) {
+                display.innerHTML = '<i class="bi bi-info-circle me-1"></i> Selected: <strong>₱' + parseFloat(fee).toFixed(2) + '</strong>';
+            } else if (customFee.value) {
+                display.innerHTML = '<i class="bi bi-info-circle me-1"></i> Custom fee override: <strong>₱' + parseFloat(customFee.value).toFixed(2) + '</strong>';
+            } else {
+                display.innerHTML = '<i class="bi bi-info-circle me-1"></i> Fee will be automatically assigned based on check-up type';
+            }
+        }
+    }
+
+    /* Toggle custom fee when manually entered */
+    function apToggleCustomFee() {
+        const customFee = document.getElementById('apCustomFee');
+        const select = document.getElementById('apCheckupTypeSelect');
+        const display = document.getElementById('apFeeDisplay');
+        
+        if (customFee.value && parseFloat(customFee.value) > 0) {
+            select.value = ''; // Clear checkup type when using custom fee
+            display.innerHTML = '<i class="bi bi-info-circle me-1"></i> Custom fee override: <strong>₱' + parseFloat(customFee.value).toFixed(2) + '</strong>';
+        } else {
+            apUpdateFeeDisplay();
+        }
+    }
+
     function apFillPatient(p) {
         document.getElementById('apSearchResults').style.display = 'none';
         document.getElementById('apPatientSearchInput').value = p.name;
@@ -198,27 +328,24 @@
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-        const searchInput = document.getElementById('apPatientSearchInput');
-        const results = document.getElementById('apSearchResults');
-        if (!searchInput || !results) return;
-
-        searchInput.addEventListener('input', function () {
-            const query = this.value.trim();
-            if (query.length < 2) { results.style.display = 'none'; return; }
-
-            fetch(`{{ route('patients.search') }}?q=${encodeURIComponent(query)}`)
-                .then(res => res.json())
-                .then(patients => {
-                    results.innerHTML = patients.length
-                        ? patients.map(p => `<div onclick="apFillPatient(${JSON.stringify(p).replace(/"/g, '&quot;')})" style="padding:10px 14px;font-size:.83rem;cursor:pointer;border-bottom:1px solid #e4ece8;"><strong>${p.name}</strong><span style="color:#6b7f77;font-size:.75rem;"> · ${p.contact_number ?? 'No contact'}</span></div>`).join('')
-                        : `<div style="padding:10px 14px;font-size:.8rem;color:#6b7f77;">No patients found.</div>`;
-                    results.style.display = 'block';
-                });
-        });
+        // Add event listeners for automatic duplicate detection
+        const nameField = document.querySelector('#addPatientModal [name="name"]');
+        const dobField = document.querySelector('#addPatientModal [name="date_of_birth"]');
+        const addressField = document.querySelector('#addPatientModal [name="address"]');
+        const contactField = document.querySelector('#addPatientModal [name="contact_number"]');
+        
+        if (nameField) nameField.addEventListener('input', apCheckDuplicatePatient);
+        if (dobField) dobField.addEventListener('input', apCheckDuplicatePatient);
+        if (addressField) addressField.addEventListener('input', apCheckDuplicatePatient);
+        if (contactField) contactField.addEventListener('input', apCheckDuplicatePatient);
 
         @if($errors->has('name') || $errors->has('primary_symptoms') || $errors->has('contact_number'))
             const modal = new bootstrap.Modal(document.getElementById('addPatientModal'));
             modal.show();
+        @endif
+
+        @if(old('checkup_type_id') || old('custom_fee'))
+            apUpdateFeeDisplay();
         @endif
     });
 </script>

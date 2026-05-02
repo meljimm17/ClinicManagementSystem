@@ -275,8 +275,7 @@ body {
 
 <aside class="sidebar">
     <div class="sidebar-brand">
-         <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
-        <div class="brand-name">CuraSure</div>
+         <img src="{{ asset('img/side_logo.png') }}" alt="CuraSure" style="width:100%; max-width:180px; height:auto; object-fit:contain; border-radius:8px;">
     </div>
     <nav class="sidebar-nav">
         <a href="{{ route('staff.dashboard') }}" class="sidebar-link {{ request()->routeIs('staff.dashboard') ? 'active' : '' }}"><i class="bi bi-grid-1x2"></i> Dashboard</a>
@@ -356,11 +355,7 @@ body {
                     @if($errors->any())
                         <div class="alert" style="background:#fff5f5; border:1px solid #f1b0b7; color:#b02a37; border-radius:8px; padding:10px 14px; font-size:.8rem; margin-bottom:16px;">
                             <strong>Please fix the following:</strong>
-                            <ul style="margin:6px 0 0 16px; padding:0;">
-                                @foreach($errors->all() as $error)
-                                    <li>{{ $error }}</li>
-                                @endforeach
-                            </ul>
+                            <div style="margin-top:6px;">{{ $errors->first() }}</div>
                         </div>
                     @endif
 
@@ -401,6 +396,23 @@ body {
                             </div>
                         </div>
                     </div>
+                    <div id="importantInfoWarningBanner" style="display:none; background:#fff4e5; border:1.5px solid #f0ad4e; color:#844d09; border-radius:10px; padding:13px 16px; margin-bottom:16px; font-size:.82rem;">
+                        <div style="display:flex; align-items:flex-start; gap:10px;">
+                            <i class="bi bi-exclamation-triangle-fill" style="font-size:1.2rem; color:#d97706; flex-shrink:0; margin-top:1px;"></i>
+                            <div>
+                                <div style="font-weight:700; font-size:.87rem; margin-bottom:3px;">⚠ Important Information Missing</div>
+                                <div id="importantInfoWarningText">Emergency contact or medical history details are incomplete. Please fill them in or mark them as N/A if not available.</div>
+                                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button type="button" onclick="dismissImportantInfoWarning()" style="display:inline-flex; align-items:center; gap:5px; background:#1b3d2f; color:#fff; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-check-circle"></i> Continue Anyway
+                                    </button>
+                                    <button type="button" onclick="focusImportantInfo()" style="display:inline-flex; align-items:center; gap:5px; background:none; border:1.5px solid #f0ad4e; color:#844d09; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-pencil-square"></i> Fill Now
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <form method="POST" action="{{ route('staff.store') }}">
                         @csrf
@@ -420,7 +432,8 @@ body {
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label-custom">Age</label>
-                                <input type="number" name="age" value="{{ old('age') }}" class="form-control-custom {{ $errors->has('age') ? 'input-invalid' : '' }}" id="age" placeholder="—" readonly>
+                                <input type="number" name="age" value="{{ old('age') }}" class="form-control-custom {{ $errors->has('age') ? 'input-invalid' : '' }}" id="age" placeholder="—" min="1" readonly oninput="validateImportantFields()" onblur="validateImportantFields()">
+                                <div id="ageError" class="field-error" style="display:none; color:#b02a37; font-size:.78rem; margin-top:5px;"></div>
                             </div>
                             <div class="col-md-3">
                                 <label class="form-label-custom">Gender</label>
@@ -445,7 +458,8 @@ body {
                         <div class="row mb-3 g-2">
                             <div class="col-md-6">
                                 <label class="form-label-custom">Contact Number</label>
-                                <input type="text" name="contact_number" value="{{ old('contact_number') }}" class="form-control-custom {{ $errors->has('contact_number') ? 'input-invalid' : '' }}" placeholder="+63 (555) 000-0000" required onblur="checkDuplicatePatient()">
+                                <input type="text" id="contactNumber" name="contact_number" value="{{ old('contact_number') }}" class="form-control-custom {{ $errors->has('contact_number') ? 'input-invalid' : '' }}" placeholder="0917 123 4567 or +63917 123 4567" required oninput="validateImportantFields()" onblur="checkDuplicatePatient(); validateImportantFields()" pattern="^(?:\+63|63|0)9\d{9}$" title="Valid Philippine mobile number, e.g. 09171234567 or +639171234567">
+                                <div id="contactError" class="field-error" style="display:none; color:#b02a37; font-size:.78rem; margin-top:5px;"></div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom">Address</label>
@@ -470,11 +484,13 @@ body {
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label-custom">Height (cm)</label>
-                                <input type="number" name="height" value="{{ old('height') }}" class="form-control-custom {{ $errors->has('height') ? 'input-invalid' : '' }}" placeholder="170">
+                                <input type="number" id="height" name="height" value="{{ old('height') }}" class="form-control-custom {{ $errors->has('height') ? 'input-invalid' : '' }}" placeholder="170" min="20" max="300" step="0.1" oninput="validateImportantFields()" onblur="validateImportantFields()">
+                                <div id="heightError" class="field-error" style="display:none; color:#b02a37; font-size:.78rem; margin-top:5px;"></div>
                             </div>
                             <div class="col-md-4">
                                 <label class="form-label-custom">Weight (kg)</label>
-                                <input type="number" name="weight" value="{{ old('weight') }}" class="form-control-custom {{ $errors->has('weight') ? 'input-invalid' : '' }}" placeholder="70">
+                                <input type="number" id="weight" name="weight" value="{{ old('weight') }}" class="form-control-custom {{ $errors->has('weight') ? 'input-invalid' : '' }}" placeholder="70" min="1" max="700" step="0.1" oninput="validateImportantFields()" onblur="validateImportantFields()">
+                                <div id="weightError" class="field-error" style="display:none; color:#b02a37; font-size:.78rem; margin-top:5px;"></div>
                             </div>
                         </div>
 
@@ -505,10 +521,10 @@ body {
                             </div>
                             <div class="row g-2">
                                 <div class="col-md-6">
-                                    <input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" class="form-control-custom {{ $errors->has('emergency_contact_name') ? 'input-invalid' : '' }}" id="emgName" placeholder="Contact Person Name" onblur="checkDuplicatePatient()">
+                                    <input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" class="form-control-custom {{ $errors->has('emergency_contact_name') ? 'input-invalid' : '' }}" id="emgName" placeholder="Contact Person Name" onblur="checkDuplicatePatient(); checkImportantInfo()">
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" class="form-control-custom {{ $errors->has('emergency_contact_number') ? 'input-invalid' : '' }}" id="emgContact" placeholder="+63 (555) 000-0000" onblur="checkDuplicatePatient()">
+                                    <input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" class="form-control-custom {{ $errors->has('emergency_contact_number') ? 'input-invalid' : '' }}" id="emgContact" placeholder="+63 (555) 000-0000" onblur="checkDuplicatePatient(); checkImportantInfo()">
                                 </div>
                             </div>
                         </div>
@@ -521,7 +537,7 @@ body {
                                 <label class="form-label-custom">Known Allergies</label>
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'allergies')">N/A</button>
                             </div>
-                            <input type="text" name="known_allergies" value="{{ old('known_allergies') }}" class="form-control-custom {{ $errors->has('known_allergies') ? 'input-invalid' : '' }}" id="allergies" placeholder="e.g. Penicillin, Shellfish, Dust">
+                            <input type="text" name="known_allergies" value="{{ old('known_allergies') }}" class="form-control-custom {{ $errors->has('known_allergies') ? 'input-invalid' : '' }}" id="allergies" placeholder="e.g. Penicillin, Shellfish, Dust" onblur="checkImportantInfo()">
                         </div>
 
                         <div class="mb-3">
@@ -529,7 +545,7 @@ body {
                                 <label class="form-label-custom">Existing Conditions</label>
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'conditions')">N/A</button>
                             </div>
-                            <input type="text" name="existing_conditions" value="{{ old('existing_conditions') }}" class="form-control-custom {{ $errors->has('existing_conditions') ? 'input-invalid' : '' }}" id="conditions" placeholder="e.g. Hypertension, Diabetes Type 2">
+                            <input type="text" name="existing_conditions" value="{{ old('existing_conditions') }}" class="form-control-custom {{ $errors->has('existing_conditions') ? 'input-invalid' : '' }}" id="conditions" placeholder="e.g. Hypertension, Diabetes Type 2" onblur="checkImportantInfo()">
                         </div>
 
                         <div class="mb-4">
@@ -537,7 +553,7 @@ body {
                                 <label class="form-label-custom">Current Medications</label>
                                 <button type="button" class="na-btn" onclick="toggleNA(this, 'medications')">N/A</button>
                             </div>
-                            <input type="text" name="current_medications" value="{{ old('current_medications') }}" class="form-control-custom {{ $errors->has('current_medications') ? 'input-invalid' : '' }}" id="medications" placeholder="e.g. Metformin 500mg, Losartan 50mg">
+                            <input type="text" name="current_medications" value="{{ old('current_medications') }}" class="form-control-custom {{ $errors->has('current_medications') ? 'input-invalid' : '' }}" id="medications" placeholder="e.g. Metformin 500mg, Losartan 50mg" onblur="checkImportantInfo()">
                         </div>
 
                         {{-- ── Visit Info ── --}}
@@ -554,7 +570,7 @@ body {
                         <div class="row mb-3 g-2">
                             <div class="col-md-6">
                                 <label class="form-label-custom">Select Check-up Type</label>
-                                <select name="checkup_type_id" id="checkupTypeSelect" class="form-control-custom {{ $errors->has('checkup_type_id') ? 'input-invalid' : '' }}" style="appearance:auto;" onchange="updateFeeDisplay()">
+                                <select name="checkup_type_id" id="checkupTypeSelect" class="form-control-custom {{ $errors->has('checkup_type_id') ? 'input-invalid' : '' }}" style="appearance:auto;" onchange="updateFeeDisplay(); validateImportantFields()">
                                     <option value="">-- Select Type --</option>
                                     @forelse($checkupTypes as $type)
                                         <option value="{{ $type->id }}" data-fee="{{ $type->fee }}" {{ old('checkup_type_id') == $type->id ? 'selected' : '' }}>
@@ -564,6 +580,9 @@ body {
                                         <option value="">No check-up types available</option>
                                     @endforelse
                                 </select>
+                                <div id="checkupTypeError" class="field-error" style="display:none; color:#b02a37; font-size:.78rem; margin-top:5px;">
+                                    {{ $errors->has('checkup_type_id') ? $errors->first('checkup_type_id') : '' }}
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label-custom">Or Custom Fee (Override)</label>
@@ -636,7 +655,7 @@ body {
                     </div>
                     <a href="{{ route('staff.queue') }}" style="display:block; text-align:center; font-size:.78rem; color:var(--primary); text-decoration:none; margin:15px 0; font-weight:600;">View all recent registrations →</a>
                     <div class="row g-3">
-                        <div class="col-6"><div class="mini-stat-card green-dark"><i class="bi bi-clock-history"></i> Avg Intake Time <div class="h5 mb-0 fw-bold">—</div></div></div>
+                        <div class="col-6"><div class="mini-stat-card green-dark"><i class="bi bi-clock-history"></i> Avg Intake Time <div class="h5 mb-0 fw-bold">{{ $avgIntakeMinutes ? $avgIntakeMinutes . ' min' : '—' }}</div></div></div>
                         <div class="col-6"><div class="mini-stat-card green-light"><i class="bi bi-people"></i> Daily Total<div class="h5 mb-0 fw-bold">{{ $recentQueue->count() }}</div></div></div>
                     </div>
                 </div>
@@ -860,12 +879,171 @@ body {
         document.getElementById('returningWarningBanner').style.display = 'none';
     }
 
+    let _importantInfoDismissed = false;
+    function checkImportantInfo() {
+        const emgName = (document.getElementById('emgName')?.value ?? '').trim();
+        const emgContact = (document.getElementById('emgContact')?.value ?? '').trim();
+        const allergies = (document.getElementById('allergies')?.value ?? '').trim();
+        const conditions = (document.getElementById('conditions')?.value ?? '').trim();
+        const medications = (document.getElementById('medications')?.value ?? '').trim();
+
+        const hasEmergency = emgName && emgName !== 'N/A' && emgContact && emgContact !== 'N/A';
+        const hasHistory = [allergies, conditions, medications].some(v => v && v !== 'N/A');
+        const banner = document.getElementById('importantInfoWarningBanner');
+
+        if (!hasEmergency || !hasHistory) {
+            if (!_importantInfoDismissed) {
+                banner.style.display = 'block';
+            }
+            return false;
+        }
+
+        banner.style.display = 'none';
+        _importantInfoDismissed = false;
+        return true;
+    }
+
+    function dismissImportantInfoWarning() {
+        _importantInfoDismissed = true;
+        document.getElementById('importantInfoWarningBanner').style.display = 'none';
+    }
+
+    function clearFieldError(fieldId) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.textContent = '';
+            field.style.display = 'none';
+        }
+    }
+
+    function showFieldError(fieldId, message) {
+        const field = document.getElementById(fieldId);
+        if (field) {
+            field.textContent = message;
+            field.style.display = 'block';
+        }
+    }
+
+    function validateImportantFields() {
+        let valid = true;
+        const contact = document.getElementById('contactNumber');
+        const age = document.getElementById('age');
+        const height = document.getElementById('height');
+        const weight = document.getElementById('weight');
+        const contactPattern = /^(?:\+63|63|0)9\d{9}$/;
+
+        clearFieldError('contactError');
+        clearFieldError('ageError');
+        clearFieldError('heightError');
+        clearFieldError('weightError');
+
+        if (contact) {
+            const value = (contact.value ?? '').trim().replace(/\s+/g, '');
+            if (!value) {
+                showFieldError('contactError', 'Contact number is required.');
+                contact.classList.add('input-invalid');
+                valid = false;
+            } else if (!contactPattern.test(value)) {
+                showFieldError('contactError', 'Enter a valid Philippine mobile number, e.g. 09171234567 or +639171234567.');
+                contact.classList.add('input-invalid');
+                valid = false;
+            } else {
+                contact.classList.remove('input-invalid');
+            }
+        }
+
+        const checkupType = document.getElementById('checkupTypeSelect');
+        if (checkupType) {
+            const value = (checkupType.value ?? '').trim();
+            if (!value) {
+                showFieldError('checkupTypeError', 'Please select a check-up type.');
+                checkupType.classList.add('input-invalid');
+                valid = false;
+            } else {
+                clearFieldError('checkupTypeError');
+                checkupType.classList.remove('input-invalid');
+            }
+        }
+
+        if (age) {
+            const value = age.value.trim();
+            const number = parseInt(value, 10);
+            if (!value || isNaN(number) || number < 1) {
+                showFieldError('ageError', 'Age must be a positive whole number.');
+                age.classList.add('input-invalid');
+                valid = false;
+            } else {
+                age.classList.remove('input-invalid');
+            }
+        }
+
+        if (height) {
+            const value = height.value.trim();
+            if (value) {
+                const number = parseFloat(value);
+                if (isNaN(number) || number < 20 || number > 300) {
+                    showFieldError('heightError', 'Height must be between 20 and 300 cm.');
+                    height.classList.add('input-invalid');
+                    valid = false;
+                } else {
+                    height.classList.remove('input-invalid');
+                }
+            } else {
+                height.classList.remove('input-invalid');
+            }
+        }
+
+        if (weight) {
+            const value = weight.value.trim();
+            if (value) {
+                const number = parseFloat(value);
+                if (isNaN(number) || number < 1 || number > 700) {
+                    showFieldError('weightError', 'Weight must be between 1 and 700 kg.');
+                    weight.classList.add('input-invalid');
+                    valid = false;
+                } else {
+                    weight.classList.remove('input-invalid');
+                }
+            } else {
+                weight.classList.remove('input-invalid');
+            }
+        }
+
+        return valid;
+    }
+
+    function focusImportantInfo() {
+        const emgName = document.getElementById('emgName');
+        if (emgName && !emgName.value.trim()) {
+            emgName.focus();
+            return;
+        }
+        const allergies = document.getElementById('allergies');
+        if (allergies && !allergies.value.trim()) {
+            allergies.focus();
+            return;
+        }
+        document.getElementById('conditions')?.focus();
+    }
+
     function handleRegistrationSubmit(e) {
         const duplicateBanner = document.getElementById('duplicateWarningBanner');
         const returningBanner = document.getElementById('returningWarningBanner');
-        if ((duplicateBanner.style.display !== 'none' && !_duplicateWarningDismissed) ||
-            (returningBanner.style.display !== 'none' && !_returningWarningDismissed)) {
+        const importantBanner = document.getElementById('importantInfoWarningBanner');
+        const importantFieldsValid = validateImportantFields();
+        const importantValid = checkImportantInfo();
+
+        if (!importantFieldsValid ||
+            (duplicateBanner.style.display !== 'none' && !_duplicateWarningDismissed) ||
+            (returningBanner.style.display !== 'none' && !_returningWarningDismissed) ||
+            (!importantValid && !_importantInfoDismissed)) {
             e.preventDefault();
+            if (!importantFieldsValid) {
+                importantBanner.style.display = 'block';
+                importantBanner.style.outline = '2.5px solid #f0ad4e';
+                importantBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                setTimeout(() => { importantBanner.style.outline = 'none'; }, 1800);
+            }
             if (duplicateBanner.style.display !== 'none') {
                 duplicateBanner.style.outline = '2.5px solid #e6a817';
                 duplicateBanner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

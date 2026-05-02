@@ -371,8 +371,7 @@ body {
 
 <aside class="sidebar">
     <div class="sidebar-brand">
-         <img src="{{ asset('img/logo.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; border-radius:8px;">
-        <div class="brand-name">CuraSure</div>
+         <img src="{{ asset('img/side_logo.png') }}" alt="CuraSure" style="width:100%; max-width:180px; height:auto; object-fit:contain; border-radius:8px;">
     </div>
     <nav class="sidebar-nav">
         @if(Auth::user()->role === 'doctor')
