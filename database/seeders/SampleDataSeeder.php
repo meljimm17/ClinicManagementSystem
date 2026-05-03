@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
+use App\Models\CheckupType;
 use App\Models\Doctor;
-use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
@@ -15,18 +15,17 @@ class SampleDataSeeder extends Seeder
     public function run(): void
     {
         $staff = User::updateOrCreate(
-            ['username' => 'sample_staff1'],
+            ['username' => 'seed_staff'],
             [
-                'name' => 'Sample Staff 1',
+                'name' => 'Seed Staff',
                 'password' => Hash::make('password123'),
                 'role' => 'staff',
             ]
         );
 
         $doctorSeeds = [
-            ['sample_doc1', 'Dr. Clara Reyes', 'General Medicine', 'LIC-SMP-001', '1'],
-            ['sample_doc2', 'Dr. Marco Lim', 'Internal Medicine', 'LIC-SMP-002', '2'],
-            ['sample_doc3', 'Dr. Nina Santos', 'Family Medicine', 'LIC-SMP-003', '3'],
+            ['seed_doc1', 'Dr. Clara Reyes', 'General Medicine', 'LIC-SMP-001', 'Room 1'],
+            ['seed_doc2', 'Dr. Marco Lim', 'Internal Medicine', 'LIC-SMP-002', 'Room 2'],
         ];
 
         $doctorRows = [];
@@ -51,101 +50,196 @@ class SampleDataSeeder extends Seeder
             );
         }
 
-        $patientIds = [];
-        for ($i = 1; $i <= 24; $i++) {
-            $dob = Carbon::now()->subYears(rand(18, 70))->subDays(rand(0, 365));
-            $contact = '0917' . str_pad((string) (($i * 137) % 10000000), 7, '0', STR_PAD_LEFT);
-
-            $patient = Patient::updateOrCreate(
-                [
-                    'name' => 'Sample Patient ' . $i,
-                    'date_of_birth' => $dob->toDateString(),
-                    'contact_number' => $contact,
-                ],
-                [
-                    'age' => $dob->age,
-                    'gender' => $i % 2 ? 'Male' : 'Female',
-                    'civil_status' => $i % 3 ? 'Single' : 'Married',
-                    'address' => 'Sample Address Block ' . $i,
-                    'blood_type' => ['A+', 'B+', 'O+', 'AB+'][$i % 4],
-                    'height' => (string) rand(150, 185),
-                    'weight' => (string) rand(50, 95),
-                    'philhealth_no' => 'PH-' . str_pad((string) $i, 8, '0', STR_PAD_LEFT),
-                    'hmo_insurance' => 'Sample HMO',
-                    'emergency_contact_name' => 'Contact ' . $i,
-                    'emergency_contact_number' => '0998' . str_pad((string) (($i * 97) % 10000000), 7, '0', STR_PAD_LEFT),
-                    'known_allergies' => $i % 4 === 0 ? 'Penicillin' : null,
-                    'existing_conditions' => $i % 5 === 0 ? 'Hypertension' : null,
-                    'current_medications' => $i % 6 === 0 ? 'Losartan 50mg' : null,
-                ]
-            );
-
-            $patientIds[] = $patient->id;
-        }
-
-        $symptoms = [
-            'Fever and cough',
-            'Headache and dizziness',
-            'Stomach pain',
-            'Back pain',
-            'Sore throat',
-            'Joint pain',
-            'Fatigue',
+        $checkupTypes = [
+            ['General Consultation', 300.00],
+            ['Follow-up Visit', 150.00],
+            ['Urgent Care', 500.00],
         ];
 
-        for ($dayOffset = 0; $dayOffset < 7; $dayOffset++) {
-            $date = Carbon::today()->subDays($dayOffset);
+        $checkupTypeIds = [];
+        foreach ($checkupTypes as [$typeName, $fee]) {
+            $checkupTypeIds[] = CheckupType::updateOrCreate(
+                ['name' => $typeName],
+                ['fee' => $fee, 'is_active' => true]
+            )->id;
+        }
 
-            for ($n = 1; $n <= 8; $n++) {
-                $queueNumber = 'S' . $date->format('md') . '-' . str_pad((string) $n, 3, '0', STR_PAD_LEFT);
-                $status = $n <= 3 ? 'done' : ($n <= 5 ? 'diagnosing' : 'waiting');
-                $queuedAt = $date->copy()->setTime(8, 0)->addMinutes($n * 17);
-                $calledAt = $status !== 'waiting' ? $queuedAt->copy()->addMinutes(rand(4, 20)) : null;
-                $completedAt = $status === 'done' ? $calledAt->copy()->addMinutes(rand(8, 30)) : null;
-                $doctor = $doctorRows[($n + $dayOffset) % count($doctorRows)];
+        $monthNow = Carbon::now();
+        $year = $monthNow->year;
+        $todayDay = max(1, $monthNow->day);
 
-                DB::table('patient_queue')->updateOrInsert(
-                    [
-                        'queue_number' => $queueNumber,
-                        'queue_date' => $date->toDateString(),
-                    ],
-                    [
-                        'patient_id' => $patientIds[array_rand($patientIds)],
-                        'registered_by' => $staff->id,
-                        'symptoms' => $symptoms[array_rand($symptoms)],
-                        'status' => $status,
-                        'assigned_room' => $status === 'waiting' ? null : ($doctor->assigned_room ?? '1'),
-                        'queued_at' => $queuedAt->toDateTimeString(),
-                        'called_at' => $calledAt?->toDateTimeString(),
-                        'completed_at' => $completedAt?->toDateTimeString(),
-                        'created_at' => $queuedAt->toDateTimeString(),
-                        'updated_at' => ($completedAt ?? $calledAt ?? $queuedAt)->toDateTimeString(),
-                    ]
-                );
+        $mayNames = [
+            'Miguel Dela Cruz',
+            'Andrea Ramos',
+            'Kevin Alonzo',
+            'Bianca Mendoza',
+            'Isaiah Torres',
+            'Celeste Garcia',
+            'Mark Javier',
+            'Sophia Lopez',
+            'Gabriel Aquino',
+            'Ella Cruz',
+        ];
 
-                $queueRow = DB::table('patient_queue')
-                    ->where('queue_number', $queueNumber)
-                    ->where('queue_date', $date->toDateString())
-                    ->first();
+        $aprilNames = [
+            'Carlos Villanueva',
+            'Denise Santos',
+            'Ramon Pineda',
+            'Mia Reyes',
+            'Joshua Valdez',
+        ];
 
-                if ($status === 'done' && $queueRow) {
-                    DB::table('medical_records')->updateOrInsert(
-                        ['queue_id' => $queueRow->id],
-                        [
-                            'doctor_id' => $doctor->id,
-                            'symptoms' => $queueRow->symptoms,
-                            'diagnosis' => ['Viral URI', 'Hypertension', 'Gastritis', 'Migraine'][($n + $dayOffset) % 4],
-                            'prescription' => 'Sample prescription',
-                            'notes' => 'Generated sample record',
-                            'record_status' => 'completed',
-                            'consultation_date' => $date->toDateString(),
-                            'consultation_time' => ($calledAt ?? $queuedAt)->format('H:i:s'),
-                            'created_at' => $queuedAt->toDateTimeString(),
-                            'updated_at' => ($completedAt ?? $queuedAt)->toDateTimeString(),
-                        ]
-                    );
-                }
-            }
+        $barangays = [
+            'Brgy. Poblacion, Makati',
+            'Brgy. San Isidro, Pasig',
+            'Brgy. Santa Cruz, Quezon City',
+            'Brgy. Bagong Silang, Caloocan',
+            'Brgy. San Roque, Antipolo',
+        ];
+
+        $bloodTypes = ['A+', 'B+', 'O+', 'AB+', 'A-', 'B-'];
+        $civilStatuses = ['Single', 'Married'];
+        $hmoList = ['None', 'Maxicare', 'Medicard', 'Intellicare'];
+        $allergies = ['None', 'Penicillin', 'Seafood', 'Dust'];
+        $conditions = ['None', 'Hypertension', 'Type 2 Diabetes', 'Asthma'];
+        $medications = ['None', 'Paracetamol 500mg', 'Loratadine 10mg', 'Metformin 500mg'];
+        $symptomsPool = [
+            'Mild fever with sore throat',
+            'Persistent headache after long screen time',
+            'Lower back pain on standing',
+            'Stomach discomfort after meals',
+            'Intermittent dizziness and fatigue',
+            'Body ache and nasal congestion',
+            'Skin rash with itching',
+            'Mild joint pain after physical activity',
+        ];
+        $diagnosisPool = [
+            'Acute viral pharyngitis',
+            'Tension headache',
+            'Lumbar strain',
+            'Gastritis',
+            'Benign positional vertigo',
+            'Allergic rhinitis',
+            'Contact dermatitis',
+            'Mild dehydration',
+        ];
+        $prescriptions = [
+            'Paracetamol 500mg every 6 hours as needed; rest and hydrate',
+            'Ibuprofen 400mg after meals for 3 days',
+            'Omeprazole 20mg once daily before breakfast for 10 days',
+            'Cetirizine 10mg once daily for 5 days',
+            'Loratadine 10mg once daily for 7 days',
+        ];
+        $notesPool = [
+            'Follow up in one week if symptoms persist.',
+            'Hydration and rest recommended.',
+            'Monitor symptoms and return if condition worsens.',
+            'Avoid heavy lifting for 3 days.',
+            'Continue medication as prescribed.',
+        ];
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=0');
+        DB::table('patient_queue_priorities')->truncate();
+        DB::table('medical_records')->truncate();
+        DB::table('patient_queue')->truncate();
+        DB::table('patients')->truncate();
+        DB::table('report_snapshots')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1');
+
+        $patientQueueCounter = 1;
+
+        $seedEntries = [];
+
+        foreach ($mayNames as $index => $name) {
+            $day = 1 + ($index % $todayDay);
+            $seedEntries[] = [
+                'name' => $name,
+                'queue_date' => $monthNow->copy()->startOfMonth()->addDays($day - 1),
+            ];
+        }
+
+        $aprilDays = [5, 10, 14, 19, 24];
+        foreach ($aprilNames as $index => $name) {
+            $seedEntries[] = [
+                'name' => $name,
+                'queue_date' => Carbon::create($year, 4, $aprilDays[$index]),
+            ];
+        }
+
+        foreach ($seedEntries as $index => $entry) {
+            $age = rand(24, 60);
+            $dob = Carbon::today()->subYears($age)->subDays(rand(0, 365));
+            $contact = '09' . str_pad((string) (960000000 + $index * 121), 9, '0', STR_PAD_LEFT);
+            $emergencyContact = '09' . str_pad((string) (970000000 + $index * 113), 9, '0', STR_PAD_LEFT);
+
+            $patientId = DB::table('patients')->insertGetId([
+                'name' => $entry['name'],
+                'date_of_birth' => $dob->toDateString(),
+                'age' => $age,
+                'gender' => $index % 2 === 0 ? 'Male' : 'Female',
+                'civil_status' => $civilStatuses[$index % count($civilStatuses)],
+                'address' => $barangays[$index % count($barangays)],
+                'blood_type' => $bloodTypes[$index % count($bloodTypes)],
+                'height' => (string) rand(153, 178),
+                'weight' => (string) rand(52, 85),
+                'contact_number' => $contact,
+                'philhealth_no' => 'PH' . str_pad((string) (100000000 + $index), 10, '0', STR_PAD_LEFT),
+                'hmo_insurance' => $hmoList[$index % count($hmoList)],
+                'emergency_contact_name' => 'Maria ' . explode(' ', $entry['name'])[1],
+                'emergency_contact_number' => $emergencyContact,
+                'known_allergies' => $allergies[$index % count($allergies)],
+                'existing_conditions' => $conditions[$index % count($conditions)],
+                'current_medications' => $medications[$index % count($medications)],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $queueDate = $entry['queue_date'];
+            $queuedAt = $queueDate->copy()->setTime(8 + ($index % 5), 10 + (($index * 11) % 40));
+            $calledAt = $queuedAt->copy()->addMinutes(10 + ($index % 10));
+            $completedAt = $calledAt->copy()->addMinutes(18 + ($index % 9));
+            $doctor = $doctorRows[$index % count($doctorRows)];
+            $checkupTypeId = $checkupTypeIds[$index % count($checkupTypeIds)];
+            $symptom = $symptomsPool[$index % count($symptomsPool)];
+            $diagnosis = $diagnosisPool[$index % count($diagnosisPool)];
+            $prescription = $prescriptions[$index % count($prescriptions)];
+            $notes = $notesPool[$index % count($notesPool)];
+
+            $queueId = DB::table('patient_queue')->insertGetId([
+                'queue_number' => $queueDate->format('Ymd') . '-' . str_pad((string) $patientQueueCounter, 3, '0', STR_PAD_LEFT),
+                'queue_date' => $queueDate->toDateString(),
+                'patient_id' => $patientId,
+                'registered_by' => $staff->id,
+                'symptoms' => $symptom,
+                'status' => 'done',
+                'assigned_room' => $doctor->assigned_room,
+                'checkup_type_id' => $checkupTypeId,
+                'queued_at' => $queuedAt->toDateTimeString(),
+                'called_at' => $calledAt->toDateTimeString(),
+                'completed_at' => $completedAt->toDateTimeString(),
+                'created_at' => $queuedAt->toDateTimeString(),
+                'updated_at' => $completedAt->toDateTimeString(),
+            ]);
+
+            DB::table('medical_records')->insert([
+                'queue_id' => $queueId,
+                'patient_id' => $patientId,
+                'patient_name' => $entry['name'],
+                'doctor_id' => $doctor->id,
+                'symptoms' => $symptom,
+                'diagnosis' => $diagnosis,
+                'prescription' => $prescription,
+                'notes' => $notes,
+                'record_status' => 'completed',
+                'assigned_room' => $doctor->assigned_room,
+                'consultation_date' => $queueDate->toDateString(),
+                'consultation_time' => $calledAt->format('H:i:s'),
+                'duration_minutes' => $calledAt->diffInMinutes($queuedAt),
+                'created_at' => $completedAt->toDateTimeString(),
+                'updated_at' => $completedAt->toDateTimeString(),
+            ]);
+
+            $patientQueueCounter++;
         }
     }
 }
