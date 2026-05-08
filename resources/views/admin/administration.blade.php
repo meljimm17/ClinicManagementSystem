@@ -333,23 +333,23 @@
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label-sm">Full Name</label>
-                            <input type="text" name="name" class="form-ctrl" placeholder="e.g. Dr. Juan dela Cruz" required>
+                            <input type="text" name="name" class="form-ctrl" placeholder="e.g. Dr. Juan dela Cruz" value="{{ old('name') }}" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label-sm">Username</label>
-                            <input type="text" name="username" class="form-ctrl" placeholder="e.g. juandelacruz" required>
+                            <input type="text" name="username" class="form-ctrl" placeholder="e.g. juandelacruz" value="{{ old('username') }}" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label-sm">Email</label>
-                            <input type="email" name="email" class="form-ctrl" placeholder="e.g. juan@curasure.ph" required>
+                            <input type="email" name="email" class="form-ctrl" placeholder="e.g. juan@curasure.ph" value="{{ old('email') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Contact Number</label>
-                            <input type="text" name="contact_number" class="form-ctrl" placeholder="e.g. 09123456789" required>
+                            <input type="text" name="contact_number" class="form-ctrl" placeholder="e.g. 09123456789" value="{{ old('contact_number') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Address</label>
-                            <input type="text" name="address" class="form-ctrl" placeholder="e.g. Davao City" required>
+                            <input type="text" name="address" class="form-ctrl" placeholder="e.g. Davao City" value="{{ old('address') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Role</label>
@@ -362,15 +362,15 @@
                         </div>
                         <div class="col-md-6 add-doctor-fields" style="display:none;">
                             <label class="form-label-sm">License Number</label>
-                            <input type="text" name="license_number" id="addLicenseNumber" class="form-ctrl" placeholder="e.g. LIC-2026-001">
+                            <input type="text" name="license_number" id="addLicenseNumber" class="form-ctrl" placeholder="e.g. LIC-2026-001" value="{{ old('license_number') }}">
                         </div>
                         <div class="col-md-6 add-doctor-fields" style="display:none;">
                             <label class="form-label-sm">Specialization</label>
-                            <input type="text" name="specialization" id="addSpecialization" class="form-ctrl" placeholder="e.g. General Medicine">
+                            <input type="text" name="specialization" id="addSpecialization" class="form-ctrl" placeholder="e.g. General Medicine" value="{{ old('specialization') }}">
                         </div>
                         <div class="col-md-6 add-doctor-fields" style="display:none;">
                             <label class="form-label-sm">Assigned Room</label>
-                            <input type="text" name="assigned_room" id="addAssignedRoom" class="form-ctrl" placeholder="e.g. Room 1">
+                            <input type="text" name="assigned_room" id="addAssignedRoom" class="form-ctrl" placeholder="e.g. Room 1" value="{{ old('assigned_room') }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Password</label>
@@ -405,23 +405,23 @@
                     <div class="row g-3">
                         <div class="col-12">
                             <label class="form-label-sm">Full Name</label>
-                            <input type="text" name="name" id="editName" class="form-ctrl" required>
+                            <input type="text" name="name" id="editName" class="form-ctrl" value="{{ old('name') }}" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label-sm">Username</label>
-                            <input type="text" name="username" id="editUsername" class="form-ctrl" required>
+                            <input type="text" name="username" id="editUsername" class="form-ctrl" value="{{ old('username') }}" required>
                         </div>
                         <div class="col-12">
                             <label class="form-label-sm">Email</label>
-                            <input type="email" name="email" id="editEmail" class="form-ctrl" required>
+                            <input type="email" name="email" id="editEmail" class="form-ctrl" value="{{ old('email') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Contact Number</label>
-                            <input type="text" name="contact_number" id="editContactNumber" class="form-ctrl" required>
+                            <input type="text" name="contact_number" id="editContactNumber" class="form-ctrl" value="{{ old('contact_number') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Address</label>
-                            <input type="text" name="address" id="editAddress" class="form-ctrl" required>
+                            <input type="text" name="address" id="editAddress" class="form-ctrl" value="{{ old('address') }}" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label-sm">Role</label>
@@ -433,15 +433,15 @@
                         </div>
                         <div class="col-md-6 edit-doctor-fields" style="display:none;">
                             <label class="form-label-sm">License Number</label>
-                            <input type="text" name="license_number" id="editLicenseNumber" class="form-ctrl">
+                            <input type="text" name="license_number" id="editLicenseNumber" class="form-ctrl" value="{{ old('license_number') }}">
                         </div>
                         <div class="col-md-6 edit-doctor-fields" style="display:none;">
                             <label class="form-label-sm">Specialization</label>
-                            <input type="text" name="specialization" id="editSpecialization" class="form-ctrl">
+                            <input type="text" name="specialization" id="editSpecialization" class="form-ctrl" value="{{ old('specialization') }}">
                         </div>
                         <div class="col-md-6 edit-doctor-fields" style="display:none;">
                             <label class="form-label-sm">Assigned Room</label>
-                            <input type="text" name="assigned_room" id="editAssignedRoom" class="form-ctrl">
+                            <input type="text" name="assigned_room" id="editAssignedRoom" class="form-ctrl" value="{{ old('assigned_room') }}">
                         </div>
                     </div>
                 </div>
@@ -467,7 +467,10 @@ function toggleDoctorFields(prefix) {
         field.style.display = isDoctor ? '' : 'none';
         field.querySelectorAll('input').forEach((input) => {
             input.required = isDoctor;
-            if (!isDoctor) input.value = '';
+            // Only clear if not showing (hide scenario)
+            if (!isDoctor) {
+                input.value = '';
+            }
         });
     });
 }
@@ -488,11 +491,17 @@ function openEditModal(id, name, username, email, contactNumber, address, specia
 }
 
 document.addEventListener('DOMContentLoaded', function () {
+    // Initialize doctor fields visibility on page load
     toggleDoctorFields('add');
 
+    // If there are validation errors, show the add modal and ensure fields are properly set
     @if($errors->any())
         const addModalEl = document.getElementById('addUserModal');
         if (addModalEl) {
+            // Reapply the toggle to ensure fields match the role selection
+            setTimeout(() => {
+                toggleDoctorFields('add');
+            }, 100);
             new bootstrap.Modal(addModalEl).show();
         }
     @endif

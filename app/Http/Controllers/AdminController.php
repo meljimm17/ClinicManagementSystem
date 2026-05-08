@@ -486,7 +486,7 @@ class AdminController extends Controller
      */
     public function storeUser(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'username' => [
                 'required',
@@ -504,30 +504,31 @@ class AdminController extends Controller
             'address' => 'required|string|max:255',
             'password' => 'required|min:8',
             'password_confirmation' => 'required|same:password',
-            'role'     => 'required',
-            'specialization' => 'required_if:role,doctor|string|max:255',
-            'license_number' => 'required_if:role,doctor|string|max:255|unique:doctors,license_number',
-            'assigned_room' => 'required_if:role,doctor|string|max:50',
+            'role'     => 'required|in:admin,doctor,staff',
+            'specialization' => 'required_if:role,doctor|nullable|string|max:255',
+            'license_number' => 'required_if:role,doctor|nullable|string|max:255|unique:doctors,license_number',
+            'assigned_room' => 'required_if:role,doctor|nullable|string|max:50',
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'username' => $request->username,
-            'email' => $request->email,
-            'contact_number' => $request->contact_number,
-            'address' => $request->address,
-            'password' => Hash::make($request->password),
-            'role'     => $request->role,
+            'name'     => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'],
+            'contact_number' => $validated['contact_number'],
+            'address' => $validated['address'],
+            'password' => Hash::make($validated['password']),
+            'role'     => $validated['role'],
         ]);
 
-        if ($request->role === 'doctor') {
+        // Only create/update doctor record if role is doctor
+        if ($validated['role'] === 'doctor') {
             Doctor::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'name' => $request->name,
-                    'specialization' => $request->specialization,
-                    'license_number' => $request->license_number,
-                    'assigned_room' => $request->assigned_room,
+                    'name' => $validated['name'],
+                    'specialization' => $validated['specialization'],
+                    'license_number' => $validated['license_number'],
+                    'assigned_room' => $validated['assigned_room'],
                 ]
             );
         }
@@ -538,7 +539,7 @@ class AdminController extends Controller
     public function updateUser(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $request->validate([
+        $validated = $request->validate([
             'name' => 'required|string|max:255',
             'username' => [
                 'required',
@@ -559,30 +560,33 @@ class AdminController extends Controller
             'contact_number' => 'required|string|max:30',
             'address' => 'required|string|max:255',
             'role' => 'required|in:admin,doctor,staff',
-            'specialization' => 'required_if:role,doctor|string|max:255',
+            'specialization' => 'required_if:role,doctor|nullable|string|max:255',
             'license_number' => [
                 'required_if:role,doctor',
+                'nullable',
                 'string',
                 'max:255',
                 Rule::unique('doctors', 'license_number')
                     ->ignore($user->doctor?->id),
             ],
-            'assigned_room' => 'required_if:role,doctor|string|max:50',
+            'assigned_room' => 'required_if:role,doctor|nullable|string|max:50',
         ]);
 
-        $user->update($request->only(['name', 'username', 'email', 'contact_number', 'address', 'role']));
+        $user->update(collect($validated)->only(['name', 'username', 'email', 'contact_number', 'address', 'role'])->toArray());
 
-        if ($request->role === 'doctor') {
+        // Only create/update doctor record if role is doctor
+        if ($validated['role'] === 'doctor') {
             Doctor::updateOrCreate(
                 ['user_id' => $user->id],
                 [
-                    'name' => $request->name,
-                    'specialization' => $request->specialization,
-                    'license_number' => $request->license_number,
-                    'assigned_room' => $request->assigned_room,
+                    'name' => $validated['name'],
+                    'specialization' => $validated['specialization'],
+                    'license_number' => $validated['license_number'],
+                    'assigned_room' => $validated['assigned_room'],
                 ]
             );
         } else {
+            // Delete doctor record if user is no longer a doctor
             Doctor::where('user_id', $user->id)->delete();
         }
 
