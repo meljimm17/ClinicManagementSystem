@@ -18,6 +18,22 @@ class MedicalRecord extends Model
         'record_status',
         'consultation_date',
         'consultation_time',
+        // Patient snapshot fields for when patient is deleted
+        'patient_age',
+        'patient_gender',
+        'patient_civil_status',
+        'patient_contact',
+        'patient_address',
+        'patient_blood_type',
+        'patient_height',
+        'patient_weight',
+        'patient_philhealth',
+        'patient_hmo',
+        'patient_emergency_name',
+        'patient_emergency_contact',
+        'patient_allergies',
+        'patient_conditions',
+        'patient_medications',
     ];
 
     public function doctor()

@@ -185,6 +185,22 @@ class DoctorController extends Controller
         'record_status'     => $request->record_status ?? 'completed',
         'consultation_date' => now()->format('Y-m-d'),
         'consultation_time' => now()->format('H:i:s'),
+        // Patient snapshot data
+        'patient_age'       => $queue?->patient?->age,
+        'patient_gender'    => $queue?->patient?->gender,
+        'patient_civil_status' => $queue?->patient?->civil_status,
+        'patient_contact'   => $queue?->patient?->contact_number,
+        'patient_address'   => $queue?->patient?->address,
+        'patient_blood_type' => $queue?->patient?->blood_type,
+        'patient_height'    => $queue?->patient?->height,
+        'patient_weight'    => $queue?->patient?->weight,
+        'patient_philhealth' => $queue?->patient?->philhealth_no,
+        'patient_hmo'       => $queue?->patient?->hmo_insurance,
+        'patient_emergency_name' => $queue?->patient?->emergency_contact_name,
+        'patient_emergency_contact' => $queue?->patient?->emergency_contact_number,
+        'patient_allergies' => $queue?->patient?->known_allergies,
+        'patient_conditions' => $queue?->patient?->existing_conditions,
+        'patient_medications' => $queue?->patient?->current_medications,
     ];
     MedicalRecord::updateOrCreate(
         ['queue_id' => $payload['queue_id']],
@@ -199,6 +215,22 @@ class DoctorController extends Controller
             'record_status'     => $payload['record_status'],
             'consultation_date' => $payload['consultation_date'],
             'consultation_time' => $payload['consultation_time'],
+            // Patient snapshot data
+            'patient_age'       => $payload['patient_age'],
+            'patient_gender'    => $payload['patient_gender'],
+            'patient_civil_status' => $payload['patient_civil_status'],
+            'patient_contact'   => $payload['patient_contact'],
+            'patient_address'   => $payload['patient_address'],
+            'patient_blood_type' => $payload['patient_blood_type'],
+            'patient_height'    => $payload['patient_height'],
+            'patient_weight'    => $payload['patient_weight'],
+            'patient_philhealth' => $payload['patient_philhealth'],
+            'patient_hmo'       => $payload['patient_hmo'],
+            'patient_emergency_name' => $payload['patient_emergency_name'],
+            'patient_emergency_contact' => $payload['patient_emergency_contact'],
+            'patient_allergies' => $payload['patient_allergies'],
+            'patient_conditions' => $payload['patient_conditions'],
+            'patient_medications' => $payload['patient_medications'],
         ]
     );
 

@@ -401,7 +401,7 @@
                             <span class="view-only-chip">Completed</span>
                         </div>
                         <div style="font-size:.73rem; color:var(--text-muted);">
-                            Record <span id="mRecordId"></span> &nbsp;·&nbsp; <span id="mDate"></span>
+                            Record <span id="mRecordId"></span> &nbsp;·&nbsp; <span id="mDate"></span> at <span id="mTime"></span>
                         </div>
                     </div>
                 </div>
@@ -445,32 +445,93 @@
                             <div class="info-value" id="mAddress">—</div>
                         </div>
                     </div>
+                    <div class="modal-section-title">Vitals</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <div class="info-label">Blood Type</div>
+                            <div class="info-value" id="mBlood">—</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-label">Height</div>
+                            <div class="info-value" id="mHeight">—</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-label">Weight</div>
+                            <div class="info-value" id="mWeight">—</div>
+                        </div>
                     </div>
+                    <div class="modal-section-title">Administrative</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="info-label">PhilHealth No.</div>
+                            <div class="info-value" id="mPhilhealth">—</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">HMO / Insurance</div>
+                            <div class="info-value" id="mHmo">—</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Emergency Contact Name</div>
+                            <div class="info-value" id="mEmgName">—</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Emergency Contact Number</div>
+                            <div class="info-value" id="mEmgContact">—</div>
+                        </div>
+                    </div>
+                </div>
 
                 <div id="panel-medical" style="display:none;">
                     <div class="modal-section-title">Medical Background</div>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="info-label">Known Allergies</div>
-                            <div class="info-value" id="mAllergies" style="white-space:pre-wrap;">—</div>
+                            <div class="info-value" id="mAllergies" style="white-space:pre-wrap;line-height:1.6;">—</div>
                         </div>
                         <div class="col-md-12">
                             <div class="info-label">Existing Conditions</div>
-                            <div class="info-value" id="mConditions" style="white-space:pre-wrap;">—</div>
+                            <div class="info-value" id="mConditions" style="white-space:pre-wrap;line-height:1.6;">—</div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="info-label">Current Medications</div>
+                            <div class="info-value" id="mMedications" style="white-space:pre-wrap;line-height:1.6;">—</div>
                         </div>
                     </div>
                 </div>
 
                 <div id="panel-consult" style="display:none;">
+                    <div class="modal-section-title">Visit Details</div>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <div class="info-label">Attending Physician</div>
+                            <div class="info-value" id="mDoctor">—</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Assigned Room</div>
+                            <div class="info-value" id="mRoom">—</div>
+                        </div>
+                    </div>
                     <div class="modal-section-title">Clinical Notes</div>
                     <div class="row g-3">
                         <div class="col-md-12">
                             <div class="info-label">Primary Symptoms</div>
-                            <div class="info-value" id="mSymptoms" style="white-space:pre-wrap;">—</div>
+                            <div class="info-value" id="mSymptoms" style="white-space:pre-wrap;line-height:1.6;">—</div>
                         </div>
                         <div class="col-md-12">
                             <div class="info-label">Final Diagnosis</div>
-                            <div class="info-value" id="mDiagnosis" style="font-weight:700; color:var(--primary);">—</div>
+                            <div class="info-value" id="mDiagnosis" style="font-weight:700;color:var(--primary);">—</div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="info-label">Prescription / Treatment Plan</div>
+                            <div class="info-value" id="mPrescription" style="white-space:pre-wrap;line-height:1.6;">—</div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="info-label">Additional Notes</div>
+                            <div class="info-value" id="mNotes" style="white-space:pre-wrap;line-height:1.6;">—</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-label">Consultation Duration</div>
+                            <div class="info-value" id="mDuration">—</div>
                         </div>
                     </div>
                 </div>
@@ -488,30 +549,43 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    // FIX: Map records in JS to use the new patient_name column
-    const allRecords = @json($records->values()->map(function($r) {
-        return array_merge($r->toArray(), [
-            'display_name' => $r->patient_name ?? ($r->queue?->patient?->name ?? 'Unknown Patient')
-        ]);
-    })); 
+    const allRecords = @json($mappedRecords); 
     
     let activeRecordPrintUrl = null;
 
-    function openRecord(id) {
+function openRecord(id) {
         const r = allRecords.find(rec => rec.id == id);
         if (!r) return;
 
-        // FIX: Use display_name instead of path through relationships
-        document.getElementById('viewAvatar').textContent  = r.display_name ? r.display_name.charAt(0).toUpperCase() : '?';
-        document.getElementById('mName').textContent       = r.display_name || '—';
-        document.getElementById('mRecordId').textContent   = '#' + r.id;
-        document.getElementById('mDate').textContent       = r.consultation_date || '—';
-        document.getElementById('mAge').textContent        = r.queue?.patient?.age ? r.queue.patient.age + ' yrs' : '—';
-        document.getElementById('mGender').textContent     = r.queue?.patient?.gender || '—';
-        document.getElementById('mAllergies').textContent  = r.queue?.patient?.known_allergies || 'None';
-        document.getElementById('mDiagnosis').textContent  = r.diagnosis || 'No diagnosis recorded';
-        
-        activeRecordPrintUrl = "{{ route('doctor.medical-records.print', ':id') }}".replace(':id', r.id);
+        document.getElementById('viewAvatar').textContent      = (r.patient_name || '?').charAt(0).toUpperCase();
+        document.getElementById('mName').textContent           = r.patient_name || 'Unknown Patient';
+        document.getElementById('mRecordId').textContent       = r.id;
+        document.getElementById('mDate').textContent           = r.date;
+        document.getElementById('mTime').textContent           = r.time || '—';
+        document.getElementById('mAge').textContent            = r.age ? `${r.age} yrs` : '—';
+        document.getElementById('mGender').textContent         = r.gender || '—';
+        document.getElementById('mCivil').textContent          = r.civil_status || '—';
+        document.getElementById('mContact').textContent        = r.contact || '—';
+        document.getElementById('mAddress').textContent        = r.address || '—';
+        document.getElementById('mBlood').textContent          = r.blood_type || '—';
+        document.getElementById('mHeight').textContent         = r.height ? `${r.height} cm` : '—';
+        document.getElementById('mWeight').textContent         = r.weight ? `${r.weight} kg` : '—';
+        document.getElementById('mPhilhealth').textContent   = r.philhealth || '—';
+        document.getElementById('mHmo').textContent          = r.hmo || '—';
+        document.getElementById('mEmgName').textContent      = r.emg_name || '—';
+        document.getElementById('mEmgContact').textContent     = r.emg_contact || '—';
+        document.getElementById('mAllergies').textContent      = r.allergies || 'None reported';
+        document.getElementById('mConditions').textContent     = r.conditions || 'None reported';
+        document.getElementById('mMedications').textContent    = r.medications || 'None reported';
+        document.getElementById('mSymptoms').textContent       = r.symptoms || 'None reported';
+        document.getElementById('mDiagnosis').textContent      = r.diagnosis || 'No diagnosis recorded';
+        document.getElementById('mPrescription').textContent   = r.prescription || 'None';
+        document.getElementById('mNotes').textContent        = r.notes || 'None';
+        document.getElementById('mDoctor').textContent         = r.doctor ? `Dr. ${r.doctor}` : '—';
+        document.getElementById('mRoom').textContent           = r.room ? `Room ${r.room}` : '—';
+        document.getElementById('mDuration').textContent       = r.duration ? `${r.duration} min` : '—';
+
+        activeRecordPrintUrl = r.print_url;
 
         switchTab('info');
         new bootstrap.Modal(document.getElementById('recordModal')).show();
