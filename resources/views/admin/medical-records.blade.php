@@ -438,6 +438,14 @@
 <script>
     const allRecords = @json($mappedRecords);
 
+    function formatDoctorName(name) {
+        if (!name) return null;
+        const normalized = name.trim();
+        return normalized.match(/^dr\.?\s+/i)
+            ? `Dr. ${normalized.replace(/^dr\.?\s+/i, '')}`
+            : `Dr. ${normalized}`;
+    }
+
     function openRecord(id) {
         const p = allRecords.find(r => r.id == id);
         if (!p) return;
@@ -466,7 +474,7 @@
         document.getElementById('viewDiagnosis').textContent   = p.diagnosis || 'No diagnosis recorded';
         document.getElementById('viewPrescription').textContent = p.prescription || 'None';
         document.getElementById('viewNotes').textContent       = p.notes || 'None';
-        document.getElementById('viewDoctor').textContent      = p.doctor ? `Dr. ${p.doctor}` : '—';
+        document.getElementById('viewDoctor').textContent      = p.doctor ? formatDoctorName(p.doctor) : '—';
         document.getElementById('viewRoom').textContent        = p.room ? `Room ${p.room}` : '—';
         document.getElementById('viewDuration').textContent    = p.duration ? `${p.duration} min` : '—';
         switchTab('info');
