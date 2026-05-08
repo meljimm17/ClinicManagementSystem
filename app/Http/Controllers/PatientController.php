@@ -224,7 +224,8 @@ class PatientController extends Controller
                     if ($fee > 0) {
                         Payment::create([
                             'visit_id' => $queueEntry->id,
-                            'amount' => $fee,
+                            'amount' => 0, // amount paid
+                            'remaining' => $fee,
                             'status' => 'unpaid',
                         ]);
                     }

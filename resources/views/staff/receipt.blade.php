@@ -155,12 +155,24 @@
             <span class="receipt-value">{{ $payment->visit->registeredBy->name ?? 'N/A' }}</span>
         </div>
 
+        <div class="receipt-row">
+            <span class="receipt-label">Total Fee</span>
+            <span class="receipt-value">₱{{ number_format($payment->amount + $payment->remaining, 2) }}</span>
+        </div>
+
         <div class="total-row">
             <div class="receipt-row" style="margin: 0; border: none;">
                 <span class="receipt-label">Amount Paid</span>
                 <span class="receipt-value">₱{{ number_format($payment->amount, 2) }}</span>
             </div>
         </div>
+
+        @if($payment->remaining > 0)
+        <div class="receipt-row">
+            <span class="receipt-label">Remaining Balance</span>
+            <span class="receipt-value">₱{{ number_format($payment->remaining, 2) }}</span>
+        </div>
+        @endif
 
         <div class="receipt-row" style="margin-top: 10px;">
             <span class="receipt-label">Payment Method</span>

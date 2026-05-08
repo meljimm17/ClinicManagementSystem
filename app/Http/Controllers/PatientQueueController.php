@@ -60,20 +60,36 @@ class PatientQueueController extends Controller
         // Find the patient to snapshot their name
         $patient = Patient::findOrFail($request->patient_id);
 
-        // Generate a unique queue number for today e.g. Q-001, Q-002
-        $todayCount = PatientQueue::whereDate('created_at', today())->count();
+        // Generate a unique queue number for today using the system queue format
+        $today = today()->toDateString();
         $queueFormat = strtoupper(Setting::getValue('queue_format', 'Q-001'));
         preg_match('/^([A-Z0-9#-]*?)(\d+)$/', $queueFormat, $matches);
         $queuePrefix = $matches[1] ?? 'Q-';
         $queueDigits = isset($matches[2]) ? strlen($matches[2]) : 3;
-        $queueNumber = $queuePrefix . str_pad($todayCount + 1, $queueDigits, '0', STR_PAD_LEFT);
+
+        $latestQueueNumber = PatientQueue::withTrashed()
+            ->whereDate('queue_date', $today)
+            ->pluck('queue_number')
+            ->map(function ($value) use ($queuePrefix) {
+                $escapedPrefix = preg_quote($queuePrefix, '/');
+                if (preg_match('/^' . $escapedPrefix . '(\d+)$/', $value, $matches)) {
+                    return (int) $matches[1];
+                }
+
+                return 0;
+            })
+            ->max() ?? 0;
+
+        $queueNumber = $queuePrefix . str_pad($latestQueueNumber + 1, $queueDigits, '0', STR_PAD_LEFT);
 
         PatientQueue::create([
             'queue_number'  => $queueNumber,
+            'queue_date'    => $today,
             'patient_id'    => $patient->id,
-            'patient_name'  => $patient->name, // 👈 snapshot saved here
+            'patient_name'  => $patient->name,
             'symptoms'      => $request->symptoms,
             'registered_by' => auth()->id(),
+            'status'        => 'waiting',
         ]);
 
         return redirect()->back()->with('success', 'Patient added to queue successfully!');

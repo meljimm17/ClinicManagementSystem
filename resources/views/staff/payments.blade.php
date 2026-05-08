@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>CuraSure - Payments</title>
     <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -87,7 +88,7 @@
                             <th>Queue #</th>
                             <th>Patient Name</th>
                             <th>Check-up Type</th>
-                            <th>Amount</th>
+                            <th>Paid / Remaining</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
@@ -98,7 +99,7 @@
                             <td>{{ $payment->visit->display_queue_number ?? 'N/A' }}</td>
                             <td>{{ $payment->visit->patient_name ?? $payment->visit->patient->name ?? 'N/A' }}</td>
                             <td>{{ $payment->visit->checkupType->name ?? 'N/A' }}</td>
-                            <td>₱{{ number_format($payment->amount, 2) }}</td>
+                            <td>₱{{ number_format($payment->amount, 2) }} / ₱{{ number_format($payment->remaining, 2) }}</td>
                             <td>
                                 <span class="status-badge 
                                     @if($payment->status === 'paid') status-paid
@@ -108,7 +109,7 @@
                                 </span>
                             </td>
                             <td>
-                                @if($payment->status === 'unpaid')
+                                @if($payment->remaining > 0)
                                 <button class="btn-pay" data-bs-toggle="modal" data-bs-target="#payModal{{ $payment->id }}">
                                     <i class="bi bi-cash me-1"></i> Pay
                                 </button>
@@ -128,7 +129,7 @@
                                         <h5 class="modal-title">Process Payment</h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                                     </div>
-                                    <form method="POST" action="{{ route('staff.payments.paid', $payment->id) }}">
+                                    <form id="paymentForm{{ $payment->id }}" method="POST" action="{{ route('staff.payments.paid', $payment->id) }}">
                                         @csrf
                                         @method('PATCH')
                                         <div class="modal-body">
@@ -141,8 +142,12 @@
                                                 <div class="form-control-custom" style="background: #fff;">{{ $payment->visit->checkupType->name ?? 'N/A' }}</div>
                                             </div>
                                             <div class="mb-3">
-                                                <label class="form-label-custom">Amount</label>
-                                                <div class="form-control-custom" style="background: #fff; font-size: 1.2rem; font-weight: 700;">₱{{ number_format($payment->amount, 2) }}</div>
+                                                <label class="form-label-custom">Total Fee</label>
+                                                <div class="form-control-custom" style="background: #fff; font-size: 1.2rem; font-weight: 700;">₱{{ number_format($payment->amount + $payment->remaining, 2) }}</div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label for="amount_paid{{ $payment->id }}" class="form-label-custom">Amount Paid</label>
+                                                <input type="number" step="0.01" min="0" max="{{ $payment->remaining }}" name="amount_paid" id="amount_paid{{ $payment->id }}" class="form-control-custom" required>
                                             </div>
                                             <div class="mb-3">
                                                 <label class="form-label-custom">Payment Method</label>
@@ -175,5 +180,95 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle payment form submission via AJAX
+    @foreach($payments as $payment)
+    document.getElementById('paymentForm{{ $payment->id }}').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('payModal{{ $payment->id }}'));
+                modal.hide();
+                // Update table immediately
+                pollPayments();
+            } else {
+                alert('Error: ' + (data.message || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while processing the payment.');
+        });
+    });
+    @endforeach
+
+    // Polling for real-time updates
+    function pollPayments() {
+        fetch('{{ route("staff.payments") }}', {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(payments => {
+            updateTable(payments);
+        })
+        .catch(error => console.error('Polling error:', error));
+    }
+
+    function updateTable(payments) {
+        const tbody = document.querySelector('tbody');
+        tbody.innerHTML = '';
+
+        if (payments.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No payments found for today.</td></tr>';
+            return;
+        }
+
+        payments.forEach(payment => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${payment.visit.display_queue_number || 'N/A'}</td>
+                <td>${payment.visit.patient_name || payment.visit.patient?.name || 'N/A'}</td>
+                <td>${payment.visit.checkup_type?.name || 'N/A'}</td>
+                <td>₱${parseFloat(payment.amount).toFixed(2)} / ₱${parseFloat(payment.remaining).toFixed(2)}</td>
+                <td>
+                    <span class="status-badge 
+                        ${payment.status === 'paid' ? 'status-paid' : 
+                          payment.status === 'unpaid' ? 'status-unpaid' : 'status-partial'}">
+                        ${payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                    </span>
+                </td>
+                <td>
+                    ${payment.remaining > 0 ? 
+                        `<button class="btn-pay" data-bs-toggle="modal" data-bs-target="#payModal${payment.id}">
+                            <i class="bi bi-cash me-1"></i> Pay
+                        </button>` :
+                        `<a href="/staff/payments/${payment.id}/receipt" target="_blank" class="btn-print">
+                            <i class="bi bi-printer"></i> Receipt
+                        </a>`
+                    }
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // Poll every 10 seconds
+    setInterval(pollPayments, 10000);
+});
+</script>
 </body>
 </html>

@@ -22,6 +22,10 @@ class PaymentController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+        if ($request->ajax()) {
+            return response()->json($payments);
+        }
+
         return view('staff.payments', compact('payments', 'date'));
     }
 
@@ -29,16 +33,29 @@ class PaymentController extends Controller
     public function markAsPaid(Request $request, Payment $payment)
     {
         $request->validate([
+            'amount_paid' => 'required|numeric|min:0',
             'payment_method' => 'nullable|string|max:50',
         ]);
 
+        $amountPaid = $request->amount_paid;
+        $newAmount = $payment->amount + $amountPaid;
+        $newRemaining = $payment->remaining - $amountPaid;
+
+        if ($newRemaining < 0) {
+            $newRemaining = 0;
+        }
+
+        $status = $newRemaining == 0 ? 'paid' : 'partial';
+
         $payment->update([
-            'status' => 'paid',
+            'amount' => $newAmount,
+            'remaining' => $newRemaining,
+            'status' => $status,
             'payment_method' => $request->payment_method ?? 'cash',
-            'paid_at' => now(),
+            'paid_at' => $status == 'paid' ? now() : $payment->paid_at,
         ]);
 
-        return redirect()->back()->with('success', 'Payment marked as paid!');
+        return response()->json(['success' => true, 'message' => 'Payment updated successfully!']);
     }
 
     // Show receipt for printing
