@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laravel Clinic Management System - Walk-In Patient Management</title>
+    <title>CuraSure: A Web-Based Walk-In Patient Management and Queue Monitoring System for Clinic Operations</title>
     <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -624,8 +624,12 @@
                              Laravel Clinic Management System
                          </div>
                          <h1 class="hero-title">
+                             <span style="color: var(--primary); display: block; font-size: 1.8rem; font-weight: 700; line-height: 1.3;">CuraSure:</span>
                              Clinic Walk-In <span>Management</span> System
                          </h1>
+                         <p style="font-size: 1.1rem; color: var(--primary); font-weight: 500; margin-bottom: 1rem;">
+                             A Web-Based Walk-In Patient Management and Queue Monitoring System for Clinic Operations
+                         </p>
                          <p class="hero-description">
                              A comprehensive Laravel-based system for managing patient queues, medical records, 
                              and clinic operations with role-based access for staff, doctors, and administrators.
@@ -1062,7 +1066,7 @@
                 <div class="col-lg-8">
                     <div class="about-card">
                         <span class="about-role">Laravel Full-Stack Project</span>
-                        <h2 class="section-title mb-4">About the Clinic Management System</h2>
+                        <h2 class="section-title mb-4">CuraSure: A Web-Based Walk-In Patient Management and Queue Monitoring System for Clinic Operations</h2>
                         <p class="text-muted mb-4">
                             This comprehensive clinic walk-in management system was developed using Laravel 12 
                             to demonstrate advanced web development skills including role-based authentication, 
@@ -1133,7 +1137,7 @@
     <footer class="footer">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <p>&copy; 2026 Laravel Clinic Management System. All rights reserved.</p>
+                <p>&copy; 2026 CuraSure - Walk-In Patient Management System. All rights reserved.</p>
                 <p>Built with <i class="bi bi-heart-fill text-danger"></i> using Laravel 12 & MySQL</p>
             </div>
         </div>
