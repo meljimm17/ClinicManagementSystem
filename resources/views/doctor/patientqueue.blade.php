@@ -186,6 +186,19 @@ body {
 }
 .form-field:focus { border-color: var(--accent); background: #fff; }
 .form-field::placeholder { color: #b0c0b8; }
+.form-field.is-invalid { border-color: #dc3545; background: #fff5f5; }
+
+.diag-error {
+    margin-bottom: 20px;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #f8d7da;
+    border: 1px solid #f5c2c7;
+    color: #842029;
+    font-size: .88rem;
+}
+.diag-error ul { margin: 0.5rem 0 0 1.2rem; padding: 0; }
+.diag-error li { margin-bottom: 0.25rem; }
 
 .action-bar {
     display: flex; align-items: center; justify-content: space-between;
@@ -374,24 +387,37 @@ body {
 
             <form method="POST" action="{{ route('doctor.record.store') }}" id="diag-form">
                 @csrf
-                <input type="hidden" name="queue_id" id="f-queue-id">
-                <input type="hidden" name="patient_id" id="f-patient-id">
+                <input type="hidden" name="queue_id" id="f-queue-id" value="{{ old('queue_id') }}">
+                <input type="hidden" name="patient_id" id="f-patient-id" value="{{ old('patient_id') }}">
                 <input type="hidden" name="doctor_id" value="{{ Auth::user()->doctor?->id ?? '' }}">
                 <input type="hidden" name="record_status" id="f-record-status" value="completed">
                 <input type="hidden" name="consultation_date" value="{{ now()->toDateString() }}">
                 <input type="hidden" name="consultation_time" value="{{ now()->format('H:i') }}">
 
+                <div id="diag-errors">
+                    @if ($errors->any())
+                        <div class="diag-error">
+                            <strong>Unable to save medical record:</strong>
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+                </div>
+
                 <div class="form-section">
                     <label class="form-section-label">Clinical Diagnosis</label>
-                    <textarea name="diagnosis" class="form-field" rows="3" placeholder="Enter clinical diagnosis..."></textarea>
+                    <textarea name="diagnosis" class="form-field @error('diagnosis') is-invalid @enderror" rows="3" placeholder="Enter clinical diagnosis..." required>{{ old('diagnosis') }}</textarea>
                 </div>
                 <div class="form-section">
                     <label class="form-section-label">Prescription / Treatment Plan</label>
-                    <textarea name="prescription" class="form-field" rows="4" placeholder="List medications and dosages..."></textarea>
+                    <textarea name="prescription" class="form-field @error('prescription') is-invalid @enderror" rows="4" placeholder="List medications and dosages..." required>{{ old('prescription') }}</textarea>
                 </div>
                 <div class="form-section">
                     <label class="form-section-label">Additional Notes <span style="color:var(--text-muted); font-weight:400;">(Optional)</span></label>
-                    <textarea name="notes" class="form-field" rows="3" placeholder="Internal clinical notes, follow-up scheduling, etc."></textarea>
+                    <textarea name="notes" class="form-field @error('notes') is-invalid @enderror" rows="3" placeholder="Internal clinical notes, follow-up scheduling, etc.">{{ old('notes') }}</textarea>
                 </div>
             </form>
 
@@ -567,7 +593,20 @@ body {
         document.getElementById('card-' + id)?.classList.add('active-card');
     }
 
+    function showDiagError(message) {
+        const errorsContainer = document.getElementById('diag-errors');
+        errorsContainer.innerHTML = `<div class="diag-error"><strong>Validation Error:</strong> ${message}</div>`;
+    }
+
     function submitRecord(status) {
+        const diagnosis = document.querySelector('textarea[name="diagnosis"]').value.trim();
+        const prescription = document.querySelector('textarea[name="prescription"]').value.trim();
+
+        if (!diagnosis || !prescription) {
+            showDiagError('Please complete both the clinical diagnosis and the prescription / treatment plan before saving.');
+            return;
+        }
+
         document.getElementById('f-record-status').value = status;
         document.getElementById('diag-form').submit();
     }

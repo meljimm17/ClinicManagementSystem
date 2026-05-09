@@ -160,7 +160,14 @@ class DoctorController extends Controller
      public function storeRecord(Request $request)
 {
     $request->validate([
-        'diagnosis'  => 'required|string',
+        'queue_id'      => 'required|exists:patient_queue,id',
+        'diagnosis'     => 'required|string',
+        'prescription'  => 'required|string',
+        'notes'         => 'nullable|string',
+    ], [
+        'queue_id.required' => 'Please select a patient before saving the medical record.',
+        'diagnosis.required' => 'Clinical diagnosis is required.',
+        'prescription.required' => 'Prescription or treatment plan is required.',
     ]);
 
     // 1. Get the authenticated doctor's profile
