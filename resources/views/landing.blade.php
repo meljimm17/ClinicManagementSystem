@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CuraSure - Clinic Management System</title>
+    <title>Laravel Clinic Management System - Walk-In Patient Management</title>
     <link rel="icon" href="{{ asset('img/logo.png') }}" type="image/png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
@@ -356,6 +356,45 @@
             margin: 0;
         }
         
+        /* Workflow Section */
+        .workflow-step {
+            padding: 2rem 1rem;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            height: 100%;
+            transition: transform 0.3s;
+        }
+        
+        .workflow-step:hover {
+            transform: translateY(-5px);
+        }
+        
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+            font-size: 1.1rem;
+        }
+        
+        .workflow-icon {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+        
+        .workflow-step h5 {
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+        }
+        
         /* Tech Stack */
         .tech-section {
             padding: 5rem 0;
@@ -561,8 +600,8 @@
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
                 <a href="#" class="navbar-brand">
-                     <img src="{{ asset('img/logo1.png') }}" alt="CuraSure" style="width:64px; height:64px; object-fit:contain; margin-right:8px;">
-                    <span style="font-family: 'Space Grotesk', sans-serif; font-weight:600;">CuraSure</span>
+                     <img src="{{ asset('img/logo1.png') }}" alt="Laravel Clinic System" style="width:64px; height:64px; object-fit:contain; margin-right:8px;">
+                    <span style="font-family: 'Space Grotesk', sans-serif; font-weight:600;">Clinic System</span>
                 </a>
                 <div class="d-flex align-items-center gap-3">
                     <a href="#features" class="nav-link d-none d-md-block">Features</a>
@@ -582,18 +621,18 @@
                      <div class="animate-fade-in">
                          <div class="hero-badge">
                              <i class="bi bi-check-circle-fill"></i>
-                             Academic Project 2026
+                             Laravel Clinic Management System
                          </div>
                          <h1 class="hero-title">
-                             Smart Clinic <span>Management</span> System
+                             Clinic Walk-In <span>Management</span> System
                          </h1>
                          <p class="hero-description">
-                             A comprehensive web-based solution for modern healthcare facilities. 
-                             Streamline patient queues, medical records, and billing with an intuitive interface.
+                             A comprehensive Laravel-based system for managing patient queues, medical records, 
+                             and clinic operations with role-based access for staff, doctors, and administrators.
                          </p>
                          <div class="hero-buttons">
-                             <a href="#preview" class="btn btn-primary-custom">
-                                 <i class="bi bi-play-circle me-2"></i>View Demo
+                             <a href="#demo" class="btn btn-primary-custom">
+                                 <i class="bi bi-play-circle me-2"></i>View System Demo
                              </a>
                              <a href="#features" class="btn btn-outline-custom">
                                  Explore Features
@@ -611,32 +650,32 @@
                             </div>
                             <div class="mockup-content">
                                 <div class="d-flex justify-content-between align-items-center mb-4">
-                                    <h5 style="font-size: 1.1rem; margin: 0;">Clinic Workflow</h5>
-                                    <span class="badge bg-success">Secure</span>
+                                    <h5 style="font-size: 1.1rem; margin: 0;">Today's Queue Status</h5>
+                                    <span class="badge bg-success">Live System</span>
                                 </div>
                                 <div class="row g-3">
                                     <div class="col-6">
                                         <div class="mockup-box">
-                                            <i class="bi bi-person-lines-fill"></i>
+                                            <i class="bi bi-person-plus-fill"></i>
                                             <span>Patient Registration</span>
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="mockup-box">
-                                            <i class="bi bi-list-check"></i>
-                                            <span>Queue Management</span>
+                                            <i class="bi bi-list-ol"></i>
+                                            <span>Queue: Q-001, Q-002</span>
                                         </div>
                                     </div>
                                     <div class="col-6">
                                         <div class="mockup-box">
-                                            <i class="bi bi-file-medical"></i>
+                                            <i class="bi bi-stethoscope"></i>
+                                            <span>Doctor Consultation</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="mockup-box">
+                                            <i class="bi bi-file-earmark-medical-fill"></i>
                                             <span>Medical Records</span>
-                                        </div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="mockup-box">
-                                            <i class="bi bi-cash-stack"></i>
-                                            <span>Billing & Reports</span>
                                         </div>
                                     </div>
                                 </div>
@@ -652,75 +691,75 @@
     <section id="features" class="features-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Key Features</h2>
+                <h2 class="section-title">Core System Features</h2>
                 <p class="section-subtitle">
-                    Everything you need to manage your clinic efficiently
+                    Built with Laravel 12, featuring role-based access and real-time queue management
                 </p>
             </div>
             <div class="row g-4">
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="bi bi-people-fill"></i>
+                            <i class="bi bi-person-plus-fill"></i>
                         </div>
-                        <h4 class="feature-title">Patient Queue Management</h4>
+                        <h4 class="feature-title">Smart Patient Registration</h4>
                         <p class="feature-description">
-                            Real-time queue tracking with priority scheduling and status updates.
+                            Duplicate prevention with multi-field validation. Automatic queue number generation (Q-001, Q-002) and priority handling for seniors, PWD, pregnant patients.
                         </p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="bi bi-file-medical-fill"></i>
+                            <i class="bi bi-list-ol"></i>
                         </div>
-                        <h4 class="feature-title">Medical Records</h4>
+                        <h4 class="feature-title">Real-Time Queue Management</h4>
                         <p class="feature-description">
-                            Comprehensive patient history with diagnosis, prescriptions, and notes.
+                            Live queue status updates (waiting → diagnosing → done). Priority-based ordering with public waiting area display for patient visibility.
                         </p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="bi bi-currency-dollar"></i>
+                            <i class="bi bi-stethoscope"></i>
                         </div>
-                        <h4 class="feature-title">Billing & Payments</h4>
+                        <h4 class="feature-title">Doctor Consultation Interface</h4>
                         <p class="feature-description">
-                            Automated fee calculation with payment tracking and receipt generation.
+                            Room-specific queue filtering, one-click patient calling, digital medical records with symptoms, diagnosis, prescription, and consultation notes.
                         </p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="bi bi-person-badge-fill"></i>
+                            <i class="bi bi-shield-lock-fill"></i>
                         </div>
-                        <h4 class="feature-title">Role-Based Access</h4>
+                        <h4 class="feature-title">Role-Based Access Control</h4>
                         <p class="feature-description">
-                            Secure login for Admin, Doctor, and Staff with appropriate permissions.
+                            Three user roles: Admin (full access), Doctor (consultations), Staff (registration). Secure authentication with appropriate permissions.
                         </p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="bi bi-graph-up-arrow"></i>
+                            <i class="bi bi-file-earmark-medical-fill"></i>
                         </div>
-                        <h4 class="feature-title">Reports & Analytics</h4>
+                        <h4 class="feature-title">Comprehensive Medical Records</h4>
                         <p class="feature-description">
-                            Generate detailed reports on patient visits, revenue, and performance.
+                            Patient snapshots for data integrity, searchable medical history, PDF prescription generation, and consultation time tracking.
                         </p>
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-4">
                     <div class="feature-card">
                         <div class="feature-icon">
-                            <i class="bi bi-display"></i>
+                            <i class="bi bi-bar-chart-line-fill"></i>
                         </div>
-                        <h4 class="feature-title">Waiting Area Display</h4>
+                        <h4 class="feature-title">Admin Dashboard & Reports</h4>
                         <p class="feature-description">
-                            Public display screen for queue status visible to waiting patients.
+                            Real-time statistics, user management, system settings, daily/monthly reports with patient volume, consultation metrics, and performance analytics.
                         </p>
                     </div>
                 </div>
@@ -732,29 +771,31 @@
     <section class="problem-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">Problem & Solution</h2>
+                <h2 class="section-title">The Challenge & Our Solution</h2>
                 <p class="section-subtitle">
-                    Addressing common challenges in healthcare management
+                    Addressing real clinic management inefficiencies with digital transformation
                 </p>
             </div>
             <div class="row g-4">
                 <div class="col-lg-6">
                     <div class="problem-card">
-                        <h4><i class="bi bi-exclamation-triangle me-2"></i>The Problem</h4>
+                        <h4><i class="bi bi-exclamation-triangle me-2"></i>Traditional Clinic Challenges</h4>
                         <p>
-                            Traditional clinic management relies on manual processes—paper-based patient records, 
-                            verbal queue updates, and scattered billing systems. This leads to long wait times, 
-                            lost records, billing errors, and poor patient experience.
+                            Clinics struggle with manual patient registration, paper-based queue systems, 
+                            inconsistent medical records, and lack of real-time visibility. Staff waste time 
+                            on administrative tasks, patients experience long waits, and data accuracy suffers 
+                            from manual entry errors and lost paperwork.
                         </p>
                     </div>
                 </div>
                 <div class="col-lg-6">
                     <div class="solution-card">
-                        <h4><i class="bi bi-lightbulb me-2"></i>Our Solution</h4>
+                        <h4><i class="bi bi-lightbulb me-2"></i>Laravel-Powered Digital Solution</h4>
                         <p>
-                            CuraSure provides a centralized digital platform that automates queue management, 
-                            securely stores medical records, and streamlines billing. With real-time updates and 
-                            role-based access, every staff member stays informed and productive.
+                            Our system automates patient registration with duplicate prevention, provides 
+                            real-time queue management with priority handling, enables digital medical 
+                            consultations, and offers comprehensive reporting. Built with Laravel 12, 
+                            MySQL, and Bootstrap 5 for a robust, scalable healthcare management platform.
                         </p>
                     </div>
                 </div>
@@ -762,49 +803,88 @@
         </div>
     </section>
 
-    <!-- System Preview Section -->
-    <section id="preview" class="preview-section">
+    <!-- System Demo Section -->
+    <section id="demo" class="preview-section">
         <div class="container">
             <div class="section-header">
-                <h2 class="section-title">System Preview</h2>
+                <h2 class="section-title">Live System Demonstration</h2>
                 <p class="section-subtitle">
-                    A glimpse into the user interface
+                    Experience the core functionality of our Laravel clinic management system
                 </p>
             </div>
             <div class="row g-4">
-                <div class="col-md-4">
+                <div class="col-md-6 col-lg-4">
                     <div class="preview-card">
                         <div class="preview-image">
-                            <i class="bi bi-layout-sidebar"></i>
+                            <i class="bi bi-person-badge"></i>
                         </div>
                         <div class="preview-caption">
-                            <h5>Admin Dashboard</h5>
-                            <p>Complete overview of clinic operations</p>
+                            <h5>Role-Based Login</h5>
+                            <p>Secure authentication for Admin, Doctor, and Staff roles</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6 col-lg-4">
                     <div class="preview-card">
                         <div class="preview-image">
                             <i class="bi bi-person-plus"></i>
                         </div>
                         <div class="preview-caption">
-                            <h5>Patient Registration</h5>
-                            <p>Easy patient intake form</p>
+                            <h5>Staff Dashboard</h5>
+                            <p>Patient registration with duplicate prevention and queue management</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-6 col-lg-4">
                     <div class="preview-card">
                         <div class="preview-image">
-                            <i class="bi bi-clipboard2-pulse"></i>
+                            <i class="bi bi-list-check"></i>
+                        </div>
+                        <div class="preview-caption">
+                            <h5>Queue Management</h5>
+                            <p>Real-time queue display with status: waiting → diagnosing → done</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="preview-card">
+                        <div class="preview-image">
+                            <i class="bi bi-stethoscope"></i>
+                        </div>
+                        <div class="preview-caption">
+                            <h5>Doctor Interface</h5>
+                            <p>Room-specific queue, patient calling, and medical record creation</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="preview-card">
+                        <div class="preview-image">
+                            <i class="bi bi-file-earmark-text"></i>
                         </div>
                         <div class="preview-caption">
                             <h5>Medical Records</h5>
-                            <p>Doctor consultation interface</p>
+                            <p>Digital consultations with diagnosis, prescriptions, and patient history</p>
                         </div>
                     </div>
                 </div>
+                <div class="col-md-6 col-lg-4">
+                    <div class="preview-card">
+                        <div class="preview-image">
+                            <i class="bi bi-bar-chart"></i>
+                        </div>
+                        <div class="preview-caption">
+                            <h5>Admin Dashboard</h5>
+                            <p>System analytics, user management, and comprehensive reporting</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-5">
+                <a href="{{ route('login') }}" class="btn btn-primary-custom btn-lg">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>Access Live System
+                </a>
+                <p class="text-muted mt-3">Login credentials available for demonstration</p>
             </div>
         </div>
     </section>
@@ -815,7 +895,7 @@
             <div class="section-header">
                 <h2 class="section-title">Technology Stack</h2>
                 <p class="section-subtitle">
-                    Built with modern and reliable technologies
+                    Built with Laravel 12 and modern web technologies for robust clinic management
                 </p>
             </div>
             <div class="tech-grid">
@@ -825,15 +905,15 @@
                 </div>
                 <div class="tech-badge">
                     <i class="bi bi-box-seam"></i>
-                    Laravel 12
+                    Laravel 12 Framework
                 </div>
                 <div class="tech-badge">
                     <i class="bi bi-database"></i>
-                    MySQL / SQLite
+                    MySQL (Clever Cloud)
                 </div>
                 <div class="tech-badge">
-                    <i class="bi bi-palette"></i>
-                    Bootstrap 5
+                    <i class="bi bi-bootstrap"></i>
+                    Bootstrap 5.3.3
                 </div>
                 <div class="tech-badge">
                     <i class="bi bi-braces"></i>
@@ -841,11 +921,74 @@
                 </div>
                 <div class="tech-badge">
                     <i class="bi bi-hammer"></i>
-                    Vite
+                    Vite Build Tool
                 </div>
                 <div class="tech-badge">
                     <i class="bi bi-file-earmark-pdf"></i>
-                    DomPDF
+                    DomPDF (Reports)
+                </div>
+                <div class="tech-badge">
+                    <i class="bi bi-shield-check"></i>
+                    Laravel Breeze Auth
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- System Workflow Section -->
+    <section class="preview-section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">System Workflow</h2>
+                <p class="section-subtitle">
+                    How the clinic management system operates from patient arrival to consultation completion
+                </p>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-3">
+                    <div class="text-center">
+                        <div class="workflow-step">
+                            <div class="step-number">1</div>
+                            <i class="bi bi-person-plus-fill workflow-icon"></i>
+                            <h5>Patient Registration</h5>
+                            <p class="text-muted">Staff registers patient, prevents duplicates, assigns queue number</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="text-center">
+                        <div class="workflow-step">
+                            <div class="step-number">2</div>
+                            <i class="bi bi-list-ol workflow-icon"></i>
+                            <h5>Queue Management</h5>
+                            <p class="text-muted">Patient joins queue with priority handling (senior, PWD, urgent)</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="text-center">
+                        <div class="workflow-step">
+                            <div class="step-number">3</div>
+                            <i class="bi bi-telephone-forward-fill workflow-icon"></i>
+                            <h5>Doctor Calls Patient</h5>
+                            <p class="text-muted">Doctor calls next patient, status changes to 'diagnosing'</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-3">
+                    <div class="text-center">
+                        <div class="workflow-step">
+                            <div class="step-number">4</div>
+                            <i class="bi bi-check-circle-fill workflow-icon"></i>
+                            <h5>Consultation Complete</h5>
+                            <p class="text-muted">Medical record saved, patient marked as 'done', queue advances</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-4">
+                <div class="alert alert-info d-inline-block">
+                    <strong>Real-time Updates:</strong> All users see live queue status changes across the system
                 </div>
             </div>
         </div>
@@ -918,29 +1061,41 @@
             <div class="row justify-content-center">
                 <div class="col-lg-8">
                     <div class="about-card">
-                        <span class="about-role">Academic Project</span>
-                        <h2 class="section-title mb-4">About the Project</h2>
+                        <span class="about-role">Laravel Full-Stack Project</span>
+                        <h2 class="section-title mb-4">About the Clinic Management System</h2>
                         <p class="text-muted mb-4">
-                            CuraSure was developed to complete the project for IT9aL(8420) to demonstrate the practical application 
-                            of web development skills in solving real-world healthcare challenges.
+                            This comprehensive clinic walk-in management system was developed using Laravel 12 
+                            to demonstrate advanced web development skills including role-based authentication, 
+                            real-time data management, and complex database relationships.
                         </p>
                         <div class="row g-4">
                             <div class="col-md-6">
-                                <h5><i class="bi bi-person me-2 text-primary"></i>Developer</h5>
-                                <p class="text-muted mb-0">Information Technology Student</p>
+                                <h5><i class="bi bi-code-slash me-2 text-primary"></i>Technology</h5>
+                                <p class="text-muted mb-0">Laravel 12, MySQL, Bootstrap 5, Vite</p>
                             </div>
                             <div class="col-md-6">
-                                <h5><i class="bi bi-calendar me-2 text-primary"></i>Timeline</h5>
-                                <p class="text-muted mb-0">Academic Year 2025-2026</p>
+                                <h5><i class="bi bi-database me-2 text-primary"></i>Database</h5>
+                                <p class="text-muted mb-0">8+ tables with complex relationships</p>
                             </div>
                             <div class="col-md-6">
-                                <h5><i class="bi bi-book me-2 text-primary"></i>Purpose</h5>
-                                <p class="text-muted mb-0">IT9aL(8420) Project</p>
+                                <h5><i class="bi bi-people me-2 text-primary"></i>User Roles</h5>
+                                <p class="text-muted mb-0">Admin, Doctor, Staff with specific permissions</p>
                             </div>
                             <div class="col-md-6">
-                                <h5><i class="bi bi-award me-2 text-primary"></i>Objective</h5>
-                                <p class="text-muted mb-0">Demonstrate full-stack development competency</p>
+                                <h5><i class="bi bi-check-circle me-2 text-primary"></i>Features</h5>
+                                <p class="text-muted mb-0">CRUD operations, real-time updates, PDF generation</p>
                             </div>
+                        </div>
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="text-primary mb-2"><i class="bi bi-lightbulb me-2"></i>Key Technical Achievements</h6>
+                            <ul class="text-muted mb-0 small">
+                                <li>Role-based middleware implementation</li>
+                                <li>Real-time queue management with status tracking</li>
+                                <li>Duplicate patient prevention algorithms</li>
+                                <li>Database transactions for data integrity</li>
+                                <li>PDF report generation with DomPDF</li>
+                                <li>Responsive design with Bootstrap 5</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -978,8 +1133,8 @@
     <footer class="footer">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
-                <p>&copy; 2026 CuraSure. All rights reserved.</p>
-                <p>Built with <i class="bi bi-heart-fill text-danger"></i> using Laravel 12</p>
+                <p>&copy; 2026 Laravel Clinic Management System. All rights reserved.</p>
+                <p>Built with <i class="bi bi-heart-fill text-danger"></i> using Laravel 12 & MySQL</p>
             </div>
         </div>
     </footer>
