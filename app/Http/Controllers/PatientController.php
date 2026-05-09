@@ -47,7 +47,7 @@ class PatientController extends Controller
             'age'                      => 'required|integer|min:1|max:130',
             'gender'                   => 'required|in:Male,Female',
             'civil_status'             => 'nullable|in:Single,Married,Widowed,Separated',
-            'contact_number'           => ['required','string','regex:/^(?:\+63|63|0)9\d{9}$/'],
+            'contact_number'           => ['required','string','regex:/^09\d{9}$/'],
             'address'                  => 'required|string|max:255',
             'blood_type'               => 'nullable|string|max:5',
             'height'                   => 'nullable|numeric|min:20|max:300',
@@ -56,7 +56,7 @@ class PatientController extends Controller
             'philhealth_no'            => 'nullable|string|max:30',
             'hmo_insurance'            => 'nullable|string|max:100',
             'emergency_contact_name'   => 'nullable|string|max:100',
-            'emergency_contact_number' => 'nullable|string|max:20|regex:/^[0-9+\-\s()]+$/',
+            'emergency_contact_number' => ['nullable','string','regex:/^09\d{9}$/'],
             // Medical history
             'known_allergies'          => 'nullable|string',
             'existing_conditions'      => 'nullable|string',
@@ -78,9 +78,9 @@ class PatientController extends Controller
             'age.min' => 'Age cannot be negative.',
             'age.max' => 'Age looks invalid. Please check again.',
             'contact_number.required' => 'Contact number is required.',
-            'contact_number.regex' => 'Contact number must be a valid Philippine mobile number (e.g. 09171234567 or +639171234567).',
+            'contact_number.regex' => 'Contact number must start with 09 and contain 11 digits.',
             'address.required' => 'Address is required.',
-            'emergency_contact_number.regex' => 'Emergency contact number must be a valid Philippine mobile number (e.g. 09171234567 or +639171234567).',
+            'emergency_contact_number.regex' => 'Emergency contact number must start with 09 and contain 11 digits.',
             'age.integer' => 'Age must be a whole number.',
             'age.min' => 'Age must be at least 1 year.',
             'height.numeric' => 'Height must be a valid number.',
@@ -260,7 +260,13 @@ class PatientController extends Controller
             }
         }
 
-        return redirect()->back()->with('success', 'Patient registered and added to queue as ' . $queueNumber . '!');
+        $successMessage = 'Patient registered and added to queue as ' . $queueNumber . '!';
+
+        if ($request->routeIs('admin.*')) {
+            return redirect()->route('admin.queue')->with('success', $successMessage);
+        }
+
+        return redirect()->back()->with('success', $successMessage);
     }
 
     // Check if a patient matching the given details is already in today's queue

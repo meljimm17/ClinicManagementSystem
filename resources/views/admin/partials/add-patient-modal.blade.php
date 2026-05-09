@@ -23,6 +23,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                @php
+                    $checkupTypes = $checkupTypes ?? \App\Models\CheckupType::active()->orderBy('name')->get();
+                @endphp
+
                 @if(session('success'))
                     <div class="alert alert-success">{{ session('success') }}</div>
                 @endif
@@ -49,11 +53,25 @@
                             </div>
                         </div>
                     </div>
+                    <div id="apQueueWarningBanner" style="display:none; background:#fff8e1; border:1.5px solid #f6c90e; color:#7a5c00; border-radius:10px; padding:13px 16px; margin-bottom:16px; font-size:.82rem;">
+                        <div style="display:flex; align-items:flex-start; gap:10px;">
+                            <i class="bi bi-exclamation-triangle-fill" style="font-size:1.2rem; color:#e6a817; flex-shrink:0; margin-top:1px;"></i>
+                            <div>
+                                <div style="font-weight:700; font-size:.87rem; margin-bottom:3px;">⚠ Patient Already in Queue Today</div>
+                                <div id="apQueueWarningText">This patient is already in queue today. Please verify the queue before adding another registration.</div>
+                                <div style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                                    <button type="button" onclick="apAcknowledgeQueueWarning()" style="display:inline-flex; align-items:center; gap:5px; background:#1b3d2f; color:#fff; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
+                                        <i class="bi bi-check-circle"></i> Okay
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <span class="ap-section-label">Personal Information</span>
                     <div class="mb-3">
                         <label class="ap-form-label">Full Patient Name</label>
-                        <input type="text" name="name" value="{{ old('name') }}" class="ap-form-control {{ $errors->has('name') ? 'ap-input-invalid' : '' }}" required>
+                        <input type="text" name="name" value="{{ old('name') }}" class="ap-form-control {{ $errors->has('name') ? 'ap-input-invalid' : '' }}" placeholder="e.g. Elena Rodriguez" required>
                     </div>
 
                     <div class="row mb-3 g-2">
@@ -88,11 +106,14 @@
                     <div class="row mb-3 g-2">
                         <div class="col-md-6">
                             <label class="ap-form-label">Contact Number</label>
-                            <input type="text" name="contact_number" value="{{ old('contact_number') }}" class="ap-form-control {{ $errors->has('contact_number') ? 'ap-input-invalid' : '' }}" required>
+                            <input type="text" name="contact_number" value="{{ old('contact_number') }}" class="ap-form-control {{ $errors->has('contact_number') ? 'ap-input-invalid' : '' }}" placeholder="09171234567" required pattern="^09\d{9}$" title="Valid Philippine mobile number, e.g. 09171234567">
+                            @if($errors->has('contact_number'))
+                                <div class="text-danger small mt-1">{{ $errors->first('contact_number') }}</div>
+                            @endif
                         </div>
                         <div class="col-md-6">
                             <label class="ap-form-label">Address</label>
-                            <input type="text" name="address" value="{{ old('address') }}" class="ap-form-control {{ $errors->has('address') ? 'ap-input-invalid' : '' }}" required>
+                            <input type="text" name="address" value="{{ old('address') }}" class="ap-form-control {{ $errors->has('address') ? 'ap-input-invalid' : '' }}" placeholder="123 Health St, Davao City" required>
                         </div>
                     </div>
 
@@ -104,12 +125,18 @@
 
                     <span class="ap-section-label">Administrative Details</span>
                     <div class="row mb-3 g-2">
-                        <div class="col-md-6"><label class="ap-form-label">PhilHealth No.</label><input type="text" name="philhealth_no" value="{{ old('philhealth_no') }}" id="ap_philhealth" class="ap-form-control"></div>
-                        <div class="col-md-6"><label class="ap-form-label">HMO / Insurance</label><input type="text" name="hmo_insurance" value="{{ old('hmo_insurance') }}" id="ap_hmo" class="ap-form-control"></div>
+                        <div class="col-md-6"><label class="ap-form-label">PhilHealth No.</label><input type="text" name="philhealth_no" value="{{ old('philhealth_no') }}" id="ap_philhealth" class="ap-form-control" placeholder="XX-XXXXXXXXX-X"></div>
+                        <div class="col-md-6"><label class="ap-form-label">HMO / Insurance</label><input type="text" name="hmo_insurance" value="{{ old('hmo_insurance') }}" id="ap_hmo" class="ap-form-control" placeholder="Provider & Member No."></div>
                     </div>
                     <div class="row mb-4 g-2">
                         <div class="col-md-6"><label class="ap-form-label">Emergency Contact Name</label><input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" id="ap_emgName" class="ap-form-control"></div>
-                        <div class="col-md-6"><label class="ap-form-label">Emergency Contact Number</label><input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" id="ap_emgContact" class="ap-form-control"></div>
+                        <div class="col-md-6">
+                            <label class="ap-form-label">Emergency Contact Number</label>
+                            <input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" id="ap_emgContact" class="ap-form-control {{ $errors->has('emergency_contact_number') ? 'ap-input-invalid' : '' }}" placeholder="09171234567" pattern="^09\d{9}$" title="Valid Philippine mobile number, e.g. 09171234567">
+                            @if($errors->has('emergency_contact_number'))
+                                <div class="text-danger small mt-1">{{ $errors->first('emergency_contact_number') }}</div>
+                            @endif
+                        </div>
                     </div>
 
                     <span class="ap-section-label">Medical History</span>
@@ -120,7 +147,7 @@
                     <span class="ap-section-label">Visit Information</span>
                     <div class="mb-3">
                         <label class="ap-form-label">Primary Symptoms</label>
-                        <textarea name="primary_symptoms" class="ap-form-control {{ $errors->has('primary_symptoms') ? 'ap-input-invalid' : '' }}" rows="3" required>{{ old('primary_symptoms') }}</textarea>
+                        <textarea name="primary_symptoms" class="ap-form-control {{ $errors->has('primary_symptoms') ? 'ap-input-invalid' : '' }}" rows="3" required placeholder="e.g. headache, fever, cough">{{ old('primary_symptoms') }}</textarea>
                     </div>
                     <div class="ap-returning-toggle mb-3" onclick="apTogglePriority(this)">
                         <input type="checkbox" id="apPriorityCheck" name="is_priority" value="1" {{ old('is_priority') ? 'checked' : '' }}>
@@ -163,6 +190,9 @@
                                     <option value="">No check-up types available</option>
                                 @endforelse
                             </select>
+                            @if($errors->has('checkup_type_id'))
+                                <div class="text-danger small mt-1">{{ $errors->first('checkup_type_id') }}</div>
+                            @endif
                         </div>
                         <div class="col-md-6">
                             <label class="ap-form-label">Or Custom Fee (Override)</label>
@@ -271,6 +301,54 @@
         _apDuplicateWarningDismissed = true;
     }
 
+    function apShowQueueWarning(patientInfo) {
+        const banner = document.getElementById('apQueueWarningBanner');
+        const text = document.getElementById('apQueueWarningText');
+        text.innerHTML = `<strong>${patientInfo.patient_name || 'This patient'}</strong> is already in queue today. Verify the queue before adding another registration.`;
+        banner.style.display = 'block';
+        banner.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function apHideQueueWarning() {
+        document.getElementById('apQueueWarningBanner').style.display = 'none';
+    }
+
+    function apAcknowledgeQueueWarning() {
+        apHideQueueWarning();
+        _apDuplicateWarningDismissed = true;
+    }
+
+    function apCheckQueuePatient() {
+        const name = (document.querySelector('#addPatientModal [name="name"]')?.value ?? '').trim();
+        const dob = (document.querySelector('#addPatientModal [name="date_of_birth"]')?.value ?? '').trim();
+        const address = (document.querySelector('#addPatientModal [name="address"]')?.value ?? '').trim();
+        const contact = (document.querySelector('#addPatientModal [name="contact_number"]')?.value ?? '').trim();
+        const age = (document.querySelector('#addPatientModal [name="age"]')?.value ?? '').trim();
+        const bloodType = (document.querySelector('#addPatientModal [name="blood_type"]')?.value ?? '').trim();
+
+        if (!name || !dob || !address || !age || !contact || !bloodType) return;
+
+        fetch(`{{ route('patients.check-queue') }}?` + new URLSearchParams({
+            name,
+            date_of_birth: dob,
+            address,
+            age,
+            contact_number: contact,
+            blood_type: bloodType,
+            emergency_contact_name: (document.getElementById('ap_emgName')?.value ?? '').trim(),
+            emergency_contact_number: (document.getElementById('ap_emgContact')?.value ?? '').trim(),
+        }))
+        .then(res => res.json())
+        .then(data => {
+            if (data.in_queue) {
+                apShowQueueWarning(data);
+            } else {
+                apHideQueueWarning();
+            }
+        })
+        .catch(() => {});
+    }
+
     /* Update fee display when checkup type changes */
     function apUpdateFeeDisplay() {
         const select = document.getElementById('apCheckupTypeSelect');
@@ -334,10 +412,26 @@
         const addressField = document.querySelector('#addPatientModal [name="address"]');
         const contactField = document.querySelector('#addPatientModal [name="contact_number"]');
         
-        if (nameField) nameField.addEventListener('input', apCheckDuplicatePatient);
-        if (dobField) dobField.addEventListener('input', apCheckDuplicatePatient);
-        if (addressField) addressField.addEventListener('input', apCheckDuplicatePatient);
-        if (contactField) contactField.addEventListener('input', apCheckDuplicatePatient);
+        if (nameField) {
+            nameField.addEventListener('input', apCheckDuplicatePatient);
+            nameField.addEventListener('input', apCheckQueuePatient);
+        }
+        if (dobField) {
+            dobField.addEventListener('input', apCheckDuplicatePatient);
+            dobField.addEventListener('input', apCheckQueuePatient);
+        }
+        if (addressField) {
+            addressField.addEventListener('input', apCheckDuplicatePatient);
+            addressField.addEventListener('input', apCheckQueuePatient);
+        }
+        if (contactField) {
+            contactField.addEventListener('input', apCheckDuplicatePatient);
+            contactField.addEventListener('input', apCheckQueuePatient);
+        }
+        const ageField = document.querySelector('#addPatientModal [name="age"]');
+        const bloodTypeField = document.querySelector('#addPatientModal [name="blood_type"]');
+        if (ageField) ageField.addEventListener('input', apCheckQueuePatient);
+        if (bloodTypeField) bloodTypeField.addEventListener('change', apCheckQueuePatient);
 
         @if($errors->has('name') || $errors->has('primary_symptoms') || $errors->has('contact_number'))
             const modal = new bootstrap.Modal(document.getElementById('addPatientModal'));

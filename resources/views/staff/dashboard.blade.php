@@ -370,9 +370,6 @@ body {
                                     <button type="button" onclick="acknowledgeDuplicateWarning()" style="display:inline-flex; align-items:center; gap:5px; background:#1b3d2f; color:#fff; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
                                         <i class="bi bi-check-circle"></i> Okay
                                     </button>
-                                    <button type="button" onclick="dismissDuplicateWarning()" style="display:inline-flex; align-items:center; gap:5px; background:none; border:1.5px solid #c9a800; color:#7a5c00; border-radius:6px; padding:5px 13px; font-size:.76rem; font-weight:700; cursor:pointer;">
-                                        <i class="bi bi-x-circle"></i> Dismiss & Proceed Anyway
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -458,7 +455,7 @@ body {
                         <div class="row mb-3 g-2">
                             <div class="col-md-6">
                                 <label class="form-label-custom">Contact Number</label>
-                                <input type="text" id="contactNumber" name="contact_number" value="{{ old('contact_number') }}" class="form-control-custom {{ $errors->has('contact_number') ? 'input-invalid' : '' }}" placeholder="0917 123 4567 or +63917 123 4567" required oninput="validateImportantFields()" onblur="checkDuplicatePatient(); validateImportantFields()" pattern="^(?:\+63|63|0)9\d{9}$" title="Valid Philippine mobile number, e.g. 09171234567 or +639171234567">
+                                <input type="text" id="contactNumber" name="contact_number" value="{{ old('contact_number') }}" class="form-control-custom {{ $errors->has('contact_number') ? 'input-invalid' : '' }}" placeholder="09171234567" required oninput="validateImportantFields()" onblur="checkDuplicatePatient(); validateImportantFields()" pattern="^09\d{9}$" title="Valid Philippine mobile number, e.g. 09171234567">
                                 <div id="contactError" class="field-error" style="display:none; color:#b02a37; font-size:.78rem; margin-top:5px;"></div>
                             </div>
                             <div class="col-md-6">
@@ -524,7 +521,7 @@ body {
                                     <input type="text" name="emergency_contact_name" value="{{ old('emergency_contact_name') }}" class="form-control-custom {{ $errors->has('emergency_contact_name') ? 'input-invalid' : '' }}" id="emgName" placeholder="Contact Person Name" onblur="checkDuplicatePatient(); checkImportantInfo()">
                                 </div>
                                 <div class="col-md-6">
-                                    <input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" class="form-control-custom {{ $errors->has('emergency_contact_number') ? 'input-invalid' : '' }}" id="emgContact" placeholder="+63 (555) 000-0000" onblur="checkDuplicatePatient(); checkImportantInfo()">
+                                    <input type="text" name="emergency_contact_number" value="{{ old('emergency_contact_number') }}" class="form-control-custom {{ $errors->has('emergency_contact_number') ? 'input-invalid' : '' }}" id="emgContact" placeholder="09171234567" pattern="^09\d{9}$" title="Valid Philippine mobile number, e.g. 09171234567" onblur="checkDuplicatePatient(); checkImportantInfo()">
                                 </div>
                             </div>
                         </div>
@@ -930,7 +927,7 @@ body {
         const age = document.getElementById('age');
         const height = document.getElementById('height');
         const weight = document.getElementById('weight');
-        const contactPattern = /^(?:\+63|63|0)9\d{9}$/;
+        const contactPattern = /^09\d{9}$/;
 
         clearFieldError('contactError');
         clearFieldError('ageError');
@@ -944,7 +941,7 @@ body {
                 contact.classList.add('input-invalid');
                 valid = false;
             } else if (!contactPattern.test(value)) {
-                showFieldError('contactError', 'Enter a valid Philippine mobile number, e.g. 09171234567 or +639171234567.');
+                showFieldError('contactError', 'Enter a valid Philippine mobile number starting with 09, e.g. 09171234567.');
                 contact.classList.add('input-invalid');
                 valid = false;
             } else {
@@ -1014,16 +1011,31 @@ body {
 
     function focusImportantInfo() {
         const emgName = document.getElementById('emgName');
+        const emgContact = document.getElementById('emgContact');
+        const allergies = document.getElementById('allergies');
+        const conditions = document.getElementById('conditions');
+        const medications = document.getElementById('medications');
+
         if (emgName && !emgName.value.trim()) {
             emgName.focus();
             return;
         }
-        const allergies = document.getElementById('allergies');
+        if (emgContact && !emgContact.value.trim()) {
+            emgContact.focus();
+            return;
+        }
         if (allergies && !allergies.value.trim()) {
             allergies.focus();
             return;
         }
-        document.getElementById('conditions')?.focus();
+        if (conditions && !conditions.value.trim()) {
+            conditions.focus();
+            return;
+        }
+        if (medications && !medications.value.trim()) {
+            medications.focus();
+            return;
+        }
     }
 
     function handleRegistrationSubmit(e) {
